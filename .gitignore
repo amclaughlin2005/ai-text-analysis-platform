@@ -75,8 +75,17 @@ backend/uploads/
 backend/temp/
 *.csv
 *.xlsx
-*.json
 *.log
+
+# Allow package.json and package-lock.json files
+!package.json
+!package-lock.json
+!frontend/package.json  
+!frontend/package-lock.json
+
+# Ignore specific JSON files we don't want
+backend/uploads/*.json
+backend/temp/*.json
 
 #===========================================
 # IDE & Editor Files
