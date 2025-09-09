@@ -1,0 +1,32 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pip install -r requirements.txt"
+
+[deploy]
+startCommand = "python production_server.py"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "always"
+
+[env]
+# Railway will set PORT automatically
+PORT = { default = "8000" }
+ENVIRONMENT = { default = "production" }
+DEBUG = { default = "false" }
+
+# Database URL will be automatically set by Railway PostgreSQL addon
+# DATABASE_URL = "postgresql://..."
+
+# CORS Origins - Update with your Vercel domain
+CORS_ORIGINS = { default = "https://your-app-name.vercel.app" }
+
+# File Upload Settings
+MAX_FILE_SIZE = { default = "10485760" }  # 10MB
+UPLOAD_DIR = { default = "/app/uploads" }
+
+# Application Settings
+MAX_WORDS_PER_CLOUD = { default = "50" }
+DEFAULT_ANALYSIS_MODE = { default = "all" }
+
+[build.nixPacks]
+packages = ["python39", "python39Packages.pip"]
