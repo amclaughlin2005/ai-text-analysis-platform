@@ -1,8 +1,15 @@
+[providers]
+python = "3.11"
+
+[phases.setup]
+nixPkgs = ["python311", "python311Packages.pip"]
+
 [phases.build]
-cmds = ["cd backend && pip install -r requirements.txt"]
+cmds = ["cd backend && python3 -m pip install -r requirements.txt"]
 
 [phases.start]
 cmd = "cd backend && python3 production_server.py"
 
 [variables]
 NIXPACKS_PYTHON_VERSION = "3.11"
+PYTHONPATH = "/app/backend"
