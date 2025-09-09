@@ -1,0 +1,8 @@
+[phases.build]
+cmds = ["cd backend && pip install -r requirements.txt"]
+
+[phases.start]
+cmd = "cd backend && python3 production_server.py"
+
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.11"
