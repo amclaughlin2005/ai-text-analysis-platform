@@ -65,7 +65,7 @@ const nextConfig = {
   
   // Rewrites for API proxy (development and production)
   async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
     console.log('🔗 API Rewrite configured for:', apiUrl);
     
     return [

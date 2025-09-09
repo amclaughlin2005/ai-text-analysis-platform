@@ -329,7 +329,7 @@ export default function SimpleWordCloud({
         }
         
         // For other datasets, use the regular API
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003';
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
         const response = await fetch(`${API_BASE_URL}/api/wordcloud/generate`, {
           method: 'POST',
           headers: {

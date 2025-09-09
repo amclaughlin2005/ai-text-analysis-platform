@@ -212,7 +212,7 @@ export default function DatasetUpload({
       });
 
       // Upload to backend using centralized API URL
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
       const response = await fetch(`${API_BASE_URL}/api/datasets/upload`, {
         method: 'POST',
         body: formData,

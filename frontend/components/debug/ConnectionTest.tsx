@@ -25,7 +25,7 @@ export default function ConnectionTest() {
   };
 
   const runTests = async () => {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
     console.log('🧪 Starting connection tests with API_BASE_URL:', API_BASE_URL);
 
     // Test 1: Basic backend connection
@@ -247,8 +247,8 @@ export default function ConnectionTest() {
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <h4 className="font-medium text-blue-900 mb-2">Environment Info</h4>
         <div className="text-sm text-blue-700 space-y-1">
-          <div>API Base URL: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003'}</div>
-          <div>WS URL: {process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8003'}</div>
+          <div>API Base URL: {process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app'}</div>
+          <div>WS URL: {process.env.NEXT_PUBLIC_WS_URL || 'wss://ai-text-analysis-platform-production.up.railway.app'}</div>
           <div>Current Time: {new Date().toISOString()}</div>
         </div>
       </div>

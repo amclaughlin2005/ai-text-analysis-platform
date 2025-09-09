@@ -50,7 +50,7 @@ export default function DatasetList({
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
       const response = await fetch(`${API_BASE_URL}/api/datasets`);
       
       if (!response.ok) {
@@ -181,7 +181,7 @@ export default function DatasetList({
     }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
       const response = await fetch(`${API_BASE_URL}/api/datasets/${datasetId}`, {
         method: 'DELETE'
       });

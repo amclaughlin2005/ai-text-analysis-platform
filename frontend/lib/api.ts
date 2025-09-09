@@ -15,7 +15,7 @@ import {
 } from './types';
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
 const API_TIMEOUT = 30000; // 30 seconds
 
 // Create axios instance with default configuration
