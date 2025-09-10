@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Download, Settings, Filter } from 'lucide-react';
+import { RefreshCw, Download, Settings, Filter, LayoutGrid, List } from 'lucide-react';
 import { WordCloudData, WordCloudFilters } from '@/lib/types';
 import { cn, getSentimentColor, formatNumber } from '@/lib/utils';
 import ColumnFilterSelector from './ColumnFilterSelector';
 import ModernWordCloud from './ModernWordCloud';
+import SimpleTextView from './SimpleTextView';
 
 interface SimpleWordCloudProps {
   datasetId: string;
@@ -247,6 +248,7 @@ export default function SimpleWordCloud({
   const [showColumnFilterUI, setShowColumnFilterUI] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [viewMode, setViewMode] = useState<'cloud' | 'text'>('cloud');
   
   // Force legal dataset to use filtered data immediately
   const isLegalDataset = datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9';
@@ -505,6 +507,34 @@ export default function SimpleWordCloud({
             </button>
           )}
           
+          {/* View Mode Toggle */}
+          <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode('cloud')}
+              className={cn(
+                "p-2 transition-colors text-sm",
+                viewMode === 'cloud'
+                  ? "bg-primary-600 text-white"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              )}
+              title="Cloud View"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('text')}
+              className={cn(
+                "p-2 transition-colors text-sm",
+                viewMode === 'text'
+                  ? "bg-primary-600 text-white"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              )}
+              title="Text View"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
+          
           <button
             onClick={refreshWordCloud}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -580,26 +610,45 @@ export default function SimpleWordCloud({
         </div>
       )}
 
-      {/* Modern Word Cloud Display */}
+      {/* Word Cloud Display - Conditional based on viewMode */}
       {!error && (
         <div className="p-4">
-          <ModernWordCloud
-            datasetId={datasetId}
-            mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
-            height={500}
-            width={800}
-            words={words} // Pass the words from SimpleWordCloud
-            onWordClick={(word) => {
-              setSelectedWord(selectedWord === word ? null : word);
-              if (onWordClick) {
-                const wordData = words.find(w => w.word === word);
-                if (wordData) {
-                  onWordClick(word, wordData);
+          {viewMode === 'cloud' ? (
+            <ModernWordCloud
+              datasetId={datasetId}
+              mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
+              height={500}
+              width={800}
+              words={words} // Pass the words from SimpleWordCloud
+              onWordClick={(word) => {
+                setSelectedWord(selectedWord === word ? null : word);
+                if (onWordClick) {
+                  const wordData = words.find(w => w.word === word);
+                  if (wordData) {
+                    onWordClick(word, wordData);
+                  }
                 }
-              }
-            }}
-            className="rounded-lg border"
-          />
+              }}
+              className="rounded-lg border"
+            />
+          ) : (
+            <SimpleTextView
+              words={words}
+              selectedWord={selectedWord}
+              onWordClick={(word) => {
+                setSelectedWord(selectedWord === word ? null : word);
+                if (onWordClick) {
+                  const wordData = words.find(w => w.word === word);
+                  if (wordData) {
+                    onWordClick(word, wordData);
+                  }
+                }
+              }}
+              height={500}
+              width={800}
+              className="rounded-lg border bg-white"
+            />
+          )}
         </div>
       )}
 
@@ -610,7 +659,7 @@ export default function SimpleWordCloud({
           <span>•</span>
           <span>Mode: {mode}</span>
           <span>•</span>
-          <span>Layout: Flex wrap</span>
+          <span>View: {viewMode === 'cloud' ? 'Visual Cloud' : 'Text List'}</span>
         </div>
         
         {selectedWord && (
