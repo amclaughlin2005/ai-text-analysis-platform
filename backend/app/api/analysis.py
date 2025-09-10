@@ -10,6 +10,9 @@ from pydantic import BaseModel
 
 from ..core.database import get_db
 from ..core.logging import get_logger
+
+logger = get_logger(__name__)
+
 # Import analysis modules with error handling for missing dependencies
 try:
     from ..analysis.nltk_processor import get_nltk_processor
@@ -35,8 +38,6 @@ except ImportError as e:
     TASKS_AVAILABLE = False
     test_nltk_processing = None
     analyze_sentiment_batch = None
-
-logger = get_logger(__name__)
 router = APIRouter()
 
 # Request/Response models
