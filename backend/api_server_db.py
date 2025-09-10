@@ -23,19 +23,36 @@ from models import Dataset, Question, WordFrequency, AnalysisJob
 app = FastAPI(
     title="AI-Powered Text Analysis Platform API (Database Version)",
     description="Enhanced API with persistent database storage",
-    version="2.0.0",
+    version="2.4.1",
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
-# CORS middleware
+# CORS middleware - Allow Vercel and localhost
+cors_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001", 
+    "http://127.0.0.1:3000",
+    "https://ai-text-analysis-platform.vercel.app",
+    "https://ai-text-analysis-platform-git-main.vercel.app",
+    "https://ai-text-analysis-platform-git-main-amclaughlin2005.vercel.app",
+]
+
+# Add environment variable for additional CORS origins
+additional_origins = os.getenv("CORS_ORIGINS", "").split(",")
+if additional_origins and additional_origins[0]:  # Check if not empty
+    cors_origins.extend([origin.strip() for origin in additional_origins])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Log CORS configuration
+print(f"🌐 CORS configured for origins: {cors_origins}")
 
 # Ensure uploads directory exists
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/tmp/uploads")
