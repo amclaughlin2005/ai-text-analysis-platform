@@ -245,6 +245,8 @@ export default function SimpleWordCloud({
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showColumnFilterUI, setShowColumnFilterUI] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Force legal dataset to use filtered data immediately
   const isLegalDataset = datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9';
@@ -379,19 +381,32 @@ export default function SimpleWordCloud({
         throw new Error('API response invalid or server not available');
         
       } catch (error) {
-        console.log('⚠️ API not available, using mock data:', error);
+        console.log('⚠️ API error:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load word cloud');
         
-        // Fallback to mock data
-        const newWords = generateSimpleWordData(mode);
-        console.log('Using mock data:', newWords.length, newWords);
-        setWords(newWords);
-        setLoading(false);
-        isRequestingRef.current = false;
+        // Auto-retry once after a short delay for CORS/network issues
+        if (retryCount === 0) {
+          console.log('🔄 Auto-retrying after 2 seconds...');
+          setTimeout(() => {
+            setRetryCount(1);
+            setError(null);
+            isRequestingRef.current = false;
+            // This will trigger the useEffect again
+          }, 2000);
+        } else {
+          // After retry fails, fallback to mock data
+          console.log('⚠️ API retry failed, using mock data:', error);
+          const newWords = generateSimpleWordData(mode);
+          console.log('Using mock data:', newWords.length, newWords);
+          setWords(newWords);
+          setLoading(false);
+          isRequestingRef.current = false;
+        }
       }
     };
     
     fetchWordCloudData();
-  }, [mode, datasetId, JSON.stringify(selectedColumns)]); // Remove filters to prevent infinite loop
+  }, [mode, datasetId, JSON.stringify(selectedColumns), retryCount]); // Include retryCount for auto-retry
 
   const handleWordClick = (word: WordCloudData) => {
     const isCurrentlySelected = selectedWord === word.word;
@@ -406,20 +421,14 @@ export default function SimpleWordCloud({
   const refreshWordCloud = () => {
     console.log('Refreshing word cloud manually');
     setLoading(true);
+    setError(null);
+    setRetryCount(0); // Reset retry count for manual refresh
+    isRequestingRef.current = false; // Allow new request
     
-    try {
-      const newWords = generateSimpleWordData(mode);
-      console.log('Refreshed words:', newWords.length);
-      setWords(newWords);
-      setTimeout(() => {
-        setLoading(false);
-        isRequestingRef.current = false;
-      }, 200); // Brief loading to show action
-    } catch (error) {
-      console.error('Error refreshing word cloud:', error);
-      setLoading(false);
-      isRequestingRef.current = false;
-    }
+    // Trigger useEffect to retry API call
+    setTimeout(() => {
+      setRetryCount(prev => prev + 1);
+    }, 100);
   };
 
   // Failsafe: Force exit loading after 3 seconds
@@ -540,25 +549,58 @@ export default function SimpleWordCloud({
         )}
       </AnimatePresence>
 
+      {/* Error State with Auto-Retry */}
+      {error && retryCount === 0 && (
+        <div className="p-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <RefreshCw className="h-5 w-5 text-yellow-600 animate-spin mr-2" />
+              <span className="text-yellow-800 font-medium">Connection Issue Detected</span>
+            </div>
+            <p className="text-yellow-700 text-sm mb-3">
+              Auto-retrying in 2 seconds... This usually resolves CORS timing issues.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Failed State (after retry) */}
+      {error && retryCount > 0 && (
+        <div className="p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p className="text-red-800 font-medium mb-3">Failed to load word cloud</p>
+            <button
+              onClick={refreshWordCloud}
+              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modern Word Cloud Display */}
-      <div className="p-4">
-        <ModernWordCloud
-          datasetId={datasetId}
-          mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
-          height={500}
-          width={800}
-          onWordClick={(word) => {
-            setSelectedWord(selectedWord === word ? null : word);
-            if (onWordClick) {
-              const wordData = words.find(w => w.word === word);
-              if (wordData) {
-                onWordClick(word, wordData);
+      {!error && (
+        <div className="p-4">
+          <ModernWordCloud
+            datasetId={datasetId}
+            mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
+            height={500}
+            width={800}
+            onWordClick={(word) => {
+              setSelectedWord(selectedWord === word ? null : word);
+              if (onWordClick) {
+                const wordData = words.find(w => w.word === word);
+                if (wordData) {
+                  onWordClick(word, wordData);
+                }
               }
-            }
-          }}
-          className="rounded-lg border"
-        />
-      </div>
+            }}
+            className="rounded-lg border"
+          />
+        </div>
+      )}
 
       {/* Footer */}
       <div className="flex items-center justify-between p-4 border-t bg-gray-50 text-sm text-gray-600">
