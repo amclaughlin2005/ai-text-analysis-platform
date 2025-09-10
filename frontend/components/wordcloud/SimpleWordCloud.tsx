@@ -6,6 +6,7 @@ import { RefreshCw, Download, Settings, Filter } from 'lucide-react';
 import { WordCloudData, WordCloudFilters } from '@/lib/types';
 import { cn, getSentimentColor, formatNumber } from '@/lib/utils';
 import ColumnFilterSelector from './ColumnFilterSelector';
+import ModernWordCloud from './ModernWordCloud';
 
 interface SimpleWordCloudProps {
   datasetId: string;
@@ -528,63 +529,24 @@ export default function SimpleWordCloud({
         )}
       </AnimatePresence>
 
-      {/* Simple Word Cloud Display */}
-      <div className="p-8">
-        {words.length === 0 ? (
-          <div className="flex items-center justify-center min-h-[400px] text-center">
-            <div>
-              <p className="text-gray-500 mb-2">No words to display</p>
-              <p className="text-xs text-gray-400">Mode: {mode}</p>
-              <button 
-                onClick={refreshWordCloud}
-                className="mt-3 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
-              >
-                Generate Words
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap justify-center items-center gap-4 min-h-[400px]">
-            {words.map((word, index) => {
-              const isSelected = selectedWord === word.word;
-              const fontSize = Math.max(14, Math.min(48, word.size * 32));
-              
-              return (
-                <motion.button
-                  key={`${word.word}-${index}`}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ 
-                    opacity: 1, 
-                    scale: isSelected ? 1.1 : 1,
-                  }}
-                  transition={{ 
-                    delay: index * 0.05, 
-                    duration: 0.4,
-                    ease: "easeOut" 
-                  }}
-                  onClick={() => handleWordClick(word)}
-                  className={cn(
-                    "inline-block px-3 py-2 rounded-lg transition-all duration-200 hover:shadow-md",
-                    "border border-transparent hover:border-gray-200",
-                    isSelected && "ring-2 ring-primary-500 bg-primary-50 border-primary-200"
-                  )}
-                  style={{
-                    fontSize: `${fontSize}px`,
-                    color: getSentimentColor(word.sentiment),
-                    fontWeight: isSelected ? 700 : 600,
-                  }}
-                  whileHover={{ 
-                    scale: isSelected ? 1.1 : 1.05,
-                    transition: { duration: 0.1 }
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {word.word}
-                </motion.button>
-              );
-            })}
-          </div>
-        )}
+      {/* Modern Word Cloud Display */}
+      <div className="p-4">
+        <ModernWordCloud
+          datasetId={datasetId}
+          mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
+          height={500}
+          width={800}
+          onWordClick={(word) => {
+            setSelectedWord(selectedWord === word ? null : word);
+            if (onWordClick) {
+              const wordData = words.find(w => w.word === word);
+              if (wordData) {
+                onWordClick(word, wordData);
+              }
+            }
+          }}
+          className="rounded-lg border"
+        />
       </div>
 
       {/* Footer */}
