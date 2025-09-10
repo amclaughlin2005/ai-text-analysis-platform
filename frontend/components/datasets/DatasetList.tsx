@@ -48,7 +48,7 @@ export default function DatasetList({
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
       const response = await fetch(`${API_BASE_URL}/api/datasets`);
       
       if (!response.ok) {
@@ -59,7 +59,7 @@ export default function DatasetList({
       console.log('Datasets fetched:', data);
       
       // Handle both direct array and nested data structure
-      const datasets = Array.isArray(data) ? data : (data.data?.datasets || data.datasets || []);
+      const datasets = Array.isArray(data) ? data : (data.data || data.datasets || []);
       
       setState(prev => ({
         ...prev,
