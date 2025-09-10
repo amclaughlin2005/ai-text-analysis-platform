@@ -5,15 +5,15 @@ import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { 
-  CloudArrowUpIcon, 
-  DocumentTextIcon, 
-  CodeBracketIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  AdjustmentsHorizontalIcon,
-  EyeIcon,
-  SparklesIcon
-} from '@heroicons/react/24/outline';
+  CloudUpload, 
+  FileText, 
+  Code,
+  CheckCircle,
+  XCircle,
+  Settings,
+  Eye,
+  Sparkles
+} from 'lucide-react';
 
 import { 
   DataSchema, 
@@ -187,7 +187,7 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center mb-8">
-          <SparklesIcon className="mx-auto h-12 w-12 text-blue-500 mb-4" />
+          <Sparkles className="mx-auto h-12 w-12 text-blue-500 mb-4" />
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Flexible Data Upload
           </h2>
@@ -219,8 +219,8 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
           ) : (
             <div className="flex flex-col items-center">
               <div className="flex space-x-4 mb-6">
-                <CodeBracketIcon className="h-12 w-12 text-blue-500" />
-                <DocumentTextIcon className="h-12 w-12 text-green-500" />
+                <Code className="h-12 w-12 text-blue-500" />
+                <FileText className="h-12 w-12 text-green-500" />
               </div>
               
               <p className="text-xl font-medium text-gray-700 mb-2">
@@ -241,17 +241,17 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <SparklesIcon className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+            <Sparkles className="h-8 w-8 text-blue-500 mx-auto mb-2" />
             <h3 className="font-semibold text-gray-900">Smart Detection</h3>
             <p className="text-sm text-gray-600">AI analyzes your data structure and suggests field roles</p>
           </div>
           <div className="text-center p-4 bg-green-50 rounded-lg">
-            <AdjustmentsHorizontalIcon className="h-8 w-8 text-green-500 mx-auto mb-2" />
+            <Settings className="h-8 w-8 text-green-500 mx-auto mb-2" />
             <h3 className="font-semibold text-gray-900">Custom Mapping</h3>
             <p className="text-sm text-gray-600">Configure which fields to analyze and how</p>
           </div>
           <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <EyeIcon className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+            <Eye className="h-8 w-8 text-purple-500 mx-auto mb-2" />
             <h3 className="font-semibold text-gray-900">Live Preview</h3>
             <p className="text-sm text-gray-600">See exactly what will be analyzed before processing</p>
           </div>
