@@ -252,9 +252,9 @@ async def upload_dataset(
             )
         
         return {
-            "status": "success",
+            "success": True,
             "message": f"Dataset uploaded and processed successfully",
-            "dataset": dataset.to_dict(),
+            "data": dataset.to_dict(),
             "processing": {
                 "questions_created": questions_created,
                 "word_frequencies_generated": len(word_data),
