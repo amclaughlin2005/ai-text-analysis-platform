@@ -74,6 +74,12 @@ class Dataset(Base):
     csv_encoding = Column(String(20), default="utf-8", nullable=False)
     has_header_row = Column(Boolean, default=True, nullable=False)
     
+    # Flexible data support
+    data_format = Column(String(20), default="csv", nullable=False)  # csv, json, xml, etc.
+    schema_detected = Column(Boolean, default=False, nullable=False)
+    user_mapping_complete = Column(Boolean, default=False, nullable=False)
+    supports_flexible_analysis = Column(Boolean, default=False, nullable=False)
+    
     # Organization data (if present in CSV)
     organizations_count = Column(Integer, default=0, nullable=False)
     organization_names = Column(JSON, nullable=True)  # List of unique org names
@@ -92,6 +98,10 @@ class Dataset(Base):
     questions = relationship("Question", back_populates="dataset", cascade="all, delete-orphan")
     analysis_jobs = relationship("AnalysisJob", back_populates="dataset", cascade="all, delete-orphan")
     word_frequencies = relationship("WordFrequency", back_populates="dataset", cascade="all, delete-orphan")
+    
+    # New flexible data relationships
+    data_schema = relationship("DataSchema", back_populates="dataset", uselist=False, cascade="all, delete-orphan")
+    data_records = relationship("DataRecord", back_populates="dataset", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Dataset(id={self.id}, name={self.name}, status={self.status}, questions={self.total_questions})>"

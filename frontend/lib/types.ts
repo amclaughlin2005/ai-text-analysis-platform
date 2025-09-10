@@ -296,6 +296,161 @@ export interface ConversationQuality {
   total_conversations: number;
 }
 
+// Schema detection types
+export type DataType = 
+  | 'text' 
+  | 'number' 
+  | 'integer' 
+  | 'float' 
+  | 'boolean' 
+  | 'date' 
+  | 'datetime' 
+  | 'email' 
+  | 'url' 
+  | 'json_object' 
+  | 'json_array';
+
+export type FieldRole = 
+  | 'primary_text'
+  | 'secondary_text' 
+  | 'category'
+  | 'metadata'
+  | 'identifier'
+  | 'timestamp'
+  | 'ignore';
+
+export interface SchemaField {
+  id: string;
+  schema_id: string;
+  field_name: string;
+  field_path?: string;
+  display_name?: string;
+  detected_type: DataType;
+  suggested_type?: DataType;
+  user_selected_type?: DataType;
+  field_role: FieldRole;
+  is_required: boolean;
+  include_in_analysis: boolean;
+  sample_values: any[];
+  unique_count?: number;
+  null_count?: number;
+  min_length?: number;
+  max_length?: number;
+  avg_length?: number;
+  validation_rules?: Record<string, any>;
+  transformation_rules?: Record<string, any>;
+  display_order: number;
+  field_group?: string;
+  ai_suggestions?: Record<string, any>;
+  confidence_score: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DataSchema {
+  id: string;
+  dataset_id: string;
+  schema_name: string;
+  description?: string;
+  version: string;
+  file_format: string;
+  detected_encoding?: string;
+  detected_delimiter?: string;
+  has_headers: boolean;
+  raw_schema: Record<string, any>;
+  sample_data: any[];
+  total_records: number;
+  field_mappings: Record<string, any>;
+  analysis_config: Record<string, any>;
+  is_valid: boolean;
+  validation_errors?: any[];
+  confidence_score: number;
+  process_nested_objects: boolean;
+  flatten_arrays: boolean;
+  max_nesting_depth: number;
+  created_at: string;
+  updated_at: string;
+  fields: SchemaField[];
+}
+
+export interface FieldMappingRequest {
+  field_id: string;
+  field_role: FieldRole;
+  data_type?: DataType;
+  include_in_analysis: boolean;
+  display_name?: string;
+}
+
+export interface AnalysisConfigRequest {
+  primary_text_fields: string[];
+  secondary_text_fields: string[];
+  category_fields: string[];
+  metadata_fields: string[];
+  exclude_words: string[];
+  analysis_modes: string[];
+}
+
+export interface SchemaMappingRequest {
+  dataset_id: string;
+  field_mappings: FieldMappingRequest[];
+  analysis_config: AnalysisConfigRequest;
+}
+
+export interface SchemaDetectionResponse {
+  success: boolean;
+  schema_id: string;
+  schema: DataSchema;
+  message: string;
+}
+
+export interface FieldSuggestions {
+  recommended_primary_text: Array<{
+    field_id: string;
+    field_name: string;
+    confidence: number;
+    reason: string;
+  }>;
+  recommended_secondary_text: Array<{
+    field_id: string;
+    field_name: string;
+    confidence: number;
+    reason: string;
+  }>;
+  recommended_categories: Array<{
+    field_id: string;
+    field_name: string;
+    unique_count: number;
+    reason: string;
+  }>;
+  recommended_ignore: Array<{
+    field_id: string;
+    field_name: string;
+    reason: string;
+  }>;
+  analysis_modes: string[];
+  confidence_notes: Array<{
+    field_name: string;
+    confidence: number;
+    note: string;
+  }>;
+}
+
+export interface AnalysisPreview {
+  fields_to_analyze: Array<{
+    field_name: string;
+    display_name: string;
+    avg_length: number;
+    sample_values: string[];
+  }>;
+  sample_combined_text: string;
+  estimated_word_count: number;
+  categories_for_filtering: Array<{
+    field_name: string;
+    unique_count: number;
+    sample_values: string[];
+  }>;
+}
+
 // Export types
 export type ExportFormat = 'PDF' | 'Excel' | 'PowerPoint' | 'JSON' | 'CSV' | 'PNG' | 'SVG';
 

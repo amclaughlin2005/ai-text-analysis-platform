@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from .core.config import get_settings
 from .core.database import engine, Base
 from .core.logging import setup_logging
-from .api import datasets, analysis, wordcloud, analytics, export_router
+from .api import datasets, analysis, wordcloud, analytics, export_router, schema
 from .websocket.manager import connection_manager
 from .websocket import handlers as websocket_handlers
 
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     # Create database tables
     try:
         # Import all models to ensure they're registered with Base
-        from .models import user, dataset, question, analysis_job, analytics
+        from .models import user, dataset, question, analysis_job, analytics, data_schema
         Base.metadata.create_all(bind=engine)
         print("✅ Database tables created/verified")
     except Exception as e:
@@ -94,6 +94,7 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(datasets.router, prefix="/api/datasets", tags=["datasets"])
+app.include_router(schema.router, tags=["schema"])  # Schema router has its own prefix
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
 app.include_router(wordcloud.router, prefix="/api/wordcloud", tags=["wordcloud"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
@@ -111,7 +112,9 @@ async def root():
         "status": "active",
         "features": [
             "NLTK text analysis",
-            "LLM integration",
+            "LLM integration", 
+            "Flexible JSON/CSV ingestion",
+            "Smart schema detection",
             "Interactive word clouds",
             "Real-time processing",
             "Advanced analytics",

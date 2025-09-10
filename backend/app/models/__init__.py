@@ -5,6 +5,7 @@ from .dataset import Dataset
 from .question import Question
 from .analysis_job import AnalysisJob
 from .analytics import NLTKAnalysis, WordFrequency, OrgUsageAnalytics, LLMAnalysisCache
+from .data_schema import DataSchema, SchemaField, DataRecord
 
 __all__ = [
     'User',
@@ -14,5 +15,8 @@ __all__ = [
     'NLTKAnalysis',
     'WordFrequency', 
     'OrgUsageAnalytics',
-    'LLMAnalysisCache'
+    'LLMAnalysisCache',
+    'DataSchema',
+    'SchemaField', 
+    'DataRecord'
 ]
