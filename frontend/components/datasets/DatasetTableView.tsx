@@ -38,7 +38,6 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
       flex: 2,
       minWidth: 300,
       wrapText: true,
-      autoHeight: true,
       cellClass: 'text-wrap',
       tooltipField: 'original_question'
     },
@@ -48,7 +47,6 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
       flex: 2,
       minWidth: 300,
       wrapText: true,
-      autoHeight: true,
       cellClass: 'text-wrap',
       tooltipField: 'ai_response'
     },
@@ -90,7 +88,7 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
     suppressRowClickSelection: false,
     animateRows: true,
     enableBrowserTooltips: true,
-    getRowHeight: () => 'auto', // Auto-height for wrapped text
+    domLayout: 'autoHeight', // Auto-height for wrapped text
   }), []);
 
   // Fetch questions data
@@ -233,7 +231,7 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
 
       {/* AG Grid Table */}
       <div className="p-4">
-        <div className="ag-theme-alpine" style={{ height: '600px', width: '100%' }}>
+        <div className="ag-theme-alpine" style={{ width: '100%' }}>
           <AgGridReact
             rowData={filteredQuestions}
             columnDefs={columnDefs}
