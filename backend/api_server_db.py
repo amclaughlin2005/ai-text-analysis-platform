@@ -38,7 +38,7 @@ app.add_middleware(
 )
 
 # Ensure uploads directory exists
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/tmp/uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Pydantic models for requests
