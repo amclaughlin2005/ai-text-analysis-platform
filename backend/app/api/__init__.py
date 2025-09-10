@@ -6,11 +6,13 @@ from . import analysis
 from . import wordcloud
 from . import analytics
 from . import export_router
+from . import schema
 
 __all__ = [
     'datasets',
     'analysis', 
     'wordcloud',
     'analytics',
-    'export_router'
+    'export_router',
+    'schema'
 ]
