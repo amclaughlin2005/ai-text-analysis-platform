@@ -2,8 +2,8 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python backend/unified_production_server.py"
-healthcheckPath = "/production/health"
+startCommand = "PYTHONPATH=/app/backend python /app/backend/unified_production_server.py"
+healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "always"
 

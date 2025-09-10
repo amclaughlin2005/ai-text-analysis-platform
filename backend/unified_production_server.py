@@ -85,6 +85,11 @@ configure_production_middleware(app)
 ensure_upload_directory()
 
 # Add production-specific endpoints
+@app.get("/health")
+async def basic_health():
+    """Basic health check for Railway"""
+    return {"status": "healthy", "service": "unified-server"}
+
 @app.get("/production/health")
 async def production_health():
     """Production health check with detailed information"""
