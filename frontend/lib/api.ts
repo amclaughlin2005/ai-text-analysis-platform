@@ -322,7 +322,7 @@ export const schemaApi = {
     formData.append('file', file);
     formData.append('dataset_id', datasetId);
 
-    const response = await api.post<SchemaDetectionResponse>('/api/schema/detect', formData, {
+    const response = await client.post<SchemaDetectionResponse>('/api/schema/detect', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -335,7 +335,7 @@ export const schemaApi = {
    * Get detected schema for a dataset
    */
   async getSchema(datasetId: string): Promise<{ success: boolean; schema: DataSchema }> {
-    const response = await api.get<{ success: boolean; schema: DataSchema }>(`/api/schema/${datasetId}`);
+    const response = await client.get<{ success: boolean; schema: DataSchema }>(`/api/schema/${datasetId}`);
     return response.data;
   },
 
@@ -343,7 +343,7 @@ export const schemaApi = {
    * Save field mappings and analysis configuration
    */
   async saveMapping(mappingRequest: SchemaMappingRequest): Promise<{ success: boolean; schema: DataSchema }> {
-    const response = await api.post<{ success: boolean; schema: DataSchema }>('/api/schema/mapping', mappingRequest);
+    const response = await client.post<{ success: boolean; schema: DataSchema }>('/api/schema/mapping', mappingRequest);
     return response.data;
   },
 
@@ -351,7 +351,7 @@ export const schemaApi = {
    * Get AI-powered field suggestions
    */
   async getSuggestions(datasetId: string): Promise<{ success: boolean; suggestions: FieldSuggestions }> {
-    const response = await api.get<{ success: boolean; suggestions: FieldSuggestions }>(`/api/schema/suggestions/${datasetId}`);
+    const response = await client.get<{ success: boolean; suggestions: FieldSuggestions }>(`/api/schema/suggestions/${datasetId}`);
     return response.data;
   },
 
@@ -359,7 +359,7 @@ export const schemaApi = {
    * Preview analysis configuration
    */
   async previewAnalysis(datasetId: string, analysisConfig: AnalysisConfigRequest): Promise<{ success: boolean; preview: AnalysisPreview }> {
-    const response = await api.post<{ success: boolean; preview: AnalysisPreview }>('/api/schema/preview', {
+    const response = await client.post<{ success: boolean; preview: AnalysisPreview }>('/api/schema/preview', {
       dataset_id: datasetId,
       ...analysisConfig
     });
