@@ -642,42 +642,48 @@ export default function SimpleWordCloud({
       {/* Word Cloud Display - Conditional based on viewMode */}
       {!error && (
         <div className="p-4">
-          {viewMode === 'cloud' ? (
-            <ModernWordCloud
-              datasetId={datasetId}
-              mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
-              height={500}
-              width={800}
-              words={words} // Pass the words from SimpleWordCloud
-              onWordClick={(word) => {
-                setSelectedWord(selectedWord === word ? null : word);
-                if (onWordClick) {
-                  const wordData = words.find(w => w.word === word);
-                  if (wordData) {
-                    onWordClick(word, wordData);
-                  }
-                }
-              }}
-              className="rounded-lg border"
-            />
-          ) : (
-            <SimpleTextView
-              words={words}
-              selectedWord={selectedWord}
-              onWordClick={(word) => {
-                setSelectedWord(selectedWord === word ? null : word);
-                if (onWordClick) {
-                  const wordData = words.find(w => w.word === word);
-                  if (wordData) {
-                    onWordClick(word, wordData);
-                  }
-                }
-              }}
-              height={500}
-              width={800}
-              className="rounded-lg border bg-white"
-            />
-          )}
+          <div className="w-full overflow-x-auto">
+            {viewMode === 'cloud' ? (
+              <div className="min-w-[1200px] w-full flex justify-center">
+                <ModernWordCloud
+                  datasetId={datasetId}
+                  mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
+                  height={600}
+                  width={1200}
+                  words={words} // Pass the words from SimpleWordCloud
+                  onWordClick={(word) => {
+                    setSelectedWord(selectedWord === word ? null : word);
+                    if (onWordClick) {
+                      const wordData = words.find(w => w.word === word);
+                      if (wordData) {
+                        onWordClick(word, wordData);
+                      }
+                    }
+                  }}
+                  className="rounded-lg border"
+                />
+              </div>
+            ) : (
+              <div className="min-w-[1200px] w-full flex justify-center">
+                <SimpleTextView
+                  words={words}
+                  selectedWord={selectedWord}
+                  onWordClick={(word) => {
+                    setSelectedWord(selectedWord === word ? null : word);
+                    if (onWordClick) {
+                      const wordData = words.find(w => w.word === word);
+                      if (wordData) {
+                        onWordClick(word, wordData);
+                      }
+                    }
+                  }}
+                  height={600}
+                  width={1200}
+                  className="rounded-lg border bg-white"
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
 

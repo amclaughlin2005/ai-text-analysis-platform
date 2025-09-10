@@ -254,7 +254,7 @@ class DataRecord(Base):
     analysis_results = Column(JSON, nullable=True)   # Store all analysis results
     extracted_text = Column(Text, nullable=True)     # Combined text for word cloud
     categories = Column(JSON, nullable=True)         # Extracted categories
-    metadata = Column(JSON, nullable=True)           # Additional metadata
+    record_metadata = Column(JSON, nullable=True)    # Additional metadata (renamed to avoid SQLAlchemy conflict)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -284,7 +284,7 @@ class DataRecord(Base):
             "analysis_results": self.analysis_results,
             "extracted_text": self.extracted_text,
             "categories": self.categories,
-            "metadata": self.metadata,
+            "metadata": self.record_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "processed_at": self.processed_at.isoformat() if self.processed_at else None

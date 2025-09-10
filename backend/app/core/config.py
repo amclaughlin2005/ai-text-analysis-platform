@@ -5,7 +5,11 @@ Handles environment variables, settings validation, and configuration defaults.
 
 import os
 from typing import List, Optional
-from pydantic import BaseSettings, validator
+try:
+    from pydantic_settings import BaseSettings
+    from pydantic import validator
+except ImportError:
+    from pydantic import BaseSettings, validator
 from functools import lru_cache
 
 class Settings(BaseSettings):
