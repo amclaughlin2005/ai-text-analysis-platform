@@ -18,3 +18,4 @@ CORS_ORIGINS = { default = "https://ai-text-analysis-platform.vercel.app,https:/
 # Upload Configuration
 UPLOAD_DIR = { default = "/app/uploads" }
 MAX_FILE_SIZE = { default = "104857600" }  # 100MB in bytes
+# Trigger Railway redeploy - Wed Sep 10 15:46:30 EDT 2025
