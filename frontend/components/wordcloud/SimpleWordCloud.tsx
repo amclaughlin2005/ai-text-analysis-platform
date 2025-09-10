@@ -301,17 +301,22 @@ export default function SimpleWordCloud({
         
         if (response.ok) {
           const data = await response.json();
-          console.log('API Response:', data);
+          console.log('✅ API Response received:', data);
           
           // Handle different response formats
           let wordsArray: any[] = [];
           
           if (data.success && data.data && Array.isArray(data.data)) {
             wordsArray = data.data;
+            console.log('📊 Using data.success.data format, words found:', wordsArray.length);
           } else if (data.words && Array.isArray(data.words)) {
             wordsArray = data.words;
+            console.log('📊 Using data.words format, words found:', wordsArray.length);
           } else if (Array.isArray(data)) {
             wordsArray = data;
+            console.log('📊 Using direct array format, words found:', wordsArray.length);
+          } else {
+            console.error('❌ Unexpected API response format:', data);
           }
           
           if (wordsArray.length > 0) {
@@ -324,15 +329,21 @@ export default function SimpleWordCloud({
               color: getSentimentColor(w.sentiment || w.sentiment_association || 'neutral')
             }));
             
-            console.log('✅ Using API data:', apiWords.length, 'words');
+            console.log('✅ Successfully processed API data:', apiWords.length, 'words');
             setWords(apiWords);
             setLoading(false);
             isRequestingRef.current = false;
             return;
+          } else {
+            console.error('❌ No words found in API response');
           }
+        } else {
+          const errorText = await response.text();
+          console.error('❌ API request failed:', response.status, response.statusText, errorText);
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
         
-        throw new Error('API response invalid or server not available');
+        throw new Error('API response invalid - no words found');
         
       } catch (error) {
         console.log('⚠️ API error:', error);
