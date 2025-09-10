@@ -8,6 +8,7 @@ This is an AI-driven development project building a comprehensive web applicatio
 ### Frontend Stack (Next.js 14 on Vercel)
 - **Framework**: Next.js 14 with TypeScript
 - **Styling**: Tailwind CSS with custom components
+- **Data Tables**: AG Grid React for interactive data visualization
 - **State Management**: React Context API or Zustand
 - **Authentication**: Clerk integration
 - **Real-time**: WebSocket client for job status updates
@@ -43,18 +44,25 @@ This is an AI-driven development project building a comprehensive web applicatio
    - Real-time filtering and comparative analysis
    - Export functionality (PNG, SVG, PDF)
 
-4. **Real-time Processing** (`backend/app/websocket/manager.py`)
+4. **Dataset Table View** (`frontend/components/datasets/DatasetTableView.tsx`)
+   - AG Grid React integration for high-performance data tables
+   - Interactive sorting, filtering, and search functionality
+   - Auto-sizing columns with text wrapping for long content
+   - CSV export functionality with filtered data
+   - Pagination support for large datasets
+
+5. **Real-time Processing** (`backend/app/websocket/manager.py`)
    - WebSocket connection management
    - Background job status updates
    - Progress tracking for large dataset processing
 
-5. **Advanced Analytics** (`backend/app/api/analytics.py`)
+6. **Advanced Analytics** (`backend/app/api/analytics.py`)
    - Sentiment trend analysis over time
    - Topic evolution tracking
    - Entity relationship networks
    - Conversation quality metrics
 
-6. **Export & Reporting** (`backend/app/reporting/`)
+7. **Export & Reporting** (`backend/app/reporting/`)
    - Executive summary generation
    - Multi-format exports (PDF, Excel, PowerPoint)
    - Scheduled report generation
@@ -109,7 +117,7 @@ WordCloud/
 │   ├── components/
 │   │   ├── dashboard/ (analytics components)
 │   │   ├── wordcloud/ (visualization components)
-│   │   ├── datasets/ (data management)
+│   │   ├── datasets/ (data management with AG Grid tables)
 │   │   ├── auth/ (authentication)
 │   │   └── common/ (shared components)
 │   ├── lib/ (utilities and API clients)
@@ -286,6 +294,7 @@ WordCloud/
   - Responsive design with Tailwind CSS
   - Interactive components and smooth transitions
   - **Updated environment variables** for production backend connection
+  - **🆕 AG Grid dataset table view** with sorting, filtering, and CSV export
 - ✅ **Production infrastructure stabilized**
   - CORS errors resolved between Vercel frontend and Railway backend
   - GitHub Actions deployment workflow streamlined

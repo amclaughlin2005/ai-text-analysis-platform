@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BarChart3, MessageSquare, Cloud, Download, Settings } from 'lucide-react';
+import { ArrowLeft, BarChart3, MessageSquare, Cloud, Download, Settings, Table } from 'lucide-react';
 import Link from 'next/link';
 import DatasetViewer from '@/components/datasets/DatasetViewer';
+import DatasetTableView from '@/components/datasets/DatasetTableView';
 import SimpleWordCloud from '@/components/wordcloud/SimpleWordCloud';
 import { WordCloudFilters } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,7 @@ interface DatasetViewPageProps {
   datasetId: string;
 }
 
-type ViewTab = 'questions' | 'wordcloud' | 'analytics';
+type ViewTab = 'questions' | 'table' | 'wordcloud' | 'analytics';
 
 export default function DatasetViewPage({ datasetId }: DatasetViewPageProps) {
   const [activeTab, setActiveTab] = useState<ViewTab>('questions');
@@ -28,6 +29,12 @@ export default function DatasetViewPage({ datasetId }: DatasetViewPageProps) {
       label: 'Questions & Answers',
       icon: MessageSquare,
       description: 'Browse actual dataset content'
+    },
+    {
+      id: 'table' as ViewTab,
+      label: 'Table View',
+      icon: Table,
+      description: 'Interactive data table with sorting & filtering'
     },
     {
       id: 'wordcloud' as ViewTab, 
@@ -132,6 +139,13 @@ export default function DatasetViewPage({ datasetId }: DatasetViewPageProps) {
             datasetId={datasetId}
             datasetName="Brett Scrhieber Legal Questions"
             className="shadow-sm"
+          />
+        )}
+
+        {activeTab === 'table' && (
+          <DatasetTableView
+            datasetId={datasetId}
+            datasetName="Brett Scrhieber Legal Questions"
           />
         )}
 
