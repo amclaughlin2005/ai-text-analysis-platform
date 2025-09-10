@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 # Set environment for production
 os.environ.setdefault("APP_ENV", "production")
 
+# Add backend directory to Python path for proper imports
+import sys
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 # Import the main application
 from app.main import app
 from app.core.config import get_settings
