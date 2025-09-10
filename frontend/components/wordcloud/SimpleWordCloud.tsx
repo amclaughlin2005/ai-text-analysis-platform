@@ -337,19 +337,23 @@ export default function SimpleWordCloud({
         
         // For other datasets, use the regular API
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
+        console.log('🚀 Making API call with selectedColumns:', selectedColumns);
+        const apiPayload = {
+          dataset_id: datasetId,
+          mode: mode,
+          selected_columns: selectedColumns,
+          exclude_words: filters?.excludeWords,
+          max_words: filters?.maxWords || 100,
+          filters: filters
+        };
+        console.log('📤 API Payload:', apiPayload);
+        
         const response = await fetch(`${API_BASE_URL}/api/wordcloud/generate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            dataset_id: datasetId,
-            mode: mode,
-            selected_columns: selectedColumns,
-            exclude_words: filters?.excludeWords,
-            max_words: filters?.maxWords || 100,
-            filters: filters
-          })
+          body: JSON.stringify(apiPayload)
         });
         
         if (response.ok) {
@@ -412,6 +416,7 @@ export default function SimpleWordCloud({
       }
     };
     
+    console.log('🔄 useEffect triggered - mode:', mode, 'datasetId:', datasetId, 'selectedColumns:', selectedColumns, 'retryCount:', retryCount);
     fetchWordCloudData();
   }, [mode, datasetId, JSON.stringify(selectedColumns), retryCount]); // Include retryCount for auto-retry
 
@@ -597,7 +602,8 @@ export default function SimpleWordCloud({
               datasetId={datasetId}
               selectedColumns={selectedColumns}
               onColumnsChange={(columns) => {
-                console.log('📊 Column selection changed:', columns);
+                console.log('📊 Column selection changed from:', selectedColumns, 'to:', columns);
+                console.log('🔄 This should trigger a new API call...');
                 if (onColumnsChange) {
                   onColumnsChange(columns);
                 }
