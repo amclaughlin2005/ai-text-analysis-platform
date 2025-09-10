@@ -31,33 +31,45 @@ This is an AI-driven development project building a comprehensive web applicatio
 - **Real-time**: WebSocket client for job status updates
 - **Visualization**: Custom CSS-based word cloud + Recharts
 
-### Backend Stack (FastAPI on Railway)
-- **Framework**: FastAPI with Python 3.11+
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Job Queue**: Celery with Redis broker
-- **File Storage**: AWS S3 for raw data storage
-- **Authentication**: JWT tokens + Clerk integration
+### Backend Stack (Unified FastAPI on Railway)
+- **Framework**: FastAPI with Python 3.11+ (Consolidated Architecture)
+- **Database**: PostgreSQL with SQLAlchemy ORM + Service Layer
+- **Job Queue**: Celery with Redis broker  
+- **File Storage**: Local filesystem with robust validation (AWS S3 ready)
+- **Authentication**: JWT tokens + Clerk integration (temporarily disabled)
 - **WebSocket**: FastAPI WebSocket for real-time updates
 - **Text Analysis**: NLTK + OpenAI LLM integration
+- **Architecture**: Unified server with separated service and API layers
 
 ## Service Map
 
-### Core Services
-1. **Dataset Management Service** (`backend/app/api/datasets.py`)
+### Core Services (Unified Architecture)
+1. **Dataset Service Layer** (`backend/app/services/dataset_service.py`)
+   - **ROBUST**: Comprehensive file validation and error handling
+   - **SECURE**: Multi-encoding support, file type validation, size limits
+   - **ATOMIC**: Database transactions with automatic rollback
+   - **SCALABLE**: Pagination, efficient queries, background processing
    - Upload, preview, and manage query-response datasets
-   - Password-protected uploads with chunking
    - Real-time processing status updates
 
-2. **NLTK Analysis Engine** (`backend/app/analysis/nltk_processor.py`)
-   - Sentiment analysis (VADER + TextBlob + custom models)
-   - Named entity recognition with spaCy integration
-   - Topic modeling using LDA with coherence scoring
-   - Keyword extraction (TF-IDF, YAKE, TextRank)
-   - Question classification and response quality assessment
+2. **Analysis Service Layer** (`backend/app/services/analysis_service.py`)
+   - **NLTK-Powered**: POS tagging for precise word categorization
+   - **CACHED**: Intelligent caching with force-regeneration options
+   - **MODES**: True analysis mode differentiation (verbs, nouns, adjectives, emotions)
+   - Sentiment analysis with enhanced word filtering
+   - Word frequency generation with database persistence
 
-3. **Word Cloud System** (`frontend/components/wordcloud/WordCloudVisualization.tsx`)
+3. **Dataset API Endpoints** (`backend/app/api/datasets.py`)
+   - **RESTful**: Complete CRUD operations with proper HTTP methods
+   - **VALIDATED**: Pydantic models and comprehensive input validation  
+   - **DOCUMENTED**: OpenAPI/Swagger documentation with examples
+   - **ROBUST**: Proper error handling and status codes
+   - Upload, list, retrieve, delete, and reprocess datasets
+   - Word frequency generation and retrieval
+
+4. **Word Cloud System** (`frontend/components/wordcloud/WordCloudVisualization.tsx`)
    - Multi-mode support (entities, topics, sentiment, themes)
-   - Interactive exploration with drill-down capability
+   - Interactive exploration with drill-down capability  
    - Real-time filtering and comparative analysis
    - Export functionality (PNG, SVG, PDF)
 
@@ -141,17 +153,20 @@ WordCloud/
 │   ├── pages/ (Next.js pages)
 │   └── styles/ (Tailwind CSS)
 ├── backend/
-│   ├── app/
-│   │   ├── main.py (FastAPI application)
-│   │   ├── models/ (database models)
-│   │   ├── api/ (REST endpoints)
-│   │   ├── analysis/ (NLTK processing)
+│   ├── app/ (UNIFIED FASTAPI APPLICATION)
+│   │   ├── main.py (Main FastAPI application with proper architecture)
+│   │   ├── models/ (SQLAlchemy database models with relationships)
+│   │   ├── api/ (REST API endpoints - FULLY IMPLEMENTED)
+│   │   ├── services/ (Business logic and data access layer - NEW)
+│   │   ├── analysis/ (NLTK processing engines)
 │   │   ├── tasks/ (Celery background tasks)
 │   │   ├── websocket/ (real-time connections)
 │   │   ├── reporting/ (export functionality)
-│   │   └── core/ (configuration and utilities)
+│   │   └── core/ (configuration, database, logging)
+│   ├── unified_production_server.py (Production server - REPLACES old servers)
+│   ├── test_unified_system.py (End-to-end testing script)
 │   ├── requirements.txt
-│   ├── celery_config.py
+│   ├── railway.toml (Updated for unified server)
 │   └── alembic/ (database migrations)
 └── docs/ (additional documentation)
 ```

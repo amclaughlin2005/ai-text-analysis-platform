@@ -2,13 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-
-interface WordData {
-  word: string;
-  frequency: number;
-  sentiment?: 'positive' | 'negative' | 'neutral';
-  size?: number;
-}
+import { WordCloudData } from '@/lib/types';
 
 interface ModernWordCloudProps {
   datasetId: string;
@@ -17,10 +11,10 @@ interface ModernWordCloudProps {
   height?: number;
   width?: number;
   onWordClick?: (word: string) => void;
-  words?: WordData[]; // Optional: if provided, skip API call
+  words?: WordCloudData[]; // Optional: if provided, skip API call
 }
 
-interface PositionedWord extends WordData {
+interface PositionedWord extends WordCloudData {
   x: number;
   y: number;
   fontSize: number;
@@ -43,7 +37,7 @@ export default function ModernWordCloud({
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Color schemes for different word types/sentiments
-  const getWordColor = (word: WordData, index: number): string => {
+  const getWordColor = (word: WordCloudData, index: number): string => {
     if (word.sentiment === 'positive') {
       return ['#3B82F6', '#1D4ED8', '#2563EB', '#1E40AF'][index % 4]; // Blues
     } else if (word.sentiment === 'negative') {
@@ -193,7 +187,7 @@ export default function ModernWordCloud({
   };
 
   // Process words and calculate positions
-  const processWordPositions = (wordData: WordData[]) => {
+  const processWordPositions = (wordData: WordCloudData[]) => {
     const centerX = width / 2;
     const centerY = height / 2;
     const maxFreq = Math.max(...wordData.map(w => w.frequency));
