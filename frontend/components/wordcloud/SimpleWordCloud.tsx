@@ -359,10 +359,24 @@ export default function SimpleWordCloud({
             // This will trigger the useEffect again
           }, 2000);
         } else {
-          // After retry fails, fallback to mock data
-          console.log('⚠️ API retry failed, using mock data:', error);
-          const newWords = generateSimpleWordData(mode);
-          console.log('Using mock data:', newWords.length, newWords);
+          // After retry fails, fallback to enhanced mock data
+          console.log('⚠️ API retry failed, using enhanced mock data with column filtering:', error);
+          
+          // Generate enhanced mock data that respects column filtering
+          let newWords;
+          if (datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9') {
+            // Use enhanced legal data with column filtering - up to 100 words
+            newWords = generateFilteredLegalDataByColumns(mode, selectedColumns);
+            // If still too few words, supplement with more
+            if (newWords.length < 50) {
+              const additionalWords = generateSimpleWordData(mode).slice(0, 100 - newWords.length);
+              newWords = [...newWords, ...additionalWords];
+            }
+            console.log(`✅ Using enhanced legal mock data (${selectedColumns.join(',')} columns):`, newWords.length, 'words');
+          } else {
+            newWords = generateSimpleWordData(mode);
+            console.log('Using standard mock data:', newWords.length, 'words');
+          }
           setWords(newWords);
           setLoading(false);
           isRequestingRef.current = false;
