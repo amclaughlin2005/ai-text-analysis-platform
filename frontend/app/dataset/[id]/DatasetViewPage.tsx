@@ -7,6 +7,7 @@ import Link from 'next/link';
 import DatasetViewer from '@/components/datasets/DatasetViewer';
 import SimpleWordCloud from '@/components/wordcloud/SimpleWordCloud';
 import { WordCloudFilters } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface DatasetViewPageProps {
   datasetId: string;
@@ -16,7 +17,7 @@ type ViewTab = 'questions' | 'wordcloud' | 'analytics';
 
 export default function DatasetViewPage({ datasetId }: DatasetViewPageProps) {
   const [activeTab, setActiveTab] = useState<ViewTab>('questions');
-  const [wordCloudFilters, setWordCloudFilters] = useState<WordCloudFilters>({});
+  const [wordCloudFilters] = useState<WordCloudFilters>({});
 
   // For real legal dataset, use the dedicated API
   const isLegalDataset = datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9';
