@@ -197,16 +197,19 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
         </div>
 
         <motion.div
-          {...getRootProps()}
-          className={`relative border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-200 ${
-            isDragActive 
-              ? 'border-blue-400 bg-blue-50' 
-              : isLoading 
-                ? 'border-gray-300 bg-gray-50 cursor-not-allowed'
-                : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-          }`}
+          className="relative"
           whileHover={!isLoading ? { scale: 1.02 } : {}}
           whileTap={!isLoading ? { scale: 0.98 } : {}}
+        >
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-200 ${
+              isDragActive 
+                ? 'border-blue-400 bg-blue-50' 
+                : isLoading 
+                  ? 'border-gray-300 bg-gray-50 cursor-not-allowed'
+                  : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+            }`}
         >
           <input {...getInputProps()} />
           
@@ -237,6 +240,7 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
               </div>
             </div>
           )}
+          </div>
         </motion.div>
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
