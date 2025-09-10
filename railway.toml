@@ -1,8 +1,8 @@
 [build]
-builder = "nixpacks"
+builder = "dockerfile"
 
 [deploy]
-startCommand = "cd backend && python api_server_db.py"
+startCommand = "python api_server_db.py"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "always"

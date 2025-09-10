@@ -21,4 +21,4 @@ EXPOSE 8000
 
 # Change to backend directory and start the server
 WORKDIR /app/backend
-CMD ["python3", "production_server.py"]
+CMD ["python3", "api_server_db.py"]
