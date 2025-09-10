@@ -15,7 +15,7 @@ import {
 } from './types';
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
 const API_TIMEOUT = 30000; // 30 seconds
 
 // Create axios instance with default configuration
@@ -80,7 +80,7 @@ export const useApiClient = () => {
 
 // API Service Classes
 export class DatasetService {
-  static async getAll(token: string): Promise<Dataset[]> {
+  static async getAll(token?: string): Promise<Dataset[]> {
     const client = createApiClient(token);
     const response = await client.get<ApiResponse<Dataset[]>>('/api/datasets');
     return response.data.data || [];
