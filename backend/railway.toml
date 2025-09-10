@@ -4,3 +4,5 @@ builder = "nixpacks"
 [deploy]
 startCommand = "python api_server_db.py"
 healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "always"

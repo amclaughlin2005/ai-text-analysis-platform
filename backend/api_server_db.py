@@ -87,7 +87,7 @@ def read_root():
     """Root endpoint with API information"""
     return {
         "message": "AI-Powered Text Analysis Platform API (Database Version)",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "status": "running",
         "database": "enabled",
         "features": [
