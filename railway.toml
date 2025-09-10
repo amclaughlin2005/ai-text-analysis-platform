@@ -1,11 +1,13 @@
 [build]
-builder = "dockerfile"
+builder = "nixpacks"
 
 [deploy]
+startCommand = "cd backend && python api_server_db.py"
 healthcheckPath = "/health"
-healthcheckTimeout = 100
-restartPolicyType = "on_failure"
+healthcheckTimeout = 300
+restartPolicyType = "always"
 
 [env]
 PYTHONPATH = "/app/backend"
 NODE_ENV = "production"
+PORT = { default = "8000" }
