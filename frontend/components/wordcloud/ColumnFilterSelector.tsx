@@ -40,28 +40,28 @@ const PRESET_FILTERS = [
     label: 'Questions Only',
     description: 'Analyze only user questions and queries',
     icon: MessageSquare,
-    columns: [1]
+    columns: [1] // original_question column
   },
   {
     id: 'responses_only', 
     label: 'Responses Only',
     description: 'Analyze only AI/agent responses',
     icon: Eye,
-    columns: [2]
+    columns: [2] // ai_response column
   },
   {
     id: 'questions_and_responses',
     label: 'Q&A Combined',
-    description: 'Analyze both questions and responses',
+    description: 'Analyze both questions and responses (recommended)',
     icon: MessageSquare,
-    columns: [1, 2]
+    columns: [1, 2] // both text columns
   },
   {
-    id: 'all_text',
-    label: 'All Text Data', 
-    description: 'Include all text columns',
+    id: 'text_only',
+    label: 'Text Content Only', 
+    description: 'Exclude metadata, focus on content',
     icon: Database,
-    columns: [1, 2, 3, 4]
+    columns: [1, 2] // same as Q&A for legal dataset
   }
 ];
 
@@ -87,17 +87,68 @@ export default function ColumnFilterSelector({
         const isLegalDataset = datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9';
         
         if (isLegalDataset) {
-          const response = await fetch('http://localhost:8002/columns');
-          if (!response.ok) {
-            throw new Error('Failed to fetch column information');
+          // Try the production API first, fallback to localhost for development
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
+          
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/datasets/${datasetId}/columns`);
+            if (response.ok) {
+              const data = await response.json();
+              console.log('📋 Column info loaded from production API:', data);
+              if (data.success && data.columns) {
+                setColumns(data.columns);
+                return;
+              }
+            }
+          } catch (prodError) {
+            console.log('Production API not available, trying localhost...');
           }
           
-          const data = await response.json();
-          console.log('📋 Column info loaded:', data);
-          
-          if (data.columns) {
-            setColumns(data.columns);
+          // Fallback to localhost for development
+          try {
+            const response = await fetch('http://localhost:8002/columns');
+            if (response.ok) {
+              const data = await response.json();
+              console.log('📋 Column info loaded from localhost:', data);
+              if (data.columns) {
+                setColumns(data.columns);
+                return;
+              }
+            }
+          } catch (localError) {
+            console.log('Localhost also not available, using fallback data');
           }
+          
+          // Final fallback - use hardcoded legal dataset structure
+          setColumns([
+            {
+              index: 0,
+              name: 'csv_row_number',
+              type: 'metadata',
+              description: 'Row number from original CSV',
+              sample_values: ['1', '2', '3'],
+              recommended_for_wordcloud: false,
+              total_non_empty: 84
+            },
+            {
+              index: 1,
+              name: 'original_question',
+              type: 'questions',
+              description: 'Legal questions and queries from users',
+              sample_values: ['Please draft a cross-examination...', 'What evidence supports...', 'How should we approach...'],
+              recommended_for_wordcloud: true,
+              total_non_empty: 84
+            },
+            {
+              index: 2,
+              name: 'ai_response',
+              type: 'responses',
+              description: 'AI-generated legal analysis and responses',
+              sample_values: ['Based on the deposition transcript...', 'The court found evidence...', 'Legal precedent suggests...'],
+              recommended_for_wordcloud: true,
+              total_non_empty: 84
+            }
+          ]);
         } else {
           // For other datasets, create generic column info
           setColumns([

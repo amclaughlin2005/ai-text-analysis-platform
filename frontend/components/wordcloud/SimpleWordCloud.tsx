@@ -343,6 +343,9 @@ export default function SimpleWordCloud({
           body: JSON.stringify({
             dataset_id: datasetId,
             mode: mode,
+            selected_columns: selectedColumns,
+            exclude_words: filters?.excludeWords,
+            max_words: filters?.maxWords || 50,
             filters: filters
           })
         });
@@ -485,9 +488,23 @@ export default function SimpleWordCloud({
           <h3 className="text-lg font-semibold text-gray-900">
             Word Cloud - {mode.charAt(0).toUpperCase() + mode.slice(1)} Analysis
           </h3>
-          <p className="text-sm text-gray-500">
-            {formatNumber(words.length)} words • Interactive mode enabled
-          </p>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span>{formatNumber(words.length)} words • Interactive mode enabled</span>
+            {datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9' && (
+              <>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <Filter className="h-3 w-3" />
+                  <span>Columns: {selectedColumns.join(', ')}</span>
+                  <span className="text-xs text-blue-600">
+                    ({selectedColumns.length === 1 && selectedColumns[0] === 1 ? 'Questions Only' : 
+                      selectedColumns.length === 1 && selectedColumns[0] === 2 ? 'Responses Only' :
+                      selectedColumns.length === 2 ? 'Questions & Responses' : 'Custom'})
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
