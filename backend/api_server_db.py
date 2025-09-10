@@ -87,7 +87,7 @@ def read_root():
     """Root endpoint with API information"""
     return {
         "message": "AI-Powered Text Analysis Platform API (Database Version)",
-        "version": "2.3.0",
+        "version": "2.4.0",
         "status": "running",
         "database": "enabled",
         "features": [
@@ -97,7 +97,8 @@ def read_root():
             "Real-time word cloud generation",
             "Enhanced NLTK word filtering",
             "User-configurable noise word exclusions",
-            "Connected to correct Railway project"
+            "Testing GitHub-Railway connection v2.4.0",
+            "Enhanced word filtering deployment test"
         ],
         "endpoints": [
             "GET /health - Health check with database status",
@@ -112,6 +113,17 @@ def read_root():
             "GET /api/jobs - List background processing jobs",
             "GET /api/stats - Database statistics"
         ]
+    }
+
+@app.get("/test-deployment")
+def test_deployment():
+    """Test endpoint to verify deployment is working"""
+    return {
+        "status": "SUCCESS",
+        "message": "GitHub-Railway connection working!",
+        "version": "2.4.0",
+        "timestamp": datetime.utcnow().isoformat(),
+        "deployment_test": "PASSED"
     }
 
 @app.get("/health")
