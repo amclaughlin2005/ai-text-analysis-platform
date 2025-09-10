@@ -124,7 +124,7 @@ def health_check():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@app.get("/api/datasets", response_model=List[DatasetResponse])
+@app.get("/api/datasets")
 def get_datasets(
     limit: int = 50, 
     offset: int = 0,
@@ -134,7 +134,7 @@ def get_datasets(
     try:
         datasets = DatasetService.get_all_datasets(limit=limit, offset=offset)
         
-        return [
+        dataset_responses = [
             DatasetResponse(
                 id=dataset.id,
                 name=dataset.name,
@@ -148,6 +148,12 @@ def get_datasets(
             )
             for dataset in datasets
         ]
+        
+        return {
+            "success": True,
+            "data": dataset_responses,
+            "message": f"Retrieved {len(dataset_responses)} datasets"
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve datasets: {str(e)}")
