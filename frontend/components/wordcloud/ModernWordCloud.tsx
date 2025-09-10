@@ -148,7 +148,7 @@ export default function ModernWordCloud({
         body: JSON.stringify({
           dataset_id: datasetId,
           mode: mode,
-          max_words: 50
+          max_words: 100
         })
       });
 

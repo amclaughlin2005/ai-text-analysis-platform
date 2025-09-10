@@ -347,7 +347,7 @@ export default function SimpleWordCloud({
             mode: mode,
             selected_columns: selectedColumns,
             exclude_words: filters?.excludeWords,
-            max_words: filters?.maxWords || 50,
+            max_words: filters?.maxWords || 100,
             filters: filters
           })
         });

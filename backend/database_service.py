@@ -525,7 +525,7 @@ class WordFrequencyService:
     def get_word_frequencies(
         dataset_id: str, 
         analysis_mode: str = 'all',
-        limit: int = 50
+        limit: int = 100
     ) -> List[WordFrequency]:
         """
         Get existing word frequencies for a dataset

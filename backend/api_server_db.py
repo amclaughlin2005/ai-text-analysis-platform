@@ -65,7 +65,7 @@ class WordCloudRequest(BaseModel):
     selected_columns: Optional[List[int]] = None
     filters: Optional[Dict[str, Any]] = None
     exclude_words: Optional[List[str]] = None  # Custom excluded words for this request
-    max_words: Optional[int] = 50
+    max_words: Optional[int] = 100
 
 class DatasetResponse(BaseModel):
     id: str
@@ -387,7 +387,7 @@ def generate_wordcloud(request: WordCloudRequest, db: Session = Depends(get_db))
             raise HTTPException(status_code=404, detail="Dataset not found")
         
         # Get existing word frequencies or generate new ones
-        max_words = request.max_words or 50
+        max_words = request.max_words or 100
         word_freqs = WordFrequencyService.get_word_frequencies(
             dataset_id=request.dataset_id,
             analysis_mode=request.mode,
