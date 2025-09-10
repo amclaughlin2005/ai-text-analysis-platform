@@ -87,7 +87,7 @@ def read_root():
     """Root endpoint with API information"""
     return {
         "message": "AI-Powered Text Analysis Platform API (Database Version)",
-        "version": "2.2.0",
+        "version": "2.3.0",
         "status": "running",
         "database": "enabled",
         "features": [
@@ -96,7 +96,8 @@ def read_root():
             "Background job processing",
             "Real-time word cloud generation",
             "Enhanced NLTK word filtering",
-            "User-configurable noise word exclusions"
+            "User-configurable noise word exclusions",
+            "Connected to correct Railway project"
         ],
         "endpoints": [
             "GET /health - Health check with database status",
