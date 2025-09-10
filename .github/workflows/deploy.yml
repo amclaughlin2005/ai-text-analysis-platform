@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Build and Test
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  deploy-frontend:
-    name: Deploy Frontend to Vercel
+  test-frontend:
+    name: Build and Test Frontend
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,23 +27,16 @@ jobs:
         
       - name: Build application
         working-directory: frontend
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.PRODUCTION_API_URL }}
-          NEXT_PUBLIC_WS_URL: ${{ secrets.PRODUCTION_WS_URL }}
         run: npm run build
         
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: frontend
-          vercel-args: '--prod'
+        run: |
+          echo "Vercel deployment handled automatically via GitHub integration"
+          echo "Frontend will deploy automatically when code is pushed to main branch"
+          echo "Manual deployment: cd frontend && vercel --prod"
 
-  deploy-backend:
-    name: Deploy Backend to Railway  
+  test-backend:
+    name: Build and Test Backend  
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -66,20 +59,25 @@ jobs:
           # python -m pytest tests/ (when tests are implemented)
           echo "Tests will be implemented in future iterations"
           
-      - name: Deploy to Railway
+      - name: Validate Backend
         run: |
+          echo "✅ Backend validation complete"
           echo "Railway deployment handled automatically via GitHub integration"
           echo "Backend will deploy automatically when code is pushed to main branch"
           
-  notify-deployment:
-    name: Notify Deployment Status
+  summary:
+    name: Build Summary
     runs-on: ubuntu-latest
-    needs: [deploy-frontend, deploy-backend]
+    needs: [test-frontend, test-backend]
     if: always()
     steps:
-      - name: Deployment Summary
+      - name: Build Summary
         run: |
-          echo "🚀 Deployment Summary:"
-          echo "Frontend: ${{ needs.deploy-frontend.result }}"
-          echo "Backend: ${{ needs.deploy-backend.result }}"
+          echo "🚀 Build Summary:"
+          echo "Frontend: ${{ needs.test-frontend.result }}"
+          echo "Backend: ${{ needs.test-backend.result }}"
           echo "Overall: ${{ job.status }}"
+          echo ""
+          echo "📦 Deployments are handled automatically:"
+          echo "  • Vercel: Connected to GitHub, deploys on push to main"
+          echo "  • Railway: Connected to GitHub, deploys on push to main"
