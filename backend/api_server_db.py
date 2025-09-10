@@ -112,10 +112,11 @@ def read_root():
             "Advanced analytics", 
             "Background job processing",
             "Real-time word cloud generation",
-            "Enhanced NLTK word filtering",
-            "User-configurable noise word exclusions",
-            "Testing GitHub-Railway connection v2.4.0",
-            "Enhanced word filtering deployment test"
+                "Enhanced NLTK word filtering with POS tagging",
+                "User-configurable noise word exclusions",
+                "NLTK Part-of-Speech analysis modes (verbs, nouns, adjectives, emotions)",
+                "Advanced word categorization v2.5.0",
+                "CORS configuration optimized for Vercel integration"
         ],
         "endpoints": [
             "GET /health - Health check with database status",
