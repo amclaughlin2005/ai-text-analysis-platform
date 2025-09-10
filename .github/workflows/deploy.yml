@@ -67,10 +67,9 @@ jobs:
           echo "Tests will be implemented in future iterations"
           
       - name: Deploy to Railway
-        uses: railway-app/railway-action@v1
-        with:
-          token: ${{ secrets.RAILWAY_TOKEN }}
-          service: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          echo "Railway deployment handled automatically via GitHub integration"
+          echo "Backend will deploy automatically when code is pushed to main branch"
           
   notify-deployment:
     name: Notify Deployment Status
