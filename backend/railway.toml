@@ -9,8 +9,8 @@ healthcheckTimeout = 300
 restartPolicyType = "always"
 
 [env]
-# Railway will set PORT automatically
-PORT = { default = "8000" }
+# Railway will set PORT automatically - don't override it
+# PORT = { default = "8000" }
 ENVIRONMENT = { default = "production" }
 DEBUG = { default = "false" }
 

@@ -134,6 +134,8 @@ if __name__ == "__main__":
     logger.info("🚀 Starting AI Text Analysis Platform - Production Server")
     logger.info(f"📊 Port: {port}")
     logger.info(f"🌍 Environment: {os.getenv('ENVIRONMENT', 'production')}")
+    logger.info(f"🔗 Binding to: 0.0.0.0:{port}")
+    logger.info(f"🌐 Public URL should be: https://ai-text-analysis-platform-production.up.railway.app")
     
     # Production server configuration
     uvicorn.run(
