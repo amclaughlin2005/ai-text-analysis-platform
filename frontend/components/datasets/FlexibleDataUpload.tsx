@@ -230,7 +230,7 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
                 {isDragActive ? 'Drop your file here' : 'Drop files here or click to browse'}
               </p>
               <p className="text-sm text-gray-500 mb-4">
-                Supports JSON and CSV files up to 100MB
+                Supports JSON and CSV files up to 2GB
               </p>
               
               <div className="flex flex-wrap gap-2 justify-center">

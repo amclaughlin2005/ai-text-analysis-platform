@@ -2,14 +2,15 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Database, List, Bug } from 'lucide-react';
+import { Upload, Database, List, Bug, Sparkles } from 'lucide-react';
 import DatasetUpload from '@/components/datasets/DatasetUpload';
 import DatasetList from '@/components/datasets/DatasetList';
 import UploadProgress from '@/components/datasets/UploadProgress';
 import ConnectionTest from '@/components/debug/ConnectionTest';
+import FlexibleDataUpload from '@/components/datasets/FlexibleDataUpload';
 import { Dataset } from '@/lib/types';
 
-type ViewMode = 'upload' | 'progress' | 'list' | 'debug';
+type ViewMode = 'upload' | 'flexible' | 'progress' | 'list' | 'debug';
 
 export default function DatasetUploadPage() {
   const [currentView, setCurrentView] = useState<ViewMode>('upload');
@@ -53,6 +54,18 @@ export default function DatasetUploadPage() {
         <Upload className="h-4 w-4" />
         Upload
       </button>
+
+      <button
+        onClick={() => setCurrentView('flexible')}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          currentView === 'flexible'
+            ? 'bg-blue-100 text-blue-700'
+            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+        }`}
+      >
+        <Sparkles className="h-4 w-4" />
+        Flexible Upload
+      </button>
       
       <button
         onClick={() => setCurrentView('list')}
@@ -90,7 +103,7 @@ export default function DatasetUploadPage() {
             Dataset Management
           </h1>
           <p className="text-lg text-gray-600">
-            Upload and manage your query-response datasets for AI-powered analysis
+            Upload and manage datasets for AI-powered analysis - supports CSV Q&A format and flexible JSON/CSV with any structure
           </p>
         </div>
 
@@ -119,6 +132,23 @@ export default function DatasetUploadPage() {
                     onUploadProgress={(progress) => console.log('Upload progress:', progress)}
                   />
                 </div>
+              </motion.div>
+            )}
+
+            {currentView === 'flexible' && (
+              <motion.div
+                key="flexible"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <FlexibleDataUpload
+                  onUploadComplete={(datasetId, schema) => {
+                    console.log('Flexible upload completed:', { datasetId, schema });
+                    setCurrentView('list');
+                  }}
+                />
               </motion.div>
             )}
 

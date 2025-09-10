@@ -18,4 +18,4 @@ CORS_ORIGINS = { default = "https://ai-text-analysis-platform.vercel.app,https:/
 
 # Upload Configuration
 UPLOAD_DIR = { default = "/app/backend/uploads" }
-MAX_FILE_SIZE = { default = "104857600" }
+MAX_FILE_SIZE = { default = "2147483648" }
