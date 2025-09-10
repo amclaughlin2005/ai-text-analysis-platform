@@ -150,72 +150,12 @@ export default function DatasetViewPage({ datasetId }: DatasetViewPageProps) {
         )}
 
         {activeTab === 'wordcloud' && (
-          <div className="space-y-6">
-            {isLegalDataset && (
-              <div className="bg-white rounded-lg border p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Legal Word Cloud Analysis
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Analyzing key legal terms from your Tesla litigation dataset.
-                </p>
-                
-                {/* Real Legal Word Cloud */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h4 className="font-medium text-gray-800 mb-4">
-                    Top Legal Terms from Your Dataset:
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {[
-                      { word: 'tesla', count: '102×', sentiment: 'neutral' },
-                      { word: 'court', count: '67×', sentiment: 'positive' },
-                      { word: 'trial', count: '54×', sentiment: 'positive' },
-                      { word: 'expert', count: '41×', sentiment: 'positive' },
-                      { word: 'cades', count: '44×', sentiment: 'neutral' },
-                      { word: 'deposition', count: '40×', sentiment: 'neutral' },
-                      { word: 'evidence', count: '36×', sentiment: 'positive' },
-                      { word: 'invoice', count: '45×', sentiment: 'neutral' }
-                    ].map(({ word, count, sentiment }) => (
-                      <div
-                        key={word}
-                        className={cn(
-                          "p-3 rounded-lg text-center cursor-pointer hover:shadow-sm transition-all",
-                          sentiment === 'positive' ? "bg-green-100 text-green-800 hover:bg-green-200" :
-                          sentiment === 'negative' ? "bg-red-100 text-red-800 hover:bg-red-200" :
-                          "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                        )}
-                      >
-                        <div className="font-medium">{word}</div>
-                        <div className="text-xs opacity-75">{count}</div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-blue-800 text-sm">
-                      <strong>84 legal questions analyzed</strong> • 
-                      Key themes: Tesla litigation, expert testimony, court procedures • 
-                      <a 
-                        href="http://localhost:8002/wordcloud" 
-                        target="_blank"
-                        className="text-blue-600 hover:text-blue-700 underline ml-1"
-                      >
-                        View full API data
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Regular word cloud component */}
-            <SimpleWordCloud
-              datasetId={datasetId}
-              mode="all"
-              filters={wordCloudFilters}
-              onWordClick={(word) => console.log('Legal term clicked:', word)}
-            />
-          </div>
+          <SimpleWordCloud
+            datasetId={datasetId}
+            mode="all"
+            filters={wordCloudFilters}
+            onWordClick={(word) => console.log('Word clicked:', word)}
+          />
         )}
 
         {activeTab === 'analytics' && (

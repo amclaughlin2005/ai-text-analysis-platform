@@ -245,7 +245,9 @@ export default function SimpleWordCloud({
   const [words, setWords] = useState<WordCloudData[]>(() => generateSimpleWordData(mode));
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showColumnFilterUI, setShowColumnFilterUI] = useState(false);
+  const [showColumnFilterUI, setShowColumnFilterUI] = useState(
+    datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9' // Default open for legal dataset
+  );
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [viewMode, setViewMode] = useState<'cloud' | 'text'>('cloud');
@@ -513,14 +515,16 @@ export default function SimpleWordCloud({
             <button
               onClick={() => setShowColumnFilterUI(!showColumnFilterUI)}
               className={cn(
-                "p-2 rounded-lg transition-colors",
+                "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium",
                 showColumnFilterUI 
-                  ? "bg-primary-100 text-primary-700" 
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  ? "bg-primary-600 text-white" 
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               )}
-              title="Column Filter"
+              title="Filter by columns"
             >
-              <Filter className="h-5 w-5" />
+              <Filter className="h-4 w-4" />
+              <span>Column Filters</span>
+              {showColumnFilterUI && <span className="text-xs opacity-75">(Open)</span>}
             </button>
           )}
           
@@ -577,7 +581,15 @@ export default function SimpleWordCloud({
                 <span className="text-sm font-medium text-blue-900">Column Filtering</span>
               </div>
               <p className="text-xs text-blue-700">
-                Choose which columns from your legal dataset to analyze. Currently analyzing columns: {selectedColumns.join(', ')}
+                Control which parts of your dataset contribute to the word cloud:
+              </p>
+              <div className="text-xs text-blue-600 mt-1 font-medium">
+                • Column 1: Questions only • Column 2: AI responses only • Both: Combined analysis
+              </div>
+              <p className="text-xs text-blue-700 mt-1">
+                Currently analyzing: {selectedColumns.map(col => 
+                  col === 1 ? 'Questions' : col === 2 ? 'Responses' : `Column ${col}`
+                ).join(' + ')}
               </p>
             </div>
             
