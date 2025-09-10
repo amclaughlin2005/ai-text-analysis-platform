@@ -94,7 +94,7 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(datasets.router, prefix="/api/datasets", tags=["datasets"])
-app.include_router(schema.router, tags=["schema"])  # Schema router has its own prefix
+app.include_router(schema.router)  # Schema router has its own prefix defined
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
 app.include_router(wordcloud.router, prefix="/api/wordcloud", tags=["wordcloud"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
