@@ -45,6 +45,18 @@ This is an **AI-Powered Text Analysis Platform** designed to analyze user querie
 **Purpose**: Extended documentation and guides
 - API documentation, deployment guides, user manuals
 
+## Development Guidelines
+
+### Git Commit Standards
+**CRITICAL**: Use SHORT, concise commit messages only. Long commit messages break deployment.
+- ✅ Good: "Add analytics dashboard"
+- ✅ Good: "Fix word cloud styling" 
+- ✅ Good: "Update API endpoints"
+- ❌ Bad: Multi-line commits with detailed descriptions
+- ❌ Bad: Emoji-heavy or overly descriptive messages
+
+Keep commits under 50 characters when possible.
+
 ## Key System Components
 
 ### 1. Data Processing Pipeline

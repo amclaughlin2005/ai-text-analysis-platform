@@ -3,6 +3,23 @@
 ## Project Overview
 This is an AI-driven development project building a comprehensive web application for analyzing user queries, context, and AI responses using NLTK and LLM APIs. The platform combines proven word cloud functionality with a robust FastAPI backend for large-scale data processing.
 
+## Development Guidelines
+
+### Git Commit Standards ⚠️ CRITICAL
+**IMPORTANT**: Use SHORT commit messages only. Long commit messages break deployment pipelines.
+
+**Format Rules:**
+- Maximum 50 characters
+- Start with action verb (Add, Fix, Update, Remove)
+- No multi-line descriptions
+- No excessive emojis
+
+**Examples:**
+- ✅ "Add analytics dashboard"
+- ✅ "Fix CORS configuration" 
+- ✅ "Update database models"
+- ❌ "🎯 NEW: Comprehensive Analytics Dashboard with multiple features..."
+
 ## Core Architecture
 
 ### Frontend Stack (Next.js 14 on Vercel)
