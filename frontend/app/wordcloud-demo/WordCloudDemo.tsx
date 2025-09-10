@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Code } from 'lucide-react';
-import Link from 'next/link';
 import SimpleWordCloud from '@/components/wordcloud/SimpleWordCloud';
 import { WordCloudFilters } from '@/lib/types';
 
@@ -170,57 +168,6 @@ export default function WordCloudDemo() {
         </div>
       </div>
 
-      {/* Technical Details */}
-      <div className="bg-gray-900 text-white rounded-lg p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Code className="h-6 w-6" />
-          <h2 className="text-2xl font-semibold">Technical Implementation</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-blue-300">
-              Frontend Stack
-            </h3>
-            <ul className="space-y-2 text-gray-300">
-              <li>• Next.js 14 with TypeScript</li>
-              <li>• Framer Motion for animations</li>
-              <li>• Tailwind CSS for styling</li>
-              <li>• SVG-based word cloud rendering</li>
-              <li>• Canvas API for image export</li>
-              <li>• WebSocket for real-time updates</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-green-300">
-              Analysis Features
-            </h3>
-            <ul className="space-y-2 text-gray-300">
-              <li>• NLTK sentiment analysis</li>
-              <li>• spaCy entity recognition</li>
-              <li>• LDA topic modeling</li>
-              <li>• TF-IDF keyword extraction</li>
-              <li>• Custom collision detection</li>
-              <li>• Spiral positioning algorithm</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-8 p-4 bg-gray-800 rounded-lg">
-          <h4 className="font-semibold mb-2 text-yellow-300">Usage Example:</h4>
-          <pre className="text-sm text-gray-300 overflow-x-auto">
-{`<SimpleWordCloud
-  datasetId="${datasetId}"
-  mode="${selectedMode}"
-  selectedColumns={${JSON.stringify(selectedColumns)}}
-  showColumnFilter={true}
-  onWordClick={(word, data) => console.log(word, data)}
-  onColumnsChange={setSelectedColumns}
-/>`}
-          </pre>
-        </div>
-      </div>
 
       {/* Selected Word Info */}
       {selectedWord && (
@@ -246,29 +193,6 @@ export default function WordCloudDemo() {
         </motion.div>
       )}
 
-      {/* Call to Action */}
-      <div className="bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">
-          Upload More Datasets
-        </h2>
-        <p className="text-xl mb-6 opacity-90">
-          Analyze additional CSV datasets with the same powerful word cloud and column filtering features.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/upload"
-            className="px-8 py-3 bg-white text-primary-600 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-          >
-            Upload Dataset
-          </Link>
-          <Link
-            href="/dashboard"
-            className="px-8 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-primary-600 transition-colors"
-          >
-            View Dashboard
-          </Link>
-        </div>
-      </div>
       </div>
     </div>
   );
