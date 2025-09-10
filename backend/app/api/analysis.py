@@ -10,9 +10,31 @@ from pydantic import BaseModel
 
 from ..core.database import get_db
 from ..core.logging import get_logger
-from ..analysis.nltk_processor import get_nltk_processor
-from ..analysis.llm_processor import get_llm_processor
-from ..tasks.analysis_tasks import test_nltk_processing, analyze_sentiment_batch
+# Import analysis modules with error handling for missing dependencies
+try:
+    from ..analysis.nltk_processor import get_nltk_processor
+    NLTK_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"NLTK processor not available: {e}")
+    NLTK_AVAILABLE = False
+    get_nltk_processor = None
+
+try:
+    from ..analysis.llm_processor import get_llm_processor
+    LLM_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"LLM processor not available: {e}")
+    LLM_AVAILABLE = False
+    get_llm_processor = None
+
+try:
+    from ..tasks.analysis_tasks import test_nltk_processing, analyze_sentiment_batch
+    TASKS_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Analysis tasks not available: {e}")
+    TASKS_AVAILABLE = False
+    test_nltk_processing = None
+    analyze_sentiment_batch = None
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -47,6 +69,9 @@ class EntityExtractionResponse(BaseModel):
 @router.get("/test")
 async def test_analysis_engine():
     """Test the analysis engine functionality"""
+    if not NLTK_AVAILABLE:
+        return {"status": "warning", "message": "NLTK processor not available - some dependencies missing"}
+    
     try:
         processor = get_nltk_processor()
         
