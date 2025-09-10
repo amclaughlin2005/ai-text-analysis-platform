@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python backend/api_server_db.py"
+startCommand = "sh -c 'cd backend && python api_server_db.py'"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "always"
@@ -11,7 +11,6 @@ restartPolicyType = "always"
 # Application Configuration
 APP_ENV = { default = "production" }
 DEBUG = { default = "false" }
-PYTHONPATH = "/app/backend"
 
 # CORS Origins - Your Vercel domains
 CORS_ORIGINS = { default = "https://ai-text-analysis-platform.vercel.app,https://ai-text-analysis-platform-git-main.vercel.app,https://wordcloud-six-eta.vercel.app" }
