@@ -179,7 +179,7 @@ export default function DatasetList({
     }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-platform-production.up.railway.app';
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
       const response = await fetch(`${API_BASE_URL}/api/datasets/${datasetId}`, {
         method: 'DELETE'
       });
