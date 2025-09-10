@@ -5,7 +5,7 @@ import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { 
-  CloudUpload, 
+  Upload, 
   FileText, 
   Code,
   CheckCircle,
