@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Database, List, Bug } from 'lucide-react';
-import Link from 'next/link';
 import DatasetUpload from '@/components/datasets/DatasetUpload';
 import DatasetList from '@/components/datasets/DatasetList';
 import UploadProgress from '@/components/datasets/UploadProgress';
@@ -17,10 +16,6 @@ export default function DatasetUploadPage() {
   const [uploadingJobId, setUploadingJobId] = useState<string | null>(null);
   const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
 
-  const handleUploadStart = (jobId: string) => {
-    setUploadingJobId(jobId);
-    setCurrentView('progress');
-  };
 
   const handleUploadComplete = (datasetId: string) => {
     console.log('Upload completed for dataset:', datasetId);

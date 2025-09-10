@@ -304,7 +304,7 @@ export default function SimpleWordCloud({
                 }));
                 
                 console.log('✅ SUCCESS! Using filtered legal API data:', apiWords.length, 'clean terms');
-                console.log('🎯 First 3 words:', apiWords.slice(0, 3).map(w => w.word));
+                console.log('🎯 First 3 words:', apiWords.slice(0, 3).map((w: any) => w.word));
                 setWords(apiWords);
                 setLoading(false);
                 isRequestingRef.current = false;
@@ -425,6 +425,8 @@ export default function SimpleWordCloud({
       
       return () => clearTimeout(failsafeTimer);
     }
+    
+    return () => {}; // Empty cleanup function for non-loading case
   }, [loading, words.length, mode]);
 
   if (loading && words.length === 0) {

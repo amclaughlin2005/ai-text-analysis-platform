@@ -124,7 +124,8 @@ export default function WordCloudVisualization({
         const wordWidth = word.word.length * fontSize * 0.65;
         const wordHeight = fontSize;
         
-        let x, y;
+        let x: number = centerX; // Default to center
+        let y: number = centerY; // Default to center
         let placed = false;
         
         if (index === 0) {
@@ -184,7 +185,8 @@ export default function WordCloudVisualization({
         const fontSize = Math.max(16, Math.min(48, word.size * 32));
         const wordWidth = word.word.length * fontSize * 0.65;
         const wordHeight = fontSize;
-        let x, y;
+        let x: number = centerX; // Default to center
+        let y: number = centerY; // Default to center
         let attempts = 0;
         let placed = false;
         

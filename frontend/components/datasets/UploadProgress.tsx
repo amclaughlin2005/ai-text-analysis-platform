@@ -8,12 +8,9 @@ import {
   AlertCircle, 
   Loader2, 
   Clock,
-  FileText,
-  Database,
-  Brain,
-  BarChart3
+  Brain
 } from 'lucide-react';
-import { JobStatus, AnalysisJob } from '@/lib/types';
+import { AnalysisJob } from '@/lib/types';
 import { cn, formatRelativeTime, formatNumber } from '@/lib/utils';
 
 interface UploadProgressProps {

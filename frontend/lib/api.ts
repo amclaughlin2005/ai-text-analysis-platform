@@ -58,7 +58,7 @@ const createApiClient = (token?: string): AxiosInstance => {
         toast.error('Access forbidden. You do not have permission for this action.');
       } else if (error.response?.status === 429) {
         toast.error('Rate limit exceeded. Please try again later.');
-      } else if (error.response?.status >= 500) {
+      } else if (error.response?.status && error.response.status >= 500) {
         toast.error('Server error. Please try again later.');
       }
       

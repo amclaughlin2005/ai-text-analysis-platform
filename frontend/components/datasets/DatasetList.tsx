@@ -12,9 +12,7 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle,
-  BarChart3,
-  FileText
+  AlertCircle
 } from 'lucide-react';
 import { Dataset, DatasetStatus } from '@/lib/types';
 import { cn, formatFileSize, formatRelativeTime, getStatusColor } from '@/lib/utils';
@@ -308,7 +306,7 @@ export default function DatasetList({
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    {getStatusIcon(dataset.processing_status || dataset.upload_status || 'unknown')}
+                    {getStatusIcon((dataset.processing_status || dataset.upload_status || 'failed') as DatasetStatus)}
                     <div>
                       <h4 className="text-lg font-semibold text-gray-900">{dataset.name}</h4>
                       <p className="text-sm text-gray-600">{dataset.filename || dataset.original_filename}</p>
@@ -412,25 +410,25 @@ export default function DatasetList({
                       {/* Analysis Summary - Hide for now since database doesn't provide advanced analytics yet */}
                       {false && (dataset.processing_status === 'completed') && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          {dataset.sentiment_avg !== null && (
+                          {dataset.sentiment_avg !== null && dataset.sentiment_avg !== undefined && (
                             <div className="bg-blue-50 p-3 rounded-lg">
                               <p className="text-xs text-blue-600 uppercase tracking-wide mb-1">Avg Sentiment</p>
                               <p className="text-xl font-bold text-blue-700">
-                                {dataset.sentiment_avg.toFixed(2)}
+                                {dataset.sentiment_avg?.toFixed(2) || '0.00'}
                               </p>
                             </div>
                           )}
                           
-                          {dataset.data_quality_score !== null && (
+                          {dataset.data_quality_score !== null && dataset.data_quality_score !== undefined && (
                             <div className="bg-green-50 p-3 rounded-lg">
                               <p className="text-xs text-green-600 uppercase tracking-wide mb-1">Quality Score</p>
                               <p className="text-xl font-bold text-green-700">
-                                {Math.round(dataset.data_quality_score * 100)}%
+                                {Math.round((dataset.data_quality_score || 0) * 100)}%
                               </p>
                             </div>
                           )}
 
-                          {dataset.organizations_count > 0 && (
+                          {(dataset.organizations_count || 0) > 0 && (
                             <div className="bg-purple-50 p-3 rounded-lg">
                               <p className="text-xs text-purple-600 uppercase tracking-wide mb-1">Organizations</p>
                               <p className="text-xl font-bold text-purple-700">
@@ -439,11 +437,11 @@ export default function DatasetList({
                             </div>
                           )}
 
-                          {dataset.avg_complexity_score !== null && (
+                          {dataset.avg_complexity_score !== null && dataset.avg_complexity_score !== undefined && (
                             <div className="bg-amber-50 p-3 rounded-lg">
                               <p className="text-xs text-amber-600 uppercase tracking-wide mb-1">Complexity</p>
                               <p className="text-xl font-bold text-amber-700">
-                                {Math.round(dataset.avg_complexity_score * 100)}%
+                                {Math.round((dataset.avg_complexity_score || 0) * 100)}%
                               </p>
                             </div>
                           )}
@@ -451,11 +449,11 @@ export default function DatasetList({
                       )}
 
                       {/* Top Topics - Hide for now since database doesn't provide this */}
-                      {false && dataset.top_topics && dataset.top_topics.length > 0 && (
+                      {false && dataset.top_topics && (dataset.top_topics?.length || 0) > 0 && (
                         <div>
                           <p className="text-sm font-medium text-gray-700 mb-2">Top Topics</p>
                           <div className="flex flex-wrap gap-2">
-                            {dataset.top_topics.slice(0, 5).map((topic, index) => (
+                            {(dataset.top_topics || []).slice(0, 5).map((topic, index) => (
                               <span
                                 key={index}
                                 className="px-3 py-1 bg-primary-100 text-primary-800 text-xs rounded-full"

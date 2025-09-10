@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Code, ExternalLink, Github } from 'lucide-react';
+import { Code } from 'lucide-react';
 import Link from 'next/link';
 import SimpleWordCloud from '@/components/wordcloud/SimpleWordCloud';
 import { WordCloudFilters } from '@/lib/types';
@@ -42,7 +42,7 @@ const ANALYSIS_MODES = [
 
 export default function WordCloudDemo() {
   const [selectedMode, setSelectedMode] = useState<string>('all');
-  const [filters, setFilters] = useState<WordCloudFilters>({});
+  const filters: WordCloudFilters = {};
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   
   // Check for dataset parameter in URL
@@ -62,14 +62,7 @@ export default function WordCloudDemo() {
     setSelectedWord(word === selectedWord ? null : word);
   };
 
-  const handleThemeClick = (theme: string) => {
-    console.log('Theme clicked:', theme);
-    // Could implement theme-based filtering here
-  };
 
-  const handleDataUpdate = (data: any[]) => {
-    console.log('Word cloud data updated:', data.length, 'words');
-  };
 
   return (
     <div className="bg-gray-50 min-h-full">
@@ -237,7 +230,7 @@ export default function WordCloudDemo() {
           className="bg-blue-50 border border-blue-200 rounded-lg p-6"
         >
           <h3 className="text-lg font-semibold text-blue-900 mb-2">
-            Selected Word: "{selectedWord}"
+            Selected Word: &quot;{selectedWord}&quot;
           </h3>
           <p className="text-blue-700">
             Click on any word in the cloud to explore its usage patterns, frequency distribution, 

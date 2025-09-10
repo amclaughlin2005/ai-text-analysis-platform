@@ -7,13 +7,11 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Eye, 
-  Clock,
   MessageSquare,
-  User,
   Calendar,
   Copy
 } from 'lucide-react';
-import { cn, formatRelativeTime } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 interface Question {
@@ -32,7 +30,6 @@ interface DatasetViewerProps {
 }
 
 export default function DatasetViewer({ 
-  datasetId, 
   datasetName, 
   className 
 }: DatasetViewerProps) {
@@ -46,7 +43,7 @@ export default function DatasetViewer({
   const questionsPerPage = 10;
 
   // Fetch questions from your real legal data
-  const fetchQuestions = async (page: number = 1) => {
+  const fetchQuestions = async () => {
     setLoading(true);
     try {
       // Use the dedicated legal data API
@@ -69,8 +66,8 @@ export default function DatasetViewer({
   };
 
   useEffect(() => {
-    fetchQuestions(currentPage);
-  }, [currentPage]);
+    fetchQuestions();
+  }, []);
 
   const filteredQuestions = questions.filter(q =>
     searchQuery === '' || 

@@ -1,0 +1,47 @@
+{
+  "name": "ai-text-analysis-platform",
+  "version": "1.0.0",
+  "description": "AI-powered text analysis platform with word cloud visualization and NLTK integration",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ai-text-analysis-platform.git"
+  },
+  "keywords": [
+    "text-analysis",
+    "nlp", 
+    "word-cloud",
+    "sentiment-analysis",
+    "fastapi",
+    "nextjs",
+    "ai",
+    "nltk"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && python3 api_server_db.py",
+    "build": "npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "npm run start:frontend",
+    "start:frontend": "cd frontend && npm start",
+    "install:all": "npm install && cd frontend && npm install",
+    "clean": "rm -rf frontend/.next frontend/out backend/__pycache__ backend/*.db",
+    "deploy:vercel": "cd frontend && vercel --prod",
+    "deploy:railway": "cd backend && railway deploy",
+    "setup:db": "cd backend && python3 init_database.py",
+    "test": "echo \"Tests will be implemented in future iterations\"",
+    "lint": "cd frontend && npm run lint",
+    "type-check": "cd frontend && npm run type-check"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0",
+    "python": ">=3.11.0"
+  },
+  "license": "MIT",
+  "author": "AI Text Analysis Platform Team"
+}

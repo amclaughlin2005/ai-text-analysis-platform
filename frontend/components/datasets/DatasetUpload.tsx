@@ -5,7 +5,6 @@ import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Upload, 
-  File, 
   X, 
   Check, 
   AlertCircle, 
@@ -16,7 +15,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { cn, formatFileSize, validateFileType, validateFileSize } from '@/lib/utils';
+import { cn, formatFileSize, validateFileSize } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 interface DatasetUploadProps {
@@ -37,7 +36,6 @@ interface UploadFile {
 
 export default function DatasetUpload({
   onUploadComplete,
-  onUploadProgress,
   className
 }: DatasetUploadProps) {
   const [uploadFile, setUploadFile] = useState<UploadFile | null>(null);
@@ -553,7 +551,7 @@ export default function DatasetUpload({
             </div>
             
             <p className="text-sm text-blue-600">
-              Uploading "{datasetName}" ({formatFileSize(uploadFile?.file.size || 0)})
+              Uploading &quot;{datasetName}&quot; ({formatFileSize(uploadFile?.file.size || 0)})
             </p>
           </div>
         </motion.div>
