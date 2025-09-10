@@ -29,7 +29,7 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     print(f"🚀 Starting simple app on port {port}")
     uvicorn.run(
-        "app:app",
+        app,  # Pass the app object directly, not as a string
         host="0.0.0.0",
         port=port,
         reload=False
