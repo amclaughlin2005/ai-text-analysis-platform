@@ -1,4 +1,4 @@
-import { Suspense } from 'next';
+import { Suspense } from 'react';
 import DatasetViewPage from './DatasetViewPage';
 
 export const metadata = {
