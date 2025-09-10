@@ -1,13 +1,21 @@
 [build]
-builder = "dockerfile"
+builder = "nixpacks"
 
 [deploy]
-startCommand = "python api_server_db.py"
-healthcheckPath = "/health"
+startCommand = "cd backend && python unified_production_server.py"
+healthcheckPath = "/production/health"
 healthcheckTimeout = 300
 restartPolicyType = "always"
 
 [env]
+# Application Configuration
+APP_ENV = { default = "production" }
+DEBUG = { default = "false" }
 PYTHONPATH = "/app/backend"
-NODE_ENV = "production"
-PORT = { default = "8000" }
+
+# CORS Origins - Your Vercel domains
+CORS_ORIGINS = { default = "https://ai-text-analysis-platform.vercel.app,https://ai-text-analysis-platform-git-main.vercel.app,https://wordcloud-six-eta.vercel.app" }
+
+# Upload Configuration
+UPLOAD_DIR = { default = "/app/backend/uploads" }
+MAX_FILE_SIZE = { default = "104857600" }
