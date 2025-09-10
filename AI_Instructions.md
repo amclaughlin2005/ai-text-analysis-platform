@@ -236,6 +236,32 @@ WordCloud/
 - **Cache/Queue**: Railway Redis
 - **Storage**: AWS S3 with CloudFront
 
+### Railway Configuration (WORKING SETUP ✅)
+```toml
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "python api_server_db.py"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "always"
+
+[env]
+APP_ENV = { default = "production" }
+DEBUG = { default = "false" }
+PYTHONPATH = "/app/backend"
+CORS_ORIGINS = { default = "https://ai-text-analysis-platform.vercel.app,..." }
+UPLOAD_DIR = { default = "/app/backend/uploads" }
+MAX_FILE_SIZE = { default = "104857600" }
+```
+
+**Critical Notes:**
+- Must use `dockerfile` builder (nixpacks causes path issues)
+- `PYTHONPATH="/app/backend"` is essential for Python imports
+- `startCommand` runs without `backend/` prefix due to PYTHONPATH setting
+- Health check at `/health` matches FastAPI endpoint
+
 ## AI Development Guidelines
 
 ### When Working on This Project:
