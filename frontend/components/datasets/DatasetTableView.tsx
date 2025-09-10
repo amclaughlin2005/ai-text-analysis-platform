@@ -107,7 +107,12 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
       const data = await response.json();
       console.log('Questions data:', data);
       
-      if (data.success) {
+      // Handle the API response structure - it returns { data: [...], pagination: {...} }
+      if (data.data && Array.isArray(data.data)) {
+        setQuestions(data.data);
+        setTotalRows(data.pagination?.total_count || data.data.length);
+      } else if (data.success && data.data) {
+        // Fallback for success-based responses
         setQuestions(data.data || []);
         setTotalRows(data.total || 0);
       } else {
