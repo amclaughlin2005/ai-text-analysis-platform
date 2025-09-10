@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Database, List, ArrowLeft, Bug } from 'lucide-react';
+import { Upload, Database, List, Bug } from 'lucide-react';
 import Link from 'next/link';
 import DatasetUpload from '@/components/datasets/DatasetUpload';
 import DatasetList from '@/components/datasets/DatasetList';
