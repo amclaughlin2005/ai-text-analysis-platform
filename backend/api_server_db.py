@@ -508,6 +508,40 @@ def update_noise_words(noise_words: List[str], db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update noise words: {str(e)}")
 
+@app.get("/api/wordcloud/test/{dataset_id}")
+def test_wordcloud_generation(dataset_id: str, mode: str = "all", max_words: int = 20):
+    """Test word cloud generation for a dataset"""
+    try:
+        # Create a test request
+        request = WordCloudRequest(
+            dataset_id=dataset_id,
+            mode=mode,
+            selected_columns=[1, 2],  # Questions and responses
+            max_words=max_words
+        )
+        
+        # Generate word cloud
+        result = generate_wordcloud(request)
+        
+        return {
+            "status": "success",
+            "message": f"Generated word cloud with {len(result.get('words', []))} words",
+            "preview": result.get('words', [])[:10],  # Show first 10 words
+            "insights": result.get('insights', {}),
+            "filtering_info": {
+                "excluded_words_applied": True,
+                "nltk_processing": True,
+                "column_filtering": True
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "dataset_id": dataset_id
+        }
+
 @app.get("/api/test-database-connection")
 def test_database_connection():
     """Test database connectivity"""
