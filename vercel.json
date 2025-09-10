@@ -1,40 +1,18 @@
 {
   "version": 2,
   "name": "ai-text-analysis-platform",
-  "builds": [
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "cd frontend && npm install",
+  "rewrites": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "rootDirectory": "frontend"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "https://your-railway-app.railway.app/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/$1"
+      "source": "/api/(.*)",
+      "destination": "https://ai-text-analysis-platform-production.up.railway.app/api/$1"
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://your-railway-app.railway.app",
-    "NEXT_PUBLIC_WS_URL": "wss://your-railway-app.railway.app",
+    "NEXT_PUBLIC_API_URL": "https://ai-text-analysis-platform-production.up.railway.app",
+    "NEXT_PUBLIC_WS_URL": "wss://ai-text-analysis-platform-production.up.railway.app",
     "NODE_ENV": "production"
-  },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_API_URL": "https://your-railway-app.railway.app",
-      "NODE_ENV": "production"
-    }
-  },
-  "functions": {
-    "frontend/api/**/*.js": {
-      "runtime": "@vercel/node"
-    }
-  },
-  "crons": []
+  }
 }
