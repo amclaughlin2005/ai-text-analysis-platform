@@ -38,7 +38,7 @@ export default function ModernWordCloud({
   const [words, setWords] = useState<PositionedWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   // Color schemes for different word types/sentiments
   const getWordColor = (word: WordData, index: number): string => {
@@ -271,7 +271,7 @@ export default function ModernWordCloud({
     <div className={`relative overflow-hidden bg-gradient-to-br from-gray-50 to-white ${className}`} 
          style={{ height, width }}>
       <svg 
-        ref={containerRef}
+        ref={svgRef}
         width={width} 
         height={height}
         className="w-full h-full"
