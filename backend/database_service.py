@@ -374,11 +374,27 @@ class WordFrequencyService:
             all_text = ' '.join(all_text_parts)
             words = re.findall(r'\b[a-zA-Z]{3,}\b', all_text)
             
-            # Filter out noise words
-            noise_words = DatabaseUtilityService.get_setting('noise_words', [
+            # Filter out noise words - Enhanced with comprehensive list
+            noise_words_from_db = DatabaseUtilityService.get_setting('noise_words', [])
+            
+            # Comprehensive noise words list including all problematic words observed
+            enhanced_noise_words = [
+                # Original user-specified exclusions
                 'details', 'page', 'https', 'filevineapp', 'docviewer', 
-                'view', 'source', 'embedding'
-            ])
+                'view', 'source', 'embedding', 'docwebviewer', 'com', 'www', 
+                'html', 'link', 'url', 'href', 'retrieved', 'matching', 'appeared',
+                
+                # Legal document technical terms that aren't meaningful for analysis
+                'singletonschreiber', 'filevineapp', 'docwebviewer',
+                
+                # Common filler words that appeared in results
+                'that', 'this', 'from', 'with', 'they', 'have', 'will', 
+                'about', 'information', 'could', 'would', 'should', 'when', 
+                'where', 'there', 'what', 'please', 'question', 'see',
+            ]
+            
+            # Combine database settings with enhanced list
+            noise_words = list(set(noise_words_from_db + enhanced_noise_words))
             
             common_stops = {
                 'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'use', 'man', 'new', 'now', 'old', 'see', 'him', 'two', 'how', 'its', 'who', 'oil', 'sit', 'set', 'run', 'eat', 'far', 'sea', 'eye', 'ask', 'put', 'end', 'why', 'let', 'say', 'she', 'may', 'try', 'own', 'too', 'any', 'yet', 'way', 'use', 'yes', 'has', 'his', 'her', 'him'

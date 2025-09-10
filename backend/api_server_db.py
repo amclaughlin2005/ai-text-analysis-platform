@@ -582,6 +582,47 @@ def initialize_database_tables():
             "timestamp": datetime.utcnow().isoformat()
         }
 
+@app.post("/api/wordcloud/regenerate/{dataset_id}")
+def regenerate_word_frequencies(dataset_id: str):
+    """Regenerate word frequencies with updated filtering"""
+    try:
+        # Clear existing word frequencies for this dataset
+        from database_service import WordFrequencyService
+        from database import get_db
+        from models import WordFrequency
+        
+        db = next(get_db())
+        try:
+            # Delete existing word frequencies
+            db.query(WordFrequency).filter(WordFrequency.dataset_id == dataset_id).delete()
+            db.commit()
+            
+            # Regenerate with new filtering
+            word_data = WordFrequencyService.generate_word_frequencies(
+                dataset_id=dataset_id,
+                analysis_mode='all',
+                selected_columns=[1, 2]
+            )
+            
+            return {
+                "status": "success",
+                "message": f"Regenerated word frequencies with enhanced filtering",
+                "words_generated": len(word_data),
+                "dataset_id": dataset_id,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to regenerate word frequencies: {str(e)}",
+            "dataset_id": dataset_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
 @app.get("/api/database/tables")
 def list_database_tables():
     """List all tables in the database"""
