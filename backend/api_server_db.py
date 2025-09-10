@@ -23,7 +23,7 @@ from models import Dataset, Question, WordFrequency, AnalysisJob
 app = FastAPI(
     title="AI-Powered Text Analysis Platform API (Database Version)",
     description="Enhanced API with persistent database storage",
-    version="2.4.1",
+    version="2.5.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )

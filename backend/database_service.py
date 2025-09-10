@@ -367,12 +367,58 @@ class WordFrequencyService:
             if not all_text_parts:
                 return []
             
-            # Word extraction and frequency counting
+            # NLTK-powered word extraction and analysis mode filtering
             import re
             from collections import Counter
+            import nltk
+            from nltk.tokenize import word_tokenize
+            from nltk.tag import pos_tag
+            from nltk.corpus import stopwords
+            
+            # Ensure NLTK data is available
+            try:
+                nltk.data.find('tokenizers/punkt')
+                nltk.data.find('taggers/averaged_perceptron_tagger')
+                nltk.data.find('corpora/stopwords')
+            except LookupError:
+                nltk.download('punkt', quiet=True)
+                nltk.download('averaged_perceptron_tagger', quiet=True)
+                nltk.download('stopwords', quiet=True)
             
             all_text = ' '.join(all_text_parts)
-            words = re.findall(r'\b[a-zA-Z]{3,}\b', all_text)
+            
+            # Tokenize and POS tag the text
+            tokens = word_tokenize(all_text.lower())
+            pos_tags = pos_tag(tokens)
+            
+            # Filter words based on analysis mode using POS tags
+            if analysis_mode == 'verbs' or analysis_mode == 'action':
+                # Extract verbs (VB, VBD, VBG, VBN, VBP, VBZ)
+                filtered_tokens = [word for word, pos in pos_tags 
+                                 if pos.startswith('VB') and len(word) >= 3 and word.isalpha()]
+            elif analysis_mode == 'nouns':
+                # Extract nouns (NN, NNS, NNP, NNPS)
+                filtered_tokens = [word for word, pos in pos_tags 
+                                 if pos.startswith('NN') and len(word) >= 3 and word.isalpha()]
+            elif analysis_mode == 'adjectives':
+                # Extract adjectives (JJ, JJR, JJS)
+                filtered_tokens = [word for word, pos in pos_tags 
+                                 if pos.startswith('JJ') and len(word) >= 3 and word.isalpha()]
+            elif analysis_mode == 'emotions':
+                # Extract emotion-related words (adjectives + some specific verbs)
+                emotion_pos = ['JJ', 'JJR', 'JJS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
+                emotion_keywords = {'feel', 'felt', 'happy', 'sad', 'angry', 'excited', 'frustrated', 
+                                  'satisfied', 'disappointed', 'pleased', 'concerned', 'worried', 
+                                  'confident', 'nervous', 'comfortable', 'uncomfortable'}
+                filtered_tokens = [word for word, pos in pos_tags 
+                                 if (pos in emotion_pos or word.lower() in emotion_keywords) 
+                                 and len(word) >= 3 and word.isalpha()]
+            else:
+                # 'all' mode - extract meaningful words (nouns, verbs, adjectives)
+                meaningful_pos = ['NN', 'NNS', 'NNP', 'NNPS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ', 
+                                'JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS']
+                filtered_tokens = [word for word, pos in pos_tags 
+                                 if pos in meaningful_pos and len(word) >= 3 and word.isalpha()]
             
             # Filter out noise words - Enhanced with comprehensive list
             noise_words_from_db = DatabaseUtilityService.get_setting('noise_words', [])
@@ -396,12 +442,21 @@ class WordFrequencyService:
             # Combine database settings with enhanced list
             noise_words = list(set(noise_words_from_db + enhanced_noise_words))
             
-            common_stops = {
-                'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'use', 'man', 'new', 'now', 'old', 'see', 'him', 'two', 'how', 'its', 'who', 'oil', 'sit', 'set', 'run', 'eat', 'far', 'sea', 'eye', 'ask', 'put', 'end', 'why', 'let', 'say', 'she', 'may', 'try', 'own', 'too', 'any', 'yet', 'way', 'use', 'yes', 'has', 'his', 'her', 'him'
-            }
+            # NLTK English stopwords
+            try:
+                english_stops = set(stopwords.words('english'))
+            except:
+                english_stops = set()
             
-            filtered_words = [w for w in words if w.lower() not in noise_words and w.lower() not in common_stops]
-            word_counts = Counter(filtered_words)
+            # Final filtering
+            final_words = [w for w in filtered_tokens 
+                          if w.lower() not in noise_words 
+                          and w.lower() not in english_stops 
+                          and len(w) >= 3]
+            
+            word_counts = Counter(final_words)
+            
+            print(f"📊 Analysis mode '{analysis_mode}': Found {len(final_words)} words, top frequencies: {dict(word_counts.most_common(5))}")
             
             # Create word frequency records with enhanced processing
             word_data = []

@@ -4,7 +4,9 @@
 
 This is an **AI-Powered Text Analysis Platform** designed to analyze user queries, context, and AI responses using advanced NLP techniques. The application combines proven word cloud visualization with robust backend processing for large-scale data analysis.
 
-**Core Function**: Upload CSV files containing query-response pairs → Process with NLTK and LLM analysis → Generate interactive visualizations and insights → Export comprehensive reports.
+**Core Function**: Upload CSV files containing query-response pairs → Process with advanced NLTK analysis (POS tagging, sentiment, entities) → Generate interactive word clouds with mode-specific filtering → Export comprehensive reports.
+
+**🌟 Latest Enhancement**: NLTK-powered Part-of-Speech tagging enables precise word categorization for analysis modes (verbs, nouns, adjectives, emotions).
 
 ## Directory Structure & Responsibilities
 
@@ -223,4 +225,33 @@ How this connects to other parts of the system
 
 **Remember**: This is an AI-driven development project. Every AI working on this codebase should be able to understand the complete system architecture and current implementation status from these documentation files.
 
-*Last Updated: Initial creation*
+## 🚀 **Current System Status (December 2024)**
+
+### **✅ Production Ready Components**
+- **Frontend**: Deployed on Vercel with auto-deployment from GitHub
+- **Backend**: Deployed on Railway with PostgreSQL database  
+- **CORS**: Fixed for cross-origin communication between Vercel and Railway
+- **Word Cloud Generation**: Enhanced with NLTK Part-of-Speech tagging
+- **Database**: PostgreSQL with full data persistence working
+
+### **🆕 Latest Enhancements (v2.5.0)**
+- **NLTK Analysis Modes**: True differentiation between analysis modes:
+  - `all`: Meaningful words (nouns, verbs, adjectives, adverbs)
+  - `verbs/action`: Action words only using POS tag filtering
+  - `nouns`: Noun phrases only
+  - `adjectives`: Descriptive words only
+  - `emotions`: Emotion-related words with enhanced keyword detection
+- **Enhanced Filtering**: NLTK stopwords + comprehensive user exclusions
+- **Debug Logging**: Analysis mode processing verification in production
+- **Force Regeneration**: API endpoints to clear cached word frequencies
+
+### **🔧 Infrastructure Status**
+- **GitHub Actions**: Streamlined deployment workflow for both platforms
+- **Environment Variables**: Production configuration verified
+- **API Documentation**: Live Swagger docs at production URL
+- **Database Tables**: Verified creation and data persistence
+
+### **🎯 Ready for Testing**
+The application is now production-ready with enhanced NLTK processing. Users should see distinct differences between word cloud analysis modes.
+
+*Last Updated: December 2024 - NLTK Analysis Enhancement*
