@@ -247,6 +247,8 @@ export interface WordCloudFilters {
   dateRange?: { start: Date; end: Date };
   questionType?: string;
   complexityRange?: [number, number];
+  excludeWords?: string[];
+  maxWords?: number;
 }
 
 export interface WordCloudData {
