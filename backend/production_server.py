@@ -31,7 +31,10 @@ def configure_production_middleware(application: FastAPI):
     # CORS - Allow your Vercel frontend domain
     cors_origins = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else [
         "http://localhost:3000",  # Development
-        "https://your-app-name.vercel.app",  # Production - UPDATE THIS
+        "http://localhost:3001",  # Development (alternate port)
+        "https://ai-text-analysis-platform.vercel.app",  # Production
+        "https://ai-text-analysis-platform-git-main.vercel.app",  # Vercel branch deploys
+        "https://ai-text-analysis-platform-amclaughlin2005.vercel.app",  # User-specific URL
     ]
     
     application.add_middleware(
