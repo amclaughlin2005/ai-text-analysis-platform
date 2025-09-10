@@ -3,161 +3,125 @@
 import Link from 'next/link';
 import { 
   BarChart3, 
-  Brain, 
   FileText, 
   MessageSquare,
   ArrowRight,
   Upload,
-  Zap
+  Database
 } from 'lucide-react';
 
 export default function LandingPage() {
   return (
-    <div className="bg-gray-50">
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Welcome Section */}
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto px-6 py-16">
+        {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Text Analysis Platform
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Analyze query-response data with advanced NLTK processing and interactive visualizations. 
-            Upload datasets, generate insights, and create comprehensive reports.
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">
+            AI Text Analysis Platform
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Internal tool for analyzing legal research data and generating insights
           </p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        {/* Main Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Link 
             href="/dashboard"
-            className="group bg-white p-8 rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-lg transition-all duration-300"
+            className="group bg-white p-6 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
           >
-            <div className="flex items-center mb-4">
-              <div className="p-3 bg-primary-100 rounded-lg mr-4 group-hover:bg-primary-200 transition-colors">
-                <Upload className="h-8 w-8 text-primary-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-                  Upload Dataset
-                </h3>
-                <p className="text-gray-600">
-                  Upload CSV files with query-response data for analysis
-                </p>
-              </div>
+            <div className="p-3 bg-blue-100 rounded-lg w-fit mb-4 group-hover:bg-blue-200 transition-colors">
+              <BarChart3 className="h-6 w-6 text-blue-600" />
             </div>
-            <div className="flex items-center text-primary-600 group-hover:text-primary-700">
-              <span className="text-sm font-medium">Go to Dashboard</span>
-              <ArrowRight className="h-4 w-4 ml-2" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics Dashboard</h3>
+            <p className="text-gray-600 text-sm mb-4">View metrics, sentiment analysis, and insights</p>
+            <div className="flex items-center text-blue-600 text-sm font-medium">
+              <span>Open Dashboard</span>
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </div>
+          </Link>
+
+          <Link 
+            href="/upload"
+            className="group bg-white p-6 rounded-lg border border-gray-200 hover:border-green-300 hover:shadow-md transition-all"
+          >
+            <div className="p-3 bg-green-100 rounded-lg w-fit mb-4 group-hover:bg-green-200 transition-colors">
+              <Upload className="h-6 w-6 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Dataset</h3>
+            <p className="text-gray-600 text-sm mb-4">Upload CSV files for analysis</p>
+            <div className="flex items-center text-green-600 text-sm font-medium">
+              <span>Upload Files</span>
+              <ArrowRight className="h-4 w-4 ml-1" />
             </div>
           </Link>
 
           <Link
             href="/wordcloud-demo"
-            className="group bg-white p-8 rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-lg transition-all duration-300"
+            className="group bg-white p-6 rounded-lg border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all"
           >
-            <div className="flex items-center mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200 transition-colors">
-                <MessageSquare className="h-8 w-8 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  Word Cloud Demo
-                </h3>
-                <p className="text-gray-600">
-                  Interactive word cloud with multiple analysis modes
-                </p>
-              </div>
+            <div className="p-3 bg-purple-100 rounded-lg w-fit mb-4 group-hover:bg-purple-200 transition-colors">
+              <MessageSquare className="h-6 w-6 text-purple-600" />
             </div>
-            <div className="flex items-center text-blue-600 group-hover:text-blue-700">
-              <span className="text-sm font-medium">Try Demo</span>
-              <ArrowRight className="h-4 w-4 ml-2" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Word Cloud Demo</h3>
+            <p className="text-gray-600 text-sm mb-4">Interactive word visualization</p>
+            <div className="flex items-center text-purple-600 text-sm font-medium">
+              <span>View Demo</span>
+              <ArrowRight className="h-4 w-4 ml-1" />
             </div>
           </Link>
 
-          <div className="bg-white p-8 rounded-xl border border-gray-200 opacity-60">
-            <div className="flex items-center mb-4">
-              <div className="p-3 bg-gray-100 rounded-lg mr-4">
-                <BarChart3 className="h-8 w-8 text-gray-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-500">
-                  Analytics Dashboard
-                </h3>
-                <p className="text-gray-400">
-                  Comprehensive analytics and reporting tools
-                </p>
-              </div>
+          <Link 
+            href="/legal-wordcloud"
+            className="group bg-white p-6 rounded-lg border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all"
+          >
+            <div className="p-3 bg-orange-100 rounded-lg w-fit mb-4 group-hover:bg-orange-200 transition-colors">
+              <FileText className="h-6 w-6 text-orange-600" />
             </div>
-            <div className="flex items-center text-gray-400">
-              <span className="text-sm font-medium">Coming Soon</span>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Legal Analysis</h3>
+            <p className="text-gray-600 text-sm mb-4">Legal research and case analysis</p>
+            <div className="flex items-center text-orange-600 text-sm font-medium">
+              <span>Analyze Data</span>
+              <ArrowRight className="h-4 w-4 ml-1" />
             </div>
-          </div>
+          </Link>
         </div>
 
-        {/* Current Features */}
-        <div className="bg-white rounded-xl border border-gray-200 p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Current Features</h3>
+        {/* Recent Activity */}
+        <div className="mt-12 bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
+            <Link 
+              href="/dashboard" 
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              View All →
+            </Link>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Available Features */}
-            <div>
-              <h4 className="text-lg font-semibold text-green-600 mb-4 flex items-center">
-                <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
-                Available Now
-              </h4>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <MessageSquare className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
-                  <span className="text-gray-700">Interactive word cloud visualization with 6 analysis modes</span>
-                </li>
-                <li className="flex items-start">
-                  <Zap className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
-                  <span className="text-gray-700">Real-time search and filtering capabilities</span>
-                </li>
-                <li className="flex items-start">
-                  <FileText className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
-                  <span className="text-gray-700">Multi-format export (PNG, SVG, PDF, CSV, JSON)</span>
-                </li>
-              </ul>
+          <div className="space-y-4">
+            <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+              <div className="p-2 bg-green-100 rounded-md mr-3">
+                <Database className="h-4 w-4 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">Brett Schrieber Legal Questions</p>
+                <p className="text-xs text-gray-600">84 questions processed • Active dataset</p>
+              </div>
+              <span className="text-xs text-gray-500">Active</span>
             </div>
-
-            {/* Coming Soon */}
-            <div>
-              <h4 className="text-lg font-semibold text-amber-600 mb-4 flex items-center">
-                <div className="h-2 w-2 bg-amber-500 rounded-full mr-2"></div>
-                Coming Soon
-              </h4>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <Upload className="h-5 w-5 text-amber-500 mt-0.5 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">CSV dataset upload and processing</span>
-                </li>
-                <li className="flex items-start">
-                  <Brain className="h-5 w-5 text-amber-500 mt-0.5 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">NLTK sentiment analysis and topic modeling</span>
-                </li>
-                <li className="flex items-start">
-                  <BarChart3 className="h-5 w-5 text-amber-500 mt-0.5 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">Advanced analytics dashboard</span>
-                </li>
-              </ul>
+            
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">Upload a dataset to get started with analysis</p>
+              <Link 
+                href="/upload" 
+                className="inline-flex items-center mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Dataset
+              </Link>
             </div>
           </div>
-        </div>
-
-        {/* System Status */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-center mb-3">
-            <div className="h-3 w-3 bg-blue-500 rounded-full mr-3 animate-pulse"></div>
-            <h4 className="text-lg font-semibold text-blue-900">System Status</h4>
-          </div>
-          <p className="text-blue-800 mb-3">
-            Platform is in active development. Word cloud demo is fully functional with mock data.
-          </p>
-          <p className="text-sm text-blue-700">
-            Backend API and database integration in progress. Authentication temporarily disabled for development.
-          </p>
         </div>
       </div>
     </div>
