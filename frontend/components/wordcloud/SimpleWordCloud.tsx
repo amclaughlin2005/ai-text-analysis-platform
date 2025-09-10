@@ -588,6 +588,7 @@ export default function SimpleWordCloud({
             mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
             height={500}
             width={800}
+            words={words} // Pass the words from SimpleWordCloud
             onWordClick={(word) => {
               setSelectedWord(selectedWord === word ? null : word);
               if (onWordClick) {

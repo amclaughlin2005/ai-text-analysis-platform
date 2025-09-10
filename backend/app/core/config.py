@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     
     # Processing Limits
     MAX_UPLOAD_SIZE_MB: int = 100
+    MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB in bytes
+    UPLOAD_DIR: str = "uploads"
     MAX_QUESTIONS_PER_DATASET: int = 50000
     BATCH_PROCESSING_SIZE: int = 100
     MAX_CONCURRENT_JOBS: int = 5

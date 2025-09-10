@@ -17,6 +17,7 @@ interface ModernWordCloudProps {
   height?: number;
   width?: number;
   onWordClick?: (word: string) => void;
+  words?: WordData[]; // Optional: if provided, skip API call
 }
 
 interface PositionedWord extends WordData {
@@ -33,7 +34,8 @@ export default function ModernWordCloud({
   className = '',
   height = 500,
   width = 800,
-  onWordClick
+  onWordClick,
+  words: propWords
 }: ModernWordCloudProps) {
   const [words, setWords] = useState<PositionedWord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -239,8 +241,17 @@ export default function ModernWordCloud({
   };
 
   useEffect(() => {
-    fetchWordCloudData();
-  }, [datasetId, mode]);
+    if (propWords && propWords.length > 0) {
+      // Use provided words instead of fetching
+      console.log('🎯 Using provided words:', propWords.length);
+      setLoading(false);
+      setError(null);
+      processWordPositions(propWords);
+    } else {
+      // Fallback to API fetch
+      fetchWordCloudData();
+    }
+  }, [datasetId, mode, propWords]);
 
   if (loading) {
     return (
