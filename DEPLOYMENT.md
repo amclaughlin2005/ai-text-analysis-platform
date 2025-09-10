@@ -11,12 +11,13 @@ This guide walks you through deploying the AI Text Analysis Platform to producti
 
 ## 📋 Pre-Deployment Checklist
 
-### ✅ **Development Complete**
+### ✅ **Development Complete (v3.0.0 - Unified Architecture)**
 - [x] Frontend React application built and tested
-- [x] Backend FastAPI with database persistence
-- [x] Word cloud visualization with column filtering
-- [x] CSV upload and processing
-- [x] Noise word filtering system
+- [x] **UNIFIED** Backend FastAPI with robust data upload & storage
+- [x] Word cloud visualization with NLTK analysis modes
+- [x] **SECURE** CSV upload with comprehensive validation
+- [x] **CONSOLIDATED** Server architecture with service layer
+- [x] End-to-end testing framework implemented
 
 ### 🔧 **Production Preparation**
 - [ ] Environment variables configured
@@ -199,20 +200,28 @@ git push -u origin main
 
 ## 🚂 **Step 5: Railway Backend Deployment**
 
-### **Railway Configuration (`railway.toml`)**
+### **Railway Configuration (`railway.toml`) - UPDATED FOR UNIFIED ARCHITECTURE**
 ```toml
 [build]
 builder = "nixpacks"
-buildCommand = "pip install -r requirements.txt"
 
 [deploy]
-startCommand = "python api_server_db.py"
-healthcheckPath = "/health"
+startCommand = "python unified_production_server.py"
+healthcheckPath = "/production/health"
 healthcheckTimeout = 300
+restartPolicyType = "always"
 
 [env]
-PORT = "8000"
-ENVIRONMENT = "production"
+# Application Configuration
+APP_ENV = { default = "production" }
+DEBUG = { default = "false" }
+
+# CORS Origins - Your Vercel domains
+CORS_ORIGINS = { default = "https://ai-text-analysis-platform.vercel.app,https://wordcloud-six-eta.vercel.app" }
+
+# Upload Configuration
+UPLOAD_DIR = { default = "/app/uploads" }
+MAX_FILE_SIZE = { default = "104857600" }  # 100MB in bytes
 ```
 
 ### **Production Requirements (`requirements.txt`)**
@@ -342,7 +351,47 @@ app.add_middleware(
 
 ---
 
-## 📊 **Step 8: Monitoring & Maintenance**
+## 🧪 **Step 8: Testing the Unified System**
+
+### **Automated End-to-End Testing**
+```bash
+# Run comprehensive system tests
+cd backend
+python test_unified_system.py
+```
+
+### **Test Coverage**
+- ✅ Server connectivity and health checks
+- ✅ Dataset upload with real CSV files  
+- ✅ Word frequency generation with NLTK
+- ✅ Data retrieval and deletion
+- ✅ Both local development and production environments
+
+### **Health Check Endpoints**
+- **Basic Health**: `/health` - Simple health status
+- **Production Health**: `/production/health` - Detailed system information
+- **System Info**: `/production/info` - Environment and feature details
+
+### **Manual Testing Checklist**
+1. **Frontend Deployment**
+   - ✅ Landing page loads correctly
+   - ✅ Dataset upload form works
+   - ✅ Word cloud visualization displays
+
+2. **Backend API Testing**
+   - ✅ `/api/datasets/` - List datasets
+   - ✅ `/api/datasets/upload` - Upload CSV
+   - ✅ `/api/datasets/{id}` - Get dataset details
+   - ✅ `/api/datasets/{id}/word-frequencies` - Generate word clouds
+
+3. **Database Integration**
+   - ✅ Data persists across requests
+   - ✅ Transactions rollback on errors
+   - ✅ PostgreSQL connection stable
+
+---
+
+## 📊 **Step 9: Monitoring & Maintenance**
 
 ### **Health Checks**
 - **Frontend**: https://your-app.vercel.app
