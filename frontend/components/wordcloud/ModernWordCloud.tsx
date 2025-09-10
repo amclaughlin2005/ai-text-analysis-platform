@@ -163,8 +163,21 @@ export default function ModernWordCloud({
       const data = await response.json();
       console.log('Word cloud data:', data);
 
-      if (data.success && data.words && data.words.length > 0) {
-        processWordPositions(data.words);
+      // Handle different response formats
+      let wordsArray: any[] = [];
+      
+      if (data.success && data.data && Array.isArray(data.data)) {
+        wordsArray = data.data;
+      } else if (data.success && data.words && Array.isArray(data.words)) {
+        wordsArray = data.words;
+      } else if (data.words && Array.isArray(data.words)) {
+        wordsArray = data.words;
+      } else if (Array.isArray(data)) {
+        wordsArray = data;
+      }
+
+      if (wordsArray.length > 0) {
+        processWordPositions(wordsArray);
       } else {
         setWords([]);
       }

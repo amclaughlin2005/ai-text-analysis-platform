@@ -347,14 +347,25 @@ export default function SimpleWordCloud({
           const data = await response.json();
           console.log('API Response:', data);
           
-          if (data.words && Array.isArray(data.words)) {
-            const apiWords = data.words.map((w: any) => ({
+          // Handle different response formats
+          let wordsArray: any[] = [];
+          
+          if (data.success && data.data && Array.isArray(data.data)) {
+            wordsArray = data.data;
+          } else if (data.words && Array.isArray(data.words)) {
+            wordsArray = data.words;
+          } else if (Array.isArray(data)) {
+            wordsArray = data;
+          }
+          
+          if (wordsArray.length > 0) {
+            const apiWords = wordsArray.map((w: any) => ({
               word: w.word,
               frequency: w.frequency,
-              sentiment: w.sentiment || w.sentiment_association,
+              sentiment: w.sentiment || w.sentiment_association || 'neutral',
               category: mode,
-              size: w.size || (w.frequency / 100),
-              color: getSentimentColor(w.sentiment || w.sentiment_association)
+              size: w.size || Math.max(0.1, w.frequency / 100),
+              color: getSentimentColor(w.sentiment || w.sentiment_association || 'neutral')
             }));
             
             console.log('✅ Using API data:', apiWords.length, 'words');
