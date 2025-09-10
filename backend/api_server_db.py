@@ -542,6 +542,71 @@ def test_wordcloud_generation(dataset_id: str, mode: str = "all", max_words: int
             "dataset_id": dataset_id
         }
 
+@app.post("/api/database/initialize")
+def initialize_database_tables():
+    """Manually initialize database tables and settings"""
+    try:
+        print("🚀 Manual database initialization requested...")
+        
+        # Check connection first
+        if not check_database_connection():
+            return {
+                "status": "error", 
+                "message": "Database connection failed"
+            }
+        
+        # Initialize database
+        success = DatabaseInitService.initialize_database()
+        
+        if success:
+            stats = DatabaseUtilityService.get_database_stats()
+            return {
+                "status": "success",
+                "message": "Database initialized successfully",
+                "tables_created": True,
+                "settings_configured": True,
+                "database_stats": stats,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Database initialization failed",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Database initialization error: {str(e)}",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+@app.get("/api/database/tables")
+def list_database_tables():
+    """List all tables in the database"""
+    try:
+        from sqlalchemy import inspect
+        from database import engine
+        
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        
+        return {
+            "status": "success",
+            "tables": tables,
+            "table_count": len(tables),
+            "expected_tables": ["datasets", "questions", "word_frequencies", "analysis_jobs", "llm_analysis_cache", "application_settings"],
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to list tables: {str(e)}",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
 @app.get("/api/test-database-connection")
 def test_database_connection():
     """Test database connectivity"""
