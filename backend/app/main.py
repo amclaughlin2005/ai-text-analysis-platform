@@ -108,7 +108,7 @@ async def root():
     """Root endpoint with API information"""
     return {
         "message": "AI-Powered Text Analysis Platform API",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "status": "active",
         "features": [
             "NLTK text analysis",
