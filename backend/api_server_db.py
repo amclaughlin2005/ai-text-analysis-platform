@@ -47,6 +47,8 @@ class WordCloudRequest(BaseModel):
     mode: str = "all"
     selected_columns: Optional[List[int]] = None
     filters: Optional[Dict[str, Any]] = None
+    exclude_words: Optional[List[str]] = None  # Custom excluded words for this request
+    max_words: Optional[int] = 50
 
 class DatasetResponse(BaseModel):
     id: str
@@ -352,10 +354,11 @@ def generate_wordcloud(request: WordCloudRequest, db: Session = Depends(get_db))
             raise HTTPException(status_code=404, detail="Dataset not found")
         
         # Get existing word frequencies or generate new ones
+        max_words = request.max_words or 50
         word_freqs = WordFrequencyService.get_word_frequencies(
             dataset_id=request.dataset_id,
             analysis_mode=request.mode,
-            limit=50
+            limit=max_words
         )
         
         if not word_freqs:
@@ -468,7 +471,7 @@ def get_application_settings(public_only: bool = True):
     try:
         # Get noise words setting
         noise_words = DatabaseUtilityService.get_setting('noise_words', [
-            'details', 'page', 'https', 'filevineapp', 'docviewer', 'view', 'source', 'embedding'
+            'details', 'page', 'https', 'filevineapp', 'docviewer', 'view', 'source', 'embedding', 'docwebviewer', 'com', 'www', 'html', 'link', 'url', 'href', 'retrieved', 'matching', 'appeared'
         ])
         
         max_words = DatabaseUtilityService.get_setting('max_words_per_cloud', 50)
@@ -485,6 +488,25 @@ def get_application_settings(public_only: bool = True):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve settings: {str(e)}")
+
+@app.post("/api/settings/noise-words")
+def update_noise_words(noise_words: List[str], db: Session = Depends(get_db)):
+    """Update excluded words configuration"""
+    try:
+        # Update the noise words setting
+        success = DatabaseUtilityService.update_setting('noise_words', noise_words)
+        
+        if success:
+            return {
+                "status": "success",
+                "message": f"Updated noise words list with {len(noise_words)} words",
+                "noise_words": noise_words
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update noise words setting")
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update noise words: {str(e)}")
 
 @app.get("/api/test-database-connection")
 def test_database_connection():

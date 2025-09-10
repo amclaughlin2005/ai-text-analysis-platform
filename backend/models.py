@@ -418,9 +418,9 @@ class ApplicationSettings(Base):
 INITIAL_SETTINGS = [
     {
         'setting_key': 'noise_words',
-        'setting_value': ['details', 'page', 'https', 'filevineapp', 'docviewer', 'view', 'source', 'embedding'],
+        'setting_value': ['details', 'page', 'https', 'filevineapp', 'docviewer', 'view', 'source', 'embedding', 'docwebviewer', 'com', 'www', 'html', 'link', 'url', 'href', 'retrieved', 'matching', 'appeared'],
         'setting_type': 'json',
-        'description': 'Words to always exclude from word cloud analysis',
+        'description': 'Words to always exclude from word cloud analysis (user-specified exclusions)',
         'is_public': True
     },
     {

@@ -387,17 +387,37 @@ class WordFrequencyService:
             filtered_words = [w for w in words if w.lower() not in noise_words and w.lower() not in common_stops]
             word_counts = Counter(filtered_words)
             
-            # Create word frequency records
+            # Create word frequency records with enhanced processing
             word_data = []
             max_freq = max(word_counts.values()) if word_counts else 1
             
+            # Try to use NLTK processor for advanced sentiment analysis
+            try:
+                from app.analysis.nltk_processor import get_nltk_processor
+                nltk_processor = get_nltk_processor()
+                use_advanced_sentiment = True
+            except ImportError:
+                use_advanced_sentiment = False
+            
             for word, frequency in word_counts.most_common(50):  # Top 50 words
-                # Simple sentiment analysis
-                sentiment = 'neutral'
-                if word.lower() in ['excellent', 'great', 'good', 'helpful', 'satisfied', 'perfect', 'amazing']:
-                    sentiment = 'positive'
-                elif word.lower() in ['bad', 'terrible', 'awful', 'frustrated', 'angry', 'disappointed']:
-                    sentiment = 'negative'
+                # Enhanced sentiment analysis
+                if use_advanced_sentiment:
+                    # Use NLTK processor for more accurate sentiment
+                    sentiment_result = nltk_processor.sentiment_analysis(word)
+                    sentiment_score = sentiment_result.get('compound_score', 0.0)
+                    if sentiment_score >= 0.05:
+                        sentiment = 'positive'
+                    elif sentiment_score <= -0.05:
+                        sentiment = 'negative'
+                    else:
+                        sentiment = 'neutral'
+                else:
+                    # Fallback simple sentiment analysis
+                    sentiment = 'neutral'
+                    if word.lower() in ['excellent', 'great', 'good', 'helpful', 'satisfied', 'perfect', 'amazing']:
+                        sentiment = 'positive'
+                    elif word.lower() in ['bad', 'terrible', 'awful', 'frustrated', 'angry', 'disappointed']:
+                        sentiment = 'negative'
                 
                 word_freq = WordFrequency(
                     dataset_id=dataset_id,
