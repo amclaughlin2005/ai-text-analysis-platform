@@ -26,7 +26,7 @@ import {
   FieldSuggestions,
   AnalysisPreview
 } from '../../lib/types';
-import { schemaApi } from '../../lib/api';
+import { SchemaService } from '../../lib/api';
 
 interface FlexibleDataUploadProps {
   onUploadComplete?: (datasetId: string, schema: DataSchema) => void;
@@ -71,7 +71,7 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
       setDatasetId(mockDatasetId);
 
       // Detect schema
-      const response = await schemaApi.detectSchema(file, mockDatasetId);
+      const response = await SchemaService.detectSchema(file, mockDatasetId);
       setSchema(response.schema);
       
       // Initialize field mappings
@@ -85,7 +85,7 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
       setFieldMappings(initialMappings);
 
       // Get AI suggestions
-      const suggestionsResponse = await schemaApi.getSuggestions(mockDatasetId);
+      const suggestionsResponse = await SchemaService.getSuggestions(mockDatasetId);
       setSuggestions(suggestionsResponse.suggestions);
 
       setUploadStep('schema');
@@ -124,7 +124,7 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
 
     setIsLoading(true);
     try {
-      const previewResponse = await schemaApi.previewAnalysis(datasetId, analysisConfig);
+      const previewResponse = await SchemaService.previewAnalysis(datasetId, analysisConfig);
       setPreview(previewResponse.preview);
       setUploadStep('preview');
     } catch (error) {
@@ -145,7 +145,7 @@ export default function FlexibleDataUpload({ onUploadComplete }: FlexibleDataUpl
         analysis_config: analysisConfig
       };
 
-      await schemaApi.saveMapping(mappingRequest);
+      await SchemaService.saveMapping(mappingRequest);
       toast.success('Configuration saved successfully!');
       
       if (onUploadComplete) {

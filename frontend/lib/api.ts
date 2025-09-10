@@ -312,12 +312,13 @@ export const downloadBlob = (blob: Blob, filename: string) => {
   window.URL.revokeObjectURL(url);
 };
 
-// Schema Detection API
-export const schemaApi = {
+// Schema Detection Service
+export class SchemaService {
   /**
    * Detect schema from uploaded file
    */
-  async detectSchema(file: File, datasetId: string): Promise<SchemaDetectionResponse> {
+  static async detectSchema(file: File, datasetId: string, token?: string): Promise<SchemaDetectionResponse> {
+    const client = createApiClient(token);
     const formData = new FormData();
     formData.append('file', file);
     formData.append('dataset_id', datasetId);
@@ -329,40 +330,44 @@ export const schemaApi = {
     });
     
     return response.data;
-  },
+  }
 
   /**
    * Get detected schema for a dataset
    */
-  async getSchema(datasetId: string): Promise<{ success: boolean; schema: DataSchema }> {
+  static async getSchema(datasetId: string, token?: string): Promise<{ success: boolean; schema: DataSchema }> {
+    const client = createApiClient(token);
     const response = await client.get<{ success: boolean; schema: DataSchema }>(`/api/schema/${datasetId}`);
     return response.data;
-  },
+  }
 
   /**
    * Save field mappings and analysis configuration
    */
-  async saveMapping(mappingRequest: SchemaMappingRequest): Promise<{ success: boolean; schema: DataSchema }> {
+  static async saveMapping(mappingRequest: SchemaMappingRequest, token?: string): Promise<{ success: boolean; schema: DataSchema }> {
+    const client = createApiClient(token);
     const response = await client.post<{ success: boolean; schema: DataSchema }>('/api/schema/mapping', mappingRequest);
     return response.data;
-  },
+  }
 
   /**
    * Get AI-powered field suggestions
    */
-  async getSuggestions(datasetId: string): Promise<{ success: boolean; suggestions: FieldSuggestions }> {
+  static async getSuggestions(datasetId: string, token?: string): Promise<{ success: boolean; suggestions: FieldSuggestions }> {
+    const client = createApiClient(token);
     const response = await client.get<{ success: boolean; suggestions: FieldSuggestions }>(`/api/schema/suggestions/${datasetId}`);
     return response.data;
-  },
+  }
 
   /**
    * Preview analysis configuration
    */
-  async previewAnalysis(datasetId: string, analysisConfig: AnalysisConfigRequest): Promise<{ success: boolean; preview: AnalysisPreview }> {
+  static async previewAnalysis(datasetId: string, analysisConfig: AnalysisConfigRequest, token?: string): Promise<{ success: boolean; preview: AnalysisPreview }> {
+    const client = createApiClient(token);
     const response = await client.post<{ success: boolean; preview: AnalysisPreview }>('/api/schema/preview', {
       dataset_id: datasetId,
       ...analysisConfig
     });
     return response.data;
   }
-};
+}
