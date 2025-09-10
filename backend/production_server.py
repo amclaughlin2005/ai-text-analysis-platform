@@ -128,7 +128,7 @@ configure_production_middleware(app)
 
 # Production startup
 if __name__ == "__main__":
-    # Get port from Railway environment
+    # Get port from Railway environment (Railway auto-assigns this)
     port = int(os.getenv("PORT", 8000))
     
     logger.info("🚀 Starting AI Text Analysis Platform - Production Server")
