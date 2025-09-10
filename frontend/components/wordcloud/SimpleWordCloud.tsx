@@ -252,8 +252,7 @@ export default function SimpleWordCloud({
   const [retryCount, setRetryCount] = useState(0);
   const [viewMode, setViewMode] = useState<'cloud' | 'text'>('cloud');
   
-  // Force legal dataset to use filtered data immediately
-  const isLegalDataset = datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9';
+  // All datasets now use the Railway API with proper column filtering
 
   // Use ref to track if request is in progress
   const isRequestingRef = useRef(false);
@@ -277,65 +276,9 @@ export default function SimpleWordCloud({
       console.log('🚀 fetchWordCloudData called with datasetId:', datasetId, 'mode:', mode, 'columns:', selectedColumns);
       
       try {        
-        console.log('🔍 isLegalDataset check:', datasetId, '===', '06a8437a-27e8-412f-a530-6cb04f7b6dc9', '→', isLegalDataset);
+        // Use Railway API for ALL datasets - it handles column filtering properly
+        console.log('🚀 Using Railway API for all datasets with column filtering');
         
-        if (isLegalDataset) {
-          console.log('🏛️ LEGAL DATASET DETECTED! Trying to fetch filtered legal data from API');
-          console.log('📊 Dataset ID:', datasetId);
-          console.log('📊 Column filter:', selectedColumns);
-          console.log('📊 Mode:', mode);
-          
-          try {
-            // FORCE call to the dedicated legal data API on port 8002
-            const columnsParam = selectedColumns.length === 2 ? 'all' : 
-                                selectedColumns.includes(1) ? 'questions' : 'responses';
-            const apiUrl = `http://localhost:8002/wordcloud?mode=${mode}&columns=${columnsParam}`;
-            console.log('🔗 CALLING LEGAL API:', apiUrl);
-            
-            const legalApiResponse = await fetch(apiUrl);
-            console.log('📡 Legal API Response Status:', legalApiResponse.status, legalApiResponse.statusText);
-            
-            if (legalApiResponse.ok) {
-              const legalData = await legalApiResponse.json();
-              console.log('✅ FILTERED LEGAL API RESPONSE:', legalData);
-              console.log('📊 Words returned:', legalData.words?.length || 'none');
-              
-              if (legalData.words && Array.isArray(legalData.words)) {
-                const apiWords = legalData.words.map((w: any) => ({
-                  word: w.word,
-                  frequency: w.frequency,
-                  sentiment: w.sentiment,
-                  category: mode,
-                  size: w.size || (w.frequency / Math.max(...legalData.words.map((word: any) => word.frequency))),
-                  color: getSentimentColor(w.sentiment)
-                }));
-                
-                console.log('✅ SUCCESS! Using filtered legal API data:', apiWords.length, 'clean terms');
-                console.log('🎯 First 3 words:', apiWords.slice(0, 3).map((w: any) => w.word));
-                setWords(apiWords);
-                setLoading(false);
-                isRequestingRef.current = false;
-                return;
-              } else {
-                console.error('❌ API response missing words array');
-              }
-            } else {
-              console.error('❌ Legal API request failed:', legalApiResponse.status, await legalApiResponse.text());
-            }
-          } catch (legalApiError) {
-            console.error('❌ Legal API FETCH ERROR:', legalApiError);
-          }
-          
-          // Fallback to hardcoded filtered data if API fails
-          const filteredLegalData = generateFilteredLegalDataByColumns(mode, selectedColumns);
-          console.log('✅ Using fallback legal data with noise filters:', filteredLegalData.length, 'clean terms');
-          setWords(filteredLegalData);
-          setLoading(false);
-          isRequestingRef.current = false;
-          return;
-        }
-        
-        // For other datasets, use the regular API
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
         console.log('🚀 Making API call with selectedColumns:', selectedColumns);
         const apiPayload = {
