@@ -485,7 +485,7 @@ export default function DatasetList({
                             if (dataset.id === '06a8437a-27e8-412f-a530-6cb04f7b6dc9') {
                               window.open('/legal-wordcloud', '_blank');
                             } else {
-                              window.open(`/wordcloud-demo?dataset=${dataset.id}`, '_blank');
+                              window.open(`/wordcloud?dataset=${dataset.id}`, '_blank');
                             }
                           }}
                           className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"

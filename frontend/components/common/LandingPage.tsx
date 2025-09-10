@@ -57,16 +57,16 @@ export default function LandingPage() {
           </Link>
 
           <Link
-            href="/wordcloud-demo"
+            href="/wordcloud"
             className="group bg-white p-6 rounded-lg border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all"
           >
             <div className="p-3 bg-purple-100 rounded-lg w-fit mb-4 group-hover:bg-purple-200 transition-colors">
               <MessageSquare className="h-6 w-6 text-purple-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Word Cloud Demo</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Word Cloud</h3>
             <p className="text-gray-600 text-sm mb-4">Interactive word visualization</p>
             <div className="flex items-center text-purple-600 text-sm font-medium">
-              <span>View Demo</span>
+              <span>Analyze Text</span>
               <ArrowRight className="h-4 w-4 ml-1" />
             </div>
           </Link>

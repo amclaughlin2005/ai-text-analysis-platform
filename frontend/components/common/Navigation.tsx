@@ -22,8 +22,8 @@ const navigationItems = [
     icon: BarChart3,
   },
   {
-    name: 'Word Cloud Demo',
-    href: '/wordcloud-demo',
+    name: 'Word Cloud',
+    href: '/wordcloud',
     icon: MessageSquare,
   }
 ];

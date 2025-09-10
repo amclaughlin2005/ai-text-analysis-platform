@@ -254,7 +254,7 @@ export default function DatasetUploadPage() {
             
             <div className="flex gap-3 mt-4">
               <button
-                onClick={() => window.open(`/wordcloud-demo?dataset=${selectedDataset.id}`, '_blank')}
+                onClick={() => window.open(`/wordcloud?dataset=${selectedDataset.id}`, '_blank')}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
               >
                 Open Word Cloud

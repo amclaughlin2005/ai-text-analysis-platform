@@ -20,7 +20,7 @@
 
 4. **Open your browser**:
    - Main app: http://localhost:3000
-   - Word cloud demo: http://localhost:3000/wordcloud-demo
+   - Word cloud: http://localhost:3000/wordcloud
 
 ## Environment Variables
 
@@ -114,7 +114,7 @@ npm run format
 
 ## Testing the Word Cloud
 
-1. Navigate to: http://localhost:3000/wordcloud-demo
+1. Navigate to: http://localhost:3000/wordcloud
 2. Try different analysis modes (All, Verbs, Themes, etc.)
 3. Test interactive features:
    - Click words to select them

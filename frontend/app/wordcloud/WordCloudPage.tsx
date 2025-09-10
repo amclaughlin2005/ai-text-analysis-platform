@@ -38,7 +38,7 @@ const ANALYSIS_MODES = [
   }
 ];
 
-export default function WordCloudDemo() {
+export default function WordCloud() {
   const [selectedMode, setSelectedMode] = useState<string>('all');
   const filters: WordCloudFilters = {};
   const [selectedWord, setSelectedWord] = useState<string | null>(null);

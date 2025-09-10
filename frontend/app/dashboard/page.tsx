@@ -81,11 +81,11 @@ export default function DashboardPage() {
                   Upload New Dataset
                 </Link>
                 <Link 
-                  href="/wordcloud-demo"
+                  href="/wordcloud"
                   className="flex items-center justify-center p-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   <Cloud className="w-5 h-5 mr-2" />
-                  Word Cloud Demo
+                  Word Cloud
                 </Link>
                 <button 
                   onClick={() => setActiveTab('analytics')}
