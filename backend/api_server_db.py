@@ -629,6 +629,7 @@ def test_database_connection():
 
 if __name__ == "__main__":
     import uvicorn
-    print("🗄️  Starting Database-Powered API Server on port 8003...")
-    print("📊 Features: SQLite storage, persistent datasets, background jobs")
-    uvicorn.run(app, host="0.0.0.0", port=8003, log_level="info")
+    port = int(os.getenv("PORT", 8003))
+    print(f"🗄️  Starting Database-Powered API Server on port {port}...")
+    print("📊 Features: PostgreSQL storage, persistent datasets, background jobs, enhanced NLTK processing")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

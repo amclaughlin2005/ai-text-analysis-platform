@@ -2,5 +2,5 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python production_server.py"
+startCommand = "python api_server_db.py"
 healthcheckPath = "/health"
