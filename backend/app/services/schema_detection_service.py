@@ -11,8 +11,15 @@ import logging
 from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime, date
 from collections import Counter
-import pandas as pd
 from sqlalchemy.orm import Session
+
+# Optional pandas import
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    pd = None
 
 from ..models.data_schema import DataSchema, SchemaField, DataType, FieldRole
 from ..models.dataset import Dataset
