@@ -25,29 +25,11 @@ def fix_database_schema():
     try:
         engine = create_engine(database_url)
         
-        # List of essential columns that might be missing
+        # Most critical columns first
         essential_columns = [
+            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'processing'",
             "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS description TEXT",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS original_filename VARCHAR(255)",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS csv_headers JSON",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS csv_delimiter VARCHAR(10) DEFAULT ','",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS csv_encoding VARCHAR(20) DEFAULT 'utf-8'",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS has_header_row BOOLEAN DEFAULT TRUE",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS total_questions INTEGER DEFAULT 0",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS processed_questions INTEGER DEFAULT 0",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS valid_questions INTEGER DEFAULT 0", 
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS invalid_questions INTEGER DEFAULT 0",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS processing_started_at TIMESTAMP",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS processing_completed_at TIMESTAMP",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS organizations_count INTEGER DEFAULT 0",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT FALSE",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS progress_percentage FLOAT DEFAULT 0.0",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS status_message TEXT",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS sentiment_avg FLOAT",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS avg_question_length FLOAT",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS avg_response_length FLOAT",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS avg_complexity_score FLOAT",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS data_quality_score FLOAT"
+            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS original_filename VARCHAR(255)"
         ]
         
         with engine.connect() as conn:
