@@ -131,10 +131,10 @@ class DatasetService:
                         db=transaction_db
                     )
                     
-                    # Update dataset with processing results
-                    dataset.total_questions = questions_created
-                    dataset.status = DatasetStatus.COMPLETED
-                    dataset.processing_completed_at = datetime.utcnow()
+                    # Update dataset with processing results (using pure SQL since no dataset object)
+                    # dataset.total_questions = questions_created
+                    # dataset.status = DatasetStatus.COMPLETED  
+                    # dataset.processing_completed_at = datetime.utcnow()
                     
                     # Update job status (skipped - no analysis job created)
                     # analysis_job.status = JobStatus.COMPLETED
