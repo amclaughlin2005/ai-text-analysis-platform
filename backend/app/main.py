@@ -83,7 +83,9 @@ app = FastAPI(
 # Add security middleware
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
 
-# Add CORS middleware
+# Add CORS middleware with debugging
+print(f"🔧 CORS Origins configured: {settings.CORS_ORIGINS}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,

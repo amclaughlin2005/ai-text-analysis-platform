@@ -70,7 +70,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://your-domain.vercel.app"
+        "https://ai-text-analysis-platform.vercel.app",
+        "https://ai-text-analysis-platform-git-main.vercel.app",
+        "https://wordcloud-six-eta.vercel.app"
     ]
     
     # Allowed hosts for security
