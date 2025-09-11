@@ -29,7 +29,7 @@ class Dataset(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # User relationship
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     
     # Basic dataset information
     name = Column(String(255), nullable=False)
@@ -74,11 +74,11 @@ class Dataset(Base):
     csv_encoding = Column(String(20), default="utf-8", nullable=False)
     has_header_row = Column(Boolean, default=True, nullable=False)
     
-    # Flexible data support
-    data_format = Column(String(20), default="csv", nullable=False)  # csv, json, xml, etc.
-    schema_detected = Column(Boolean, default=False, nullable=False)
-    user_mapping_complete = Column(Boolean, default=False, nullable=False)
-    supports_flexible_analysis = Column(Boolean, default=False, nullable=False)
+    # Flexible data support (nullable for backward compatibility)
+    data_format = Column(String(20), default="csv", nullable=True)  # csv, json, xml, etc.
+    schema_detected = Column(Boolean, default=False, nullable=True)
+    user_mapping_complete = Column(Boolean, default=False, nullable=True)
+    supports_flexible_analysis = Column(Boolean, default=False, nullable=True)
     
     # Organization data (if present in CSV)
     organizations_count = Column(Integer, default=0, nullable=False)
