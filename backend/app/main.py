@@ -107,8 +107,9 @@ app.include_router(websocket_handlers.router, prefix="/ws")
 async def root():
     """Root endpoint with API information"""
     return {
-        "message": "AI-Powered Text Analysis Platform API",
-        "version": "1.0.1",
+        "message": "AI-Powered Text Analysis Platform API - LATEST DEPLOYMENT",
+        "version": "1.0.1", 
+        "deployment_timestamp": "2025-09-10T20:58:00Z",
         "status": "active",
         "features": [
             "NLTK text analysis",
