@@ -60,15 +60,19 @@ async def detect_schema(
         # Read file content with size limit
         file_content = await file.read()
         
-        # Check file size (allow up to 2GB but warn for very large files)
+        # Check file size and apply memory-based limits for Railway
         file_size_mb = len(file_content) / 1024 / 1024
         if file_size_mb > 2048:  # 2GB
             raise HTTPException(
                 status_code=413, 
                 detail="File too large for processing. Maximum size: 2GB"
             )
-        elif file_size_mb > 500:  # 500MB
-            logger.warning(f"⚠️ Processing very large file: {file_size_mb:.1f}MB - this may take longer")
+        elif file_size_mb > 500:  # 500MB - likely to cause Railway memory issues
+            return await SchemaDetectionService.handle_extremely_large_file(
+                file_content, file.filename, dataset_id, db
+            )
+        elif file_size_mb > 100:  # 100MB
+            logger.warning(f"⚠️ Processing large file: {file_size_mb:.1f}MB")
             
         logger.info(f"📊 File size: {len(file_content) / 1024 / 1024:.2f}MB")
         

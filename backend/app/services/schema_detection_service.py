@@ -14,6 +14,7 @@ from collections import Counter
 from sqlalchemy.orm import Session
 import tempfile
 import os
+from fastapi import HTTPException
 
 # Optional pandas import
 try:
@@ -741,3 +742,207 @@ class SchemaDetectionService:
         
         db.commit()
         return schema
+    
+    @staticmethod
+    async def handle_extremely_large_file(
+        file_content: bytes, 
+        filename: str, 
+        dataset_id: str, 
+        db: Session
+    ) -> Dict[str, Any]:
+        """
+        Handle files >500MB that might cause memory issues on Railway
+        Uses minimal memory footprint and very small samples
+        """
+        file_size_mb = len(file_content) / 1024 / 1024
+        logger.info(f"🚨 Handling extremely large file: {file_size_mb:.1f}MB with minimal memory approach")
+        
+        # For files this large, we'll only read a tiny portion to understand structure
+        try:
+            # Read just the first 1MB to understand structure
+            sample_size = min(1024 * 1024, len(file_content))  # 1MB max
+            sample_content = file_content[:sample_size]
+            
+            # Try to decode
+            try:
+                content_str = sample_content.decode('utf-8')
+            except UnicodeDecodeError:
+                content_str = sample_content.decode('latin-1')
+            
+            # Determine basic structure
+            content_str = content_str.strip()
+            
+            if content_str.startswith('['):
+                # JSON array - extract just a few objects
+                schema_data = SchemaDetectionService._minimal_json_array_analysis(content_str)
+            elif content_str.startswith('{'):
+                # JSON object - try to understand structure
+                schema_data = SchemaDetectionService._minimal_json_object_analysis(content_str)
+            else:
+                raise ValueError("Unable to determine JSON structure from sample")
+            
+            # Create minimal schema record
+            schema = DataSchema(
+                dataset_id=dataset_id,
+                file_format='json',
+                detected_fields=schema_data.get('fields', {}),
+                field_count=schema_data.get('field_count', 0),
+                total_records=schema_data.get('estimated_records', 1),
+                confidence_score=0.7,  # Lower confidence for minimal analysis
+                analysis_metadata={
+                    'processing_method': 'minimal_sample',
+                    'sample_size_mb': sample_size / 1024 / 1024,
+                    'total_file_size_mb': file_size_mb,
+                    'warning': 'Schema detected from small sample due to file size'
+                }
+            )
+            
+            db.add(schema)
+            db.commit()
+            
+            # Return minimal response
+            return {
+                'schema_id': schema.id,
+                'fields': schema_data.get('fields', {}),
+                'total_records': schema_data.get('estimated_records', 1),
+                'confidence_score': 0.7,
+                'sample_data': schema_data.get('sample_data', []),
+                'processing_method': 'minimal_sample',
+                'warning': f'Large file ({file_size_mb:.1f}MB) - schema detected from 1MB sample'
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to process large file: {e}")
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unable to process large file ({file_size_mb:.1f}MB): {str(e)}"
+            )
+    
+    @staticmethod
+    def _minimal_json_array_analysis(content_str: str) -> Dict[str, Any]:
+        """Extract minimal schema from JSON array sample"""
+        try:
+            # Find first few complete objects
+            objects = []
+            brace_count = 0
+            current_obj = ""
+            in_string = False
+            escape_next = False
+            
+            # Skip opening bracket
+            i = content_str.find('[') + 1
+            
+            while i < len(content_str) and len(objects) < 5:  # Only need 5 objects max
+                char = content_str[i]
+                current_obj += char
+                
+                if not escape_next and char == '"':
+                    in_string = not in_string
+                elif not escape_next and char == '\\':
+                    escape_next = True
+                    i += 1
+                    continue
+                escape_next = False
+                
+                if not in_string:
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            # Complete object
+                            try:
+                                obj = json.loads(current_obj.rstrip(',').strip())
+                                objects.append(obj)
+                                current_obj = ""
+                            except json.JSONDecodeError:
+                                pass
+                
+                i += 1
+            
+            if not objects:
+                return {'fields': {}, 'field_count': 0, 'estimated_records': 1}
+            
+            # Analyze the few objects we found
+            all_fields = set()
+            for obj in objects:
+                all_fields.update(SchemaDetectionService._flatten_dict(obj, max_depth=2).keys())
+            
+            # Create minimal field analysis
+            fields_analysis = {}
+            for field_name in list(all_fields)[:20]:  # Limit to 20 fields max
+                fields_analysis[field_name] = {
+                    'data_type': 'text',  # Default to text
+                    'role': SchemaDetectionService._suggest_field_role(field_name, []),
+                    'confidence': 0.6,
+                    'include_in_analysis': True
+                }
+            
+            return {
+                'fields': fields_analysis,
+                'field_count': len(fields_analysis),
+                'estimated_records': 10000,  # Rough estimate for large files
+                'sample_data': objects
+            }
+            
+        except Exception:
+            # Fallback minimal response
+            return {
+                'fields': {'content': {'data_type': 'text', 'role': 'primary_text', 'confidence': 0.5}},
+                'field_count': 1,
+                'estimated_records': 1000,
+                'sample_data': [{'content': 'Large file content'}]
+            }
+    
+    @staticmethod
+    def _minimal_json_object_analysis(content_str: str) -> Dict[str, Any]:
+        """Extract minimal schema from JSON object sample"""
+        try:
+            # Try to parse just the beginning to understand structure
+            end_pos = min(10000, len(content_str))  # Look at first 10KB
+            sample = content_str[:end_pos]
+            
+            # Find first complete object or reasonable chunk
+            if sample.count('{') > sample.count('}'):
+                # Incomplete object, try to close it
+                sample += '}'
+            
+            try:
+                data = json.loads(sample)
+                if isinstance(data, dict):
+                    # Check if it contains an array
+                    for key, value in data.items():
+                        if isinstance(value, list) and len(value) > 0:
+                            # Object with array property
+                            sample_records = value[:3]  # Just first 3
+                            return SchemaDetectionService._minimal_json_array_analysis(json.dumps(sample_records))
+                    
+                    # Single object
+                    fields = SchemaDetectionService._flatten_dict(data, max_depth=2)
+                    fields_analysis = {}
+                    for field_name in list(fields.keys())[:15]:  # Limit fields
+                        fields_analysis[field_name] = {
+                            'data_type': 'text',
+                            'role': SchemaDetectionService._suggest_field_role(field_name, []),
+                            'confidence': 0.6,
+                            'include_in_analysis': True
+                        }
+                    
+                    return {
+                        'fields': fields_analysis,
+                        'field_count': len(fields_analysis),
+                        'estimated_records': 1,
+                        'sample_data': [data]
+                    }
+            except json.JSONDecodeError:
+                pass
+        except Exception:
+            pass
+        
+        # Ultimate fallback
+        return {
+            'fields': {'content': {'data_type': 'text', 'role': 'primary_text', 'confidence': 0.5}},
+            'field_count': 1,
+            'estimated_records': 1,
+            'sample_data': [{'content': 'Large file content'}]
+        }
