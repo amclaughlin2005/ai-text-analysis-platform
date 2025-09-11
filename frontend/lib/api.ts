@@ -323,10 +323,22 @@ export class SchemaService {
     formData.append('file', file);
     formData.append('dataset_id', datasetId);
 
+    // Use extended timeout for large files
+    const fileSizeMB = file.size / 1024 / 1024;
+    let timeout = API_TIMEOUT;
+    if (fileSizeMB > 500) {
+      timeout = 300000; // 5 minutes for very large files
+    } else if (fileSizeMB > 100) {
+      timeout = 180000; // 3 minutes for large files
+    } else if (fileSizeMB > 50) {
+      timeout = 120000; // 2 minutes for medium files
+    }
+
     const response = await client.post<SchemaDetectionResponse>('/api/schema/detect', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: timeout,
     });
     
     return response.data;

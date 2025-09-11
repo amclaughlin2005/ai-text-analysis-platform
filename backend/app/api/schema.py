@@ -60,12 +60,15 @@ async def detect_schema(
         # Read file content with size limit
         file_content = await file.read()
         
-        # Check file size (limit to 50MB for schema detection)
-        if len(file_content) > 50 * 1024 * 1024:  # 50MB
+        # Check file size (allow up to 2GB but warn for very large files)
+        file_size_mb = len(file_content) / 1024 / 1024
+        if file_size_mb > 2048:  # 2GB
             raise HTTPException(
                 status_code=413, 
-                detail="File too large for schema detection. Maximum size: 50MB"
+                detail="File too large for processing. Maximum size: 2GB"
             )
+        elif file_size_mb > 500:  # 500MB
+            logger.warning(f"⚠️ Processing very large file: {file_size_mb:.1f}MB - this may take longer")
             
         logger.info(f"📊 File size: {len(file_content) / 1024 / 1024:.2f}MB")
         
@@ -73,10 +76,13 @@ async def detect_schema(
         file_extension = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
         
         # Adjust sample size based on file size for faster processing
-        file_size_mb = len(file_content) / 1024 / 1024
-        if file_size_mb > 10:
-            max_sample_records = 50  # Smaller sample for large files
-        elif file_size_mb > 5:
+        if file_size_mb > 500:
+            max_sample_records = 25  # Very small sample for huge files
+        elif file_size_mb > 100:
+            max_sample_records = 35  # Small sample for very large files
+        elif file_size_mb > 50:
+            max_sample_records = 50  # Medium sample for large files
+        elif file_size_mb > 10:
             max_sample_records = 75
         else:
             max_sample_records = 100

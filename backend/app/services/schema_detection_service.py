@@ -12,6 +12,8 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime, date
 from collections import Counter
 from sqlalchemy.orm import Session
+import tempfile
+import os
 
 # Optional pandas import
 try:
@@ -61,7 +63,16 @@ class SchemaDetectionService:
         filename: str,
         max_sample_records: int = 100
     ) -> Dict[str, Any]:
-        """Detect schema from JSON file"""
+        """Detect schema from JSON file with support for large files"""
+        file_size_mb = len(file_content) / 1024 / 1024
+        
+        # For files larger than 100MB, use streaming approach
+        if file_size_mb > 100:
+            return SchemaDetectionService._detect_large_json_schema(
+                file_content, filename, max_sample_records
+            )
+        
+        # Original approach for smaller files
         try:
             # Try to decode as UTF-8 first
             content_str = file_content.decode('utf-8')
@@ -111,6 +122,169 @@ class SchemaDetectionService:
         schema_info['detected_encoding'] = 'utf-8'  # JSON is always UTF-8
         
         return schema_info
+    
+    @staticmethod
+    def _detect_large_json_schema(
+        file_content: bytes,
+        filename: str,
+        max_sample_records: int = 100
+    ) -> Dict[str, Any]:
+        """Streaming approach for large JSON files (>100MB)"""
+        logger.info(f"🌊 Using streaming approach for large file: {len(file_content) / 1024 / 1024:.1f}MB")
+        
+        # Write to temporary file for streaming
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.json') as temp_file:
+            temp_file.write(file_content)
+            temp_file_path = temp_file.name
+        
+        try:
+            return SchemaDetectionService._stream_parse_json(temp_file_path, max_sample_records)
+        finally:
+            # Clean up temp file
+            try:
+                os.unlink(temp_file_path)
+            except OSError:
+                pass
+    
+    @staticmethod
+    def _stream_parse_json(file_path: str, max_sample_records: int) -> Dict[str, Any]:
+        """Stream parse JSON file to extract sample records without loading entire file"""
+        records = []
+        total_records = 0
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            # Try to determine structure by reading first chunk
+            first_chunk = f.read(1024)
+            f.seek(0)
+            
+            if first_chunk.strip().startswith('['):
+                # Array of objects - stream parse each object
+                records, total_records = SchemaDetectionService._stream_parse_json_array(f, max_sample_records)
+            elif first_chunk.strip().startswith('{'):
+                # Single object or object with array - need to identify structure
+                records, total_records = SchemaDetectionService._stream_parse_json_object(f, max_sample_records)
+            else:
+                raise ValueError("Invalid JSON structure")
+        
+        if not records:
+            raise ValueError("No data records found in JSON")
+        
+        # Detect schema from sample records
+        schema_info = SchemaDetectionService._analyze_records(records, 'json')
+        schema_info['total_records'] = total_records
+        schema_info['sample_data'] = records[:10]
+        schema_info['detected_encoding'] = 'utf-8'
+        schema_info['streaming_used'] = True
+        
+        return schema_info
+    
+    @staticmethod
+    def _stream_parse_json_array(file_obj, max_sample_records: int) -> Tuple[List[Dict], int]:
+        """Stream parse JSON array by reading one object at a time"""
+        records = []
+        total_records = 0
+        
+        # Skip opening bracket
+        file_obj.read(1)
+        
+        decoder = json.JSONDecoder()
+        buffer = ""
+        brace_count = 0
+        in_string = False
+        escape_next = False
+        
+        while True:
+            char = file_obj.read(1)
+            if not char:
+                break
+                
+            buffer += char
+            
+            # Track string state to ignore braces in strings
+            if not escape_next and char == '"':
+                in_string = not in_string
+            elif not escape_next and char == '\\':
+                escape_next = True
+                continue
+            escape_next = False
+            
+            if not in_string:
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    
+                    # Complete object found
+                    if brace_count == 0:
+                        try:
+                            # Extract the JSON object
+                            obj_end = len(buffer)
+                            while obj_end > 0 and buffer[obj_end-1] in ' \n\r\t,':
+                                obj_end -= 1
+                            
+                            obj_str = buffer[:obj_end]
+                            obj = json.loads(obj_str)
+                            
+                            total_records += 1
+                            if len(records) < max_sample_records:
+                                records.append(obj)
+                            
+                            # Reset buffer
+                            buffer = ""
+                            
+                            # Early exit if we have enough samples and file is very large
+                            if len(records) >= max_sample_records and total_records > max_sample_records * 2:
+                                # Estimate total by reading ahead quickly
+                                remaining_pos = file_obj.tell()
+                                file_obj.seek(0, 2)  # End of file
+                                file_size = file_obj.tell()
+                                file_obj.seek(remaining_pos)
+                                
+                                # Rough estimate based on current progress
+                                processed_size = remaining_pos
+                                estimated_total = int(total_records * file_size / processed_size)
+                                return records, estimated_total
+                                
+                        except json.JSONDecodeError:
+                            # Skip malformed object
+                            buffer = ""
+                            brace_count = 0
+        
+        return records, total_records
+    
+    @staticmethod
+    def _stream_parse_json_object(file_obj, max_sample_records: int) -> Tuple[List[Dict], int]:
+        """Handle single object or object with array property"""
+        # For now, read a reasonable chunk to determine structure
+        chunk_size = min(1024 * 1024, max_sample_records * 1000)  # 1MB or estimated size
+        chunk = file_obj.read(chunk_size)
+        
+        try:
+            data = json.loads(chunk)
+            
+            if isinstance(data, dict) and len(data) == 1:
+                # Check if it's an object with array property
+                key, value = next(iter(data.items()))
+                if isinstance(value, list) and value:
+                    records = value[:max_sample_records]
+                    return records, len(value)
+            
+            # Single object
+            return [data], 1
+            
+        except json.JSONDecodeError:
+            # If chunk doesn't contain complete JSON, fall back to simpler approach
+            file_obj.seek(0)
+            try:
+                # Try to load just enough to get structure
+                partial = file_obj.read(10240)  # 10KB
+                if partial.count('{') > partial.count('}'):
+                    # Likely incomplete, return minimal structure
+                    return [{"_structure": "unknown", "_size": "large"}], 1
+            except:
+                pass
+            
+            raise ValueError("Unable to parse large JSON object structure")
     
     @staticmethod
     def detect_csv_schema(
