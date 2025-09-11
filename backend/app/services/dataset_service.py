@@ -97,12 +97,13 @@ class DatasetService:
                     # FINAL SOLUTION: Pure SQL bypass to avoid SQLAlchemy model issues entirely
                     from sqlalchemy import text
                     
-                    # Insert using pure SQL - only the columns we absolutely know exist
-                    sql = text("INSERT INTO datasets (id, name) VALUES (:id, :name)")
+                    # Insert using pure SQL - add filename to satisfy Railway's NOT NULL constraint
+                    sql = text("INSERT INTO datasets (id, name, filename) VALUES (:id, :name, :filename)")
                     
                     transaction_db.execute(sql, {
                         'id': str(dataset_id), 
-                        'name': name.strip()[:255]
+                        'name': name.strip()[:255],
+                        'filename': file.filename or 'unknown.csv'
                     })
                     
                     logger.info(f"✅ Pure SQL dataset insert successful: {dataset_id}")
