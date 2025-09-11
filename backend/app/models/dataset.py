@@ -36,6 +36,7 @@ class Dataset(Base):
     description = Column(Text, nullable=True)  # Re-enabled after Railway schema fix
     file_path = Column(String(500), nullable=False)  # S3 path or local file path  
     original_filename = Column(String(255), nullable=False)
+    filename = Column(String(255), nullable=True)  # Railway compatibility - might be required by legacy schema
     file_size = Column(Integer, nullable=False)  # Size in bytes
     
     # Processing status and progress

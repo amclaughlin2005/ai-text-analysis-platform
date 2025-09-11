@@ -438,6 +438,7 @@ class DatasetService:
             description=description.strip() if description else None,  # Re-enabled after Railway schema fix
             file_path=file_info['file_path'],
             original_filename=file_info['original_filename'],  # Re-enabled after Railway schema fix
+            filename=file_info['original_filename'],  # Railway compatibility - set both filename fields
             file_size=file_info['file_size'],
             status=DatasetStatus.PROCESSING,
             # csv_headers=csv_info['headers'],  # Column doesn't exist on Railway
