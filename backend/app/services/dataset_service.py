@@ -98,13 +98,14 @@ class DatasetService:
                     from sqlalchemy import text
                     
                     # Insert using pure SQL - add required Railway fields
-                    sql = text("INSERT INTO datasets (id, name, filename, file_size) VALUES (:id, :name, :filename, :file_size)")
+                    sql = text("INSERT INTO datasets (id, name, filename, file_size, file_path) VALUES (:id, :name, :filename, :file_size, :file_path)")
                     
                     transaction_db.execute(sql, {
                         'id': str(dataset_id), 
                         'name': name.strip()[:255],
                         'filename': file.filename or 'unknown.csv',
-                        'file_size': file_path.stat().st_size
+                        'file_size': file_path.stat().st_size,
+                        'file_path': str(file_path)
                     })
                     
                     logger.info(f"✅ Pure SQL dataset insert successful: {dataset_id}")
