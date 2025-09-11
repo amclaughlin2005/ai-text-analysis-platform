@@ -116,11 +116,12 @@ class DatasetService:
                     logger.info(f"✅ Pure SQL dataset insert successful: {dataset_id}")
                     created_dataset_id = dataset_id
                     
-                    # Create analysis job for background processing
-                    analysis_job = cls._create_analysis_job(
-                        dataset_id=created_dataset_id,
-                        db=transaction_db
-                    )
+                    # Skip analysis job creation for now - Railway schema incompatibility
+                    # analysis_job = cls._create_analysis_job(
+                    #     dataset_id=created_dataset_id,
+                    #     db=transaction_db
+                    # )
+                    analysis_job = None
                     
                     # Process CSV rows into Question records
                     questions_created = cls._create_questions_from_csv(
@@ -135,9 +136,9 @@ class DatasetService:
                     dataset.status = DatasetStatus.COMPLETED
                     dataset.processing_completed_at = datetime.utcnow()
                     
-                    # Update job status
-                    analysis_job.status = JobStatus.COMPLETED
-                    analysis_job.end_time = datetime.utcnow()
+                    # Update job status (skipped - no analysis job created)
+                    # analysis_job.status = JobStatus.COMPLETED
+                    # analysis_job.end_time = datetime.utcnow()
                     
                     transaction_db.commit()
                     
@@ -149,7 +150,7 @@ class DatasetService:
                         "dataset_id": str(created_dataset_id),
                         "processing": {
                             "questions_created": questions_created,
-                            "job_id": str(analysis_job.id),
+                            "job_id": None,  # No analysis job created due to Railway schema
                             "status": "completed"
                         }
                     }
