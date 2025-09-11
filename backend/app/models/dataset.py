@@ -33,7 +33,7 @@ class Dataset(Base):
     
     # Basic dataset information (core fields only for Railway compatibility)
     name = Column(String(255), nullable=False)
-    # description = Column(Text, nullable=True)  # Temporarily disabled - column doesn't exist on Railway
+    description = Column(Text, nullable=True)  # Re-enabled after Railway schema fix
     file_path = Column(String(500), nullable=False)  # S3 path or local file path  
     original_filename = Column(String(255), nullable=False)
     file_size = Column(Integer, nullable=False)  # Size in bytes
