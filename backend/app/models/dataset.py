@@ -28,8 +28,8 @@ class Dataset(Base):
     # Primary key
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
-    # User relationship
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    # User relationship (temporarily disabled for Railway compatibility)
+    # user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     
     # Basic dataset information
     name = Column(String(255), nullable=False)
