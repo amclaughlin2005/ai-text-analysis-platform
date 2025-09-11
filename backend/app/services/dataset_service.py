@@ -124,7 +124,7 @@ class DatasetService:
                     
                     # Process CSV rows into Question records
                     questions_created = cls._create_questions_from_csv(
-                        dataset_id=dataset.id,
+                        dataset_id=created_dataset_id,
                         headers=headers,
                         rows=rows,
                         db=transaction_db
@@ -457,7 +457,7 @@ class DatasetService:
         """Create analysis job for background processing tracking"""
         job = AnalysisJob(
             dataset_id=dataset_id,
-            user_id=None,  # Will be set when auth is enabled
+            # user_id=None,  # Temporarily disabled for Railway compatibility
             job_type=JobType.DATASET_PROCESSING,
             status=JobStatus.RUNNING,
             priority=JobPriority.NORMAL,
