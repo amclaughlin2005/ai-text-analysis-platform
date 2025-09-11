@@ -31,32 +31,14 @@ class RailwayCompatibilityService:
         This bypasses our Dataset model entirely and works directly with Railway's schema
         """
         try:
-            # Use raw SQL to insert only the fields we know exist
-            # This is the safest approach given Railway's unpredictable schema
-            
+            # Start with the absolute minimum - just ID and name
             insert_sql = """
-            INSERT INTO datasets (
-                id, 
-                name, 
-                file_path, 
-                file_size,
-                created_at,
-                updated_at
-            ) VALUES (
-                :id,
-                :name,
-                :file_path,
-                :file_size,
-                NOW(),
-                NOW()
-            )
+            INSERT INTO datasets (id, name) VALUES (:id, :name)
             """
             
             params = {
                 'id': str(dataset_id),
-                'name': name.strip()[:255],  # Ensure it fits
-                'file_path': file_info['file_path'],
-                'file_size': file_info['file_size']
+                'name': name.strip()[:255]  # Ensure it fits
             }
             
             logger.info(f"🔧 Creating minimal dataset record for: {name}")
@@ -70,49 +52,15 @@ class RailwayCompatibilityService:
         except IntegrityError as e:
             logger.error(f"❌ Database integrity error: {e}")
             session.rollback()
-            
-            # Try even more minimal approach
-            return RailwayCompatibilityService._create_ultra_minimal_record(
-                session, dataset_id, name, file_info
-            )
+            return False
             
         except Exception as e:
             logger.error(f"❌ Failed to create minimal dataset: {e}")
+            logger.error(f"SQL: {insert_sql}")
+            logger.error(f"Params: {params}")
             session.rollback()
             return False
     
-    @staticmethod
-    def _create_ultra_minimal_record(
-        session: Session,
-        dataset_id: uuid.UUID,
-        name: str,
-        file_info: Dict[str, Any]
-    ) -> bool:
-        """
-        Ultra-minimal fallback - insert only ID and name
-        """
-        try:
-            insert_sql = """
-            INSERT INTO datasets (id, name) VALUES (:id, :name)
-            """
-            
-            params = {
-                'id': str(dataset_id),
-                'name': name.strip()[:255]
-            }
-            
-            logger.info(f"🆘 Creating ultra-minimal dataset record")
-            
-            session.execute(text(insert_sql), params)
-            session.commit()
-            
-            logger.info(f"✅ Ultra-minimal dataset created: {dataset_id}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Even ultra-minimal insert failed: {e}")
-            session.rollback()
-            return False
     
     @staticmethod
     def update_dataset_with_safe_fields(
