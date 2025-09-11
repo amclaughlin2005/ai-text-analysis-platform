@@ -57,24 +57,29 @@ async def detect_schema(
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset not found")
         
-        # Read file content with size limit
-        file_content = await file.read()
+        # Check file size before reading to avoid memory issues
+        file.file.seek(0, 2)  # Seek to end
+        file_size = file.file.tell()
+        file.file.seek(0)  # Reset to beginning
         
-        # Check file size and apply memory-based limits for Railway
-        file_size_mb = len(file_content) / 1024 / 1024
+        file_size_mb = file_size / 1024 / 1024
+        logger.info(f"📊 File size: {file_size_mb:.2f}MB")
+        
         if file_size_mb > 2048:  # 2GB
             raise HTTPException(
                 status_code=413, 
                 detail="File too large for processing. Maximum size: 2GB"
             )
-        elif file_size_mb > 500:  # 500MB - likely to cause Railway memory issues
-            return await SchemaDetectionService.handle_extremely_large_file(
-                file_content, file.filename, dataset_id, db
+        elif file_size_mb > 500:  # 500MB - use minimal processing to avoid memory issues
+            return await SchemaDetectionService.handle_extremely_large_file_stream(
+                file, dataset_id, db
             )
-        elif file_size_mb > 100:  # 100MB
+        
+        # For smaller files, read normally
+        file_content = await file.read()
+        
+        if file_size_mb > 100:  # 100MB
             logger.warning(f"⚠️ Processing large file: {file_size_mb:.1f}MB")
-            
-        logger.info(f"📊 File size: {len(file_content) / 1024 / 1024:.2f}MB")
         
         # Detect schema based on file type
         file_extension = file.filename.lower().split('.')[-1] if '.' in file.filename else ''

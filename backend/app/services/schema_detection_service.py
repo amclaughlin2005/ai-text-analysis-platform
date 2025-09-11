@@ -744,6 +744,94 @@ class SchemaDetectionService:
         return schema
     
     @staticmethod
+    async def handle_extremely_large_file_stream(
+        file: Any,  # UploadFile
+        dataset_id: str, 
+        db: Session
+    ) -> Dict[str, Any]:
+        """
+        Handle files >500MB using streaming to avoid loading entire file into memory
+        """
+        file_size = file.file.tell()  # Already at end from previous seek
+        file.file.seek(0)  # Reset to beginning
+        file_size_mb = file_size / 1024 / 1024
+        
+        logger.info(f"🌊 Streaming processing for {file_size_mb:.1f}MB file")
+        
+        try:
+            # Read only first 1MB in chunks to avoid memory spike
+            chunk_size = 64 * 1024  # 64KB chunks
+            total_read = 0
+            max_read = 1024 * 1024  # 1MB max
+            content_chunks = []
+            
+            while total_read < max_read:
+                chunk = await file.read(chunk_size)
+                if not chunk:
+                    break
+                content_chunks.append(chunk)
+                total_read += len(chunk)
+                
+                # Stop if we have enough for analysis
+                if total_read >= max_read:
+                    break
+            
+            # Combine chunks
+            sample_content = b''.join(content_chunks)
+            
+            # Decode sample
+            try:
+                content_str = sample_content.decode('utf-8')
+            except UnicodeDecodeError:
+                content_str = sample_content.decode('latin-1', errors='ignore')
+            
+            # Analyze structure from sample
+            content_str = content_str.strip()
+            
+            if content_str.startswith('['):
+                schema_data = SchemaDetectionService._minimal_json_array_analysis(content_str)
+            elif content_str.startswith('{'):
+                schema_data = SchemaDetectionService._minimal_json_object_analysis(content_str)
+            else:
+                raise ValueError("Unable to determine JSON structure from sample")
+            
+            # Create schema record
+            schema = DataSchema(
+                dataset_id=dataset_id,
+                file_format='json',
+                detected_fields=schema_data.get('fields', {}),
+                field_count=schema_data.get('field_count', 0),
+                total_records=schema_data.get('estimated_records', 1),
+                confidence_score=0.6,  # Lower confidence for streaming sample
+                analysis_metadata={
+                    'processing_method': 'streaming_sample',
+                    'sample_size_mb': total_read / 1024 / 1024,
+                    'total_file_size_mb': file_size_mb,
+                    'warning': 'Schema detected from streaming sample due to large file size'
+                }
+            )
+            
+            db.add(schema)
+            db.commit()
+            
+            return {
+                'schema_id': schema.id,
+                'fields': schema_data.get('fields', {}),
+                'total_records': schema_data.get('estimated_records', 1),
+                'confidence_score': 0.6,
+                'sample_data': schema_data.get('sample_data', []),
+                'processing_method': 'streaming_sample',
+                'warning': f'Large file ({file_size_mb:.1f}MB) - schema detected from {total_read/1024/1024:.1f}MB streaming sample'
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to stream process large file: {e}")
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unable to process large file ({file_size_mb:.1f}MB): {str(e)}"
+            )
+    
+    @staticmethod
     async def handle_extremely_large_file(
         file_content: bytes, 
         filename: str, 
