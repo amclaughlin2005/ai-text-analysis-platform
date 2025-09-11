@@ -459,7 +459,7 @@ class DatasetService:
             dataset_id=dataset_id,
             # user_id=None,  # Temporarily disabled for Railway compatibility
             job_type=JobType.DATASET_PROCESSING,
-            job_name="CSV Dataset Processing",
+            # job_name="CSV Dataset Processing",  # Column doesn't exist on Railway
             status=JobStatus.RUNNING,
             priority=JobPriority.NORMAL,
             started_at=datetime.utcnow()
