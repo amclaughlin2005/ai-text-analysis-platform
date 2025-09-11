@@ -94,28 +94,18 @@ class DatasetService:
                 await cls._save_file_to_disk(file, file_path)
                 
                 try:
-                    # Create dataset record using compatibility layer
-                    created_dataset_id = cls._create_dataset_record(
-                        dataset_id=dataset_id,
-                        name=name,
-                        description=description,
-                        file_info={
-                            'original_filename': file.filename,
-                            'file_path': str(file_path),
-                            'file_size': file_path.stat().st_size,
-                            'encoding': encoding_used
-                        },
-                        csv_info={
-                            'headers': headers,
-                            'total_rows': len(rows),
-                            'total_columns': len(headers)
-                        },
-                        # user_id=user_id,  # Temporarily disabled for Railway compatibility
-                        db=transaction_db
+                    # EMERGENCY APPROACH: Use minimal dataset model for Railway compatibility
+                    from ..models.minimal_dataset import MinimalDataset
+                    
+                    dataset = MinimalDataset(
+                        id=dataset_id,
+                        name=name.strip()
                     )
                     
-                    if not created_dataset_id:
-                        raise Exception("Failed to create dataset record")
+                    transaction_db.add(dataset)
+                    transaction_db.flush()  # Get the ID without committing
+                    
+                    created_dataset_id = dataset.id
                     
                     # Create analysis job for background processing
                     analysis_job = cls._create_analysis_job(
