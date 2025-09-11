@@ -228,16 +228,22 @@ class SchemaDetectionService:
         return schema
     
     @staticmethod
-    def _flatten_dict(d: Dict, parent_key: str = '', sep: str = '.') -> Dict[str, Any]:
-        """Flatten nested dictionary to dot notation"""
+    def _flatten_dict(d: Dict, parent_key: str = '', sep: str = '.', max_depth: int = 3) -> Dict[str, Any]:
+        """Flatten nested dictionary to dot notation with depth limit"""
         items = []
+        
+        # Limit depth to prevent extremely deep nesting from causing timeouts
+        current_depth = parent_key.count(sep)
+        if current_depth >= max_depth:
+            # If we've reached max depth, just use the value as-is
+            return {parent_key: str(d) if not isinstance(d, (str, int, float, bool)) else d}
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
             if isinstance(v, dict):
-                items.extend(SchemaDetectionService._flatten_dict(v, new_key, sep=sep).items())
+                items.extend(SchemaDetectionService._flatten_dict(v, new_key, sep=sep, max_depth=max_depth).items())
             elif isinstance(v, list) and v and isinstance(v[0], dict):
                 # Handle array of objects - take first object as sample
-                items.extend(SchemaDetectionService._flatten_dict(v[0], f"{new_key}[0]", sep=sep).items())
+                items.extend(SchemaDetectionService._flatten_dict(v[0], f"{new_key}[0]", sep=sep, max_depth=max_depth).items())
             else:
                 items.append((new_key, v))
         return dict(items)

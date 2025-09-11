@@ -57,20 +57,40 @@ async def detect_schema(
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset not found")
         
-        # Read file content
+        # Read file content with size limit
         file_content = await file.read()
+        
+        # Check file size (limit to 50MB for schema detection)
+        if len(file_content) > 50 * 1024 * 1024:  # 50MB
+            raise HTTPException(
+                status_code=413, 
+                detail="File too large for schema detection. Maximum size: 50MB"
+            )
+            
+        logger.info(f"📊 File size: {len(file_content) / 1024 / 1024:.2f}MB")
         
         # Detect schema based on file type
         file_extension = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
         
+        # Adjust sample size based on file size for faster processing
+        file_size_mb = len(file_content) / 1024 / 1024
+        if file_size_mb > 10:
+            max_sample_records = 50  # Smaller sample for large files
+        elif file_size_mb > 5:
+            max_sample_records = 75
+        else:
+            max_sample_records = 100
+            
+        logger.info(f"📝 Using sample size: {max_sample_records} records")
+        
         if file_extension == 'json' or file.content_type == 'application/json':
             schema_data = SchemaDetectionService.detect_json_schema(
-                file_content, file.filename
+                file_content, file.filename, max_sample_records
             )
             dataset.data_format = 'json'
         elif file_extension == 'csv' or file.content_type == 'text/csv':
             schema_data = SchemaDetectionService.detect_csv_schema(
-                file_content, file.filename
+                file_content, file.filename, max_sample_records
             )
             dataset.data_format = 'csv'
         else:
