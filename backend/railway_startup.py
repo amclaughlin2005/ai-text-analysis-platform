@@ -30,7 +30,8 @@ def fix_database_schema():
             "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'processing'",
             "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS description TEXT",
             "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS original_filename VARCHAR(255)",
-            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS filename VARCHAR(255)"
+            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS filename VARCHAR(255)",
+            "ALTER TABLE datasets ADD COLUMN IF NOT EXISTS total_rows INTEGER DEFAULT 0"
         ]
         
         with engine.connect() as conn:

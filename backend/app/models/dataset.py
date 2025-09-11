@@ -38,6 +38,7 @@ class Dataset(Base):
     original_filename = Column(String(255), nullable=False)
     filename = Column(String(255), nullable=True)  # Railway compatibility - might be required by legacy schema
     file_size = Column(Integer, nullable=False)  # Size in bytes
+    total_rows = Column(Integer, default=0, nullable=True)  # Railway legacy compatibility
     
     # Processing status and progress
     status = Column(Enum(DatasetStatus), default=DatasetStatus.UPLOADING, nullable=False, index=True)

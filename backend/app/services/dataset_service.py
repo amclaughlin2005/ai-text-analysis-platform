@@ -22,6 +22,7 @@ from ..models.analytics import WordFrequency
 from ..models.analysis_job import AnalysisJob, JobType, JobStatus, JobPriority
 from ..core.database import DatabaseTransaction
 from ..core.config import get_settings
+from .railway_compatibility import RailwayCompatibilityService
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -93,8 +94,8 @@ class DatasetService:
                 await cls._save_file_to_disk(file, file_path)
                 
                 try:
-                    # Create dataset record
-                    dataset = cls._create_dataset_record(
+                    # Create dataset record using compatibility layer
+                    created_dataset_id = cls._create_dataset_record(
                         dataset_id=dataset_id,
                         name=name,
                         description=description,
@@ -113,9 +114,12 @@ class DatasetService:
                         db=transaction_db
                     )
                     
+                    if not created_dataset_id:
+                        raise Exception("Failed to create dataset record")
+                    
                     # Create analysis job for background processing
                     analysis_job = cls._create_analysis_job(
-                        dataset_id=dataset.id,
+                        dataset_id=created_dataset_id,
                         db=transaction_db
                     )
                     
@@ -138,12 +142,12 @@ class DatasetService:
                     
                     transaction_db.commit()
                     
-                    logger.info(f"✅ Dataset uploaded successfully: {dataset.id} - {name}")
+                    logger.info(f"✅ Dataset uploaded successfully: {created_dataset_id} - {name}")
                     
                     return {
                         "success": True,
                         "message": f"Dataset '{name}' uploaded and processed successfully",
-                        "dataset": dataset.to_dict(),
+                        "dataset_id": str(created_dataset_id),
                         "processing": {
                             "questions_created": questions_created,
                             "job_id": str(analysis_job.id),
@@ -428,30 +432,26 @@ class DatasetService:
         csv_info: Dict[str, Any],
         # user_id: Optional[str],  # Temporarily disabled for Railway compatibility
         db: Session
-    ) -> Dataset:
-        """Create dataset database record"""
-        # Ultra-minimal dataset creation for Railway compatibility
-        # Only use the absolute minimum fields
-        dataset = Dataset(
-            id=dataset_id,
-            name=name.strip(),
-            description=description.strip() if description else None,  # Re-enabled after Railway schema fix
-            file_path=file_info['file_path'],
-            original_filename=file_info['original_filename'],  # Re-enabled after Railway schema fix
-            filename=file_info['original_filename'],  # Railway compatibility - set both filename fields
-            file_size=file_info['file_size'],
-            status=DatasetStatus.PROCESSING,
-            # csv_headers=csv_info['headers'],  # Column doesn't exist on Railway
-            # csv_encoding=file_info['encoding'],  # Column doesn't exist on Railway  
-            # has_header_row=True,  # Column doesn't exist on Railway
-            # total_questions=csv_info['total_rows'],  # Column doesn't exist on Railway
-            # processing_started_at=datetime.utcnow()  # Column doesn't exist on Railway
+    ) -> Optional[uuid.UUID]:
+        """Create dataset database record using Railway compatibility layer"""
+        logger.info(f"🔧 Creating dataset record using Railway compatibility layer")
+        
+        # Use the compatibility service to bypass SQLAlchemy model issues
+        success = RailwayCompatibilityService.create_minimal_dataset_record(
+            session=db,
+            dataset_id=dataset_id,
+            name=name,
+            description=description,
+            file_info=file_info,
+            csv_info=csv_info
         )
         
-        db.add(dataset)
-        db.flush()  # Get the ID without committing
-        
-        return dataset
+        if success:
+            logger.info(f"✅ Dataset record created successfully: {dataset_id}")
+            return dataset_id
+        else:
+            logger.error(f"❌ Failed to create dataset record: {dataset_id}")
+            return None
 
     @classmethod
     def _create_analysis_job(cls, dataset_id: uuid.UUID, db: Session) -> AnalysisJob:
