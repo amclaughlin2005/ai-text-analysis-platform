@@ -109,7 +109,7 @@ class DatasetService:
                             'total_rows': len(rows),
                             'total_columns': len(headers)
                         },
-                        user_id=user_id,
+                        # user_id=user_id,  # Temporarily disabled for Railway compatibility
                         db=transaction_db
                     )
                     
@@ -181,7 +181,7 @@ class DatasetService:
             
             # Filter by user if provided (for when auth is enabled)
             if user_id:
-                query = query.filter(Dataset.user_id == user_id)
+                pass  # query = query.filter(Dataset.user_id == user_id)  # Temporarily disabled for Railway
             
             # Get total count for pagination
             total_count = query.count()
@@ -426,13 +426,13 @@ class DatasetService:
         description: Optional[str],
         file_info: Dict[str, Any],
         csv_info: Dict[str, Any],
-        user_id: Optional[str],
+        # user_id: Optional[str],  # Temporarily disabled for Railway compatibility
         db: Session
     ) -> Dataset:
         """Create dataset database record"""
         dataset = Dataset(
             id=dataset_id,
-            user_id=user_id,  # Will be None for now, UUID when auth is enabled
+            # user_id=user_id,  # Temporarily disabled for Railway compatibility
             name=name.strip(),
             description=description.strip() if description else None,
             file_path=file_info['file_path'],
