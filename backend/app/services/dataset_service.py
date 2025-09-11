@@ -97,8 +97,8 @@ class DatasetService:
                     # FINAL SOLUTION: Pure SQL bypass to avoid SQLAlchemy model issues entirely
                     from sqlalchemy import text
                     
-                    # Insert using pure SQL - add required Railway fields
-                    sql = text("INSERT INTO datasets (id, name, filename, file_size, file_path, total_rows, total_columns, upload_status) VALUES (:id, :name, :filename, :file_size, :file_path, :total_rows, :total_columns, :upload_status)")
+                    # Insert using pure SQL - add required Railway fields (9 fields discovered so far)
+                    sql = text("INSERT INTO datasets (id, name, filename, file_size, file_path, total_rows, total_columns, upload_status, processing_status) VALUES (:id, :name, :filename, :file_size, :file_path, :total_rows, :total_columns, :upload_status, :processing_status)")
                     
                     transaction_db.execute(sql, {
                         'id': str(dataset_id), 
@@ -108,7 +108,8 @@ class DatasetService:
                         'file_path': str(file_path),
                         'total_rows': len(rows),
                         'total_columns': len(headers),
-                        'upload_status': 'completed'
+                        'upload_status': 'completed',
+                        'processing_status': 'processing'
                     })
                     
                     logger.info(f"✅ Pure SQL dataset insert successful: {dataset_id}")
