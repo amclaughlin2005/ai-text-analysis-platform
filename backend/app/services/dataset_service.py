@@ -94,18 +94,19 @@ class DatasetService:
                 await cls._save_file_to_disk(file, file_path)
                 
                 try:
-                    # EMERGENCY APPROACH: Use minimal dataset model for Railway compatibility
-                    from ..models.minimal_dataset import MinimalDataset
+                    # FINAL SOLUTION: Pure SQL bypass to avoid SQLAlchemy model issues entirely
+                    from sqlalchemy import text
                     
-                    dataset = MinimalDataset(
-                        id=dataset_id,
-                        name=name.strip()
-                    )
+                    # Insert using pure SQL - only the columns we absolutely know exist
+                    sql = text("INSERT INTO datasets (id, name) VALUES (:id, :name)")
                     
-                    transaction_db.add(dataset)
-                    transaction_db.flush()  # Get the ID without committing
+                    transaction_db.execute(sql, {
+                        'id': str(dataset_id), 
+                        'name': name.strip()[:255]
+                    })
                     
-                    created_dataset_id = dataset.id
+                    logger.info(f"✅ Pure SQL dataset insert successful: {dataset_id}")
+                    created_dataset_id = dataset_id
                     
                     # Create analysis job for background processing
                     analysis_job = cls._create_analysis_job(
