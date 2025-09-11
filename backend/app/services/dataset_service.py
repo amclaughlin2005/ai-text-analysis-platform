@@ -430,20 +430,20 @@ class DatasetService:
         db: Session
     ) -> Dataset:
         """Create dataset database record"""
+        # Ultra-minimal dataset creation for Railway compatibility
+        # Only use the absolute minimum fields
         dataset = Dataset(
             id=dataset_id,
-            # user_id=user_id,  # Temporarily disabled for Railway compatibility
             name=name.strip(),
-            # description=description.strip() if description else None,  # Temporarily disabled - column doesn't exist on Railway
             file_path=file_info['file_path'],
-            original_filename=file_info['original_filename'],
+            # original_filename=file_info['original_filename'],  # Column doesn't exist on Railway
             file_size=file_info['file_size'],
             status=DatasetStatus.PROCESSING,
-            csv_headers=csv_info['headers'],
-            csv_encoding=file_info['encoding'],
-            has_header_row=True,
-            total_questions=csv_info['total_rows'],
-            processing_started_at=datetime.utcnow()
+            # csv_headers=csv_info['headers'],  # Column doesn't exist on Railway
+            # csv_encoding=file_info['encoding'],  # Column doesn't exist on Railway  
+            # has_header_row=True,  # Column doesn't exist on Railway
+            # total_questions=csv_info['total_rows'],  # Column doesn't exist on Railway
+            # processing_started_at=datetime.utcnow()  # Column doesn't exist on Railway
         )
         
         db.add(dataset)
