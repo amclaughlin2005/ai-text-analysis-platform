@@ -1,0 +1,5 @@
+This file forces Railway to redeploy the latest code.
+Created at: 2025-09-10 20:58:00
+Git commit: e3636ce
+Expected version: 1.0.1
+Schema endpoints should be available after this deployment.
