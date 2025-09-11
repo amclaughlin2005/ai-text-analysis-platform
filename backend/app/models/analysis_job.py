@@ -51,7 +51,7 @@ class AnalysisJob(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Relationships
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    # user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)  # Temporarily disabled for Railway
     dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=True, index=True)
     
     # Job metadata
@@ -111,7 +111,7 @@ class AnalysisJob(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
     # Relationships
-    user = relationship("User", back_populates="analysis_jobs")
+    # user = relationship("User", back_populates="analysis_jobs")  # Temporarily disabled for Railway
     dataset = relationship("Dataset", back_populates="analysis_jobs")
     dependent_job = relationship("AnalysisJob", remote_side=[id])  # Self-referencing relationship
     
