@@ -434,7 +434,7 @@ class DatasetService:
             id=dataset_id,
             # user_id=user_id,  # Temporarily disabled for Railway compatibility
             name=name.strip(),
-            description=description.strip() if description else None,
+            # description=description.strip() if description else None,  # Temporarily disabled - column doesn't exist on Railway
             file_path=file_info['file_path'],
             original_filename=file_info['original_filename'],
             file_size=file_info['file_size'],

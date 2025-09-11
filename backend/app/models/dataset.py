@@ -31,10 +31,10 @@ class Dataset(Base):
     # User relationship (temporarily disabled for Railway compatibility)
     # user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     
-    # Basic dataset information
+    # Basic dataset information (core fields only for Railway compatibility)
     name = Column(String(255), nullable=False)
-    description = Column(Text, nullable=True)
-    file_path = Column(String(500), nullable=False)  # S3 path or local file path
+    # description = Column(Text, nullable=True)  # Temporarily disabled - column doesn't exist on Railway
+    file_path = Column(String(500), nullable=False)  # S3 path or local file path  
     original_filename = Column(String(255), nullable=False)
     file_size = Column(Integer, nullable=False)  # Size in bytes
     
@@ -74,11 +74,11 @@ class Dataset(Base):
     csv_encoding = Column(String(20), default="utf-8", nullable=False)
     has_header_row = Column(Boolean, default=True, nullable=False)
     
-    # Flexible data support (nullable for backward compatibility)
-    data_format = Column(String(20), default="csv", nullable=True)  # csv, json, xml, etc.
-    schema_detected = Column(Boolean, default=False, nullable=True)
-    user_mapping_complete = Column(Boolean, default=False, nullable=True)
-    supports_flexible_analysis = Column(Boolean, default=False, nullable=True)
+    # Flexible data support (temporarily disabled - columns don't exist on Railway)
+    # data_format = Column(String(20), default="csv", nullable=True)  # csv, json, xml, etc.
+    # schema_detected = Column(Boolean, default=False, nullable=True)
+    # user_mapping_complete = Column(Boolean, default=False, nullable=True)
+    # supports_flexible_analysis = Column(Boolean, default=False, nullable=True)
     
     # Organization data (if present in CSV)
     organizations_count = Column(Integer, default=0, nullable=False)
