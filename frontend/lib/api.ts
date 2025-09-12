@@ -88,13 +88,13 @@ export const useApiClient = () => {
 export class DatasetService {
   static async getAll(token?: string): Promise<Dataset[]> {
     const client = createApiClient(token);
-    const response = await client.get<ApiResponse<Dataset[]>>('/api/datasets');
+    const response = await client.get<ApiResponse<Dataset[]>>('/api/datasets/');
     return response.data.data || [];
   }
 
   static async getById(id: string, token: string): Promise<Dataset> {
     const client = createApiClient(token);
-    const response = await client.get<ApiResponse<Dataset>>(`/api/datasets/${id}`);
+    const response = await client.get<ApiResponse<Dataset>>(`/api/datasets/${id}/`);
     if (!response.data.data) {
       throw new Error('Dataset not found');
     }
@@ -123,7 +123,7 @@ export class DatasetService {
 
   static async delete(id: string, token: string): Promise<void> {
     const client = createApiClient(token);
-    await client.delete(`/api/datasets/${id}`);
+    await client.delete(`/api/datasets/${id}/`);
   }
 
   static async reprocess(id: string, config: AnalysisConfigForm, token: string): Promise<AnalysisJob> {
