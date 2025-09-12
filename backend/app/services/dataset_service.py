@@ -123,14 +123,15 @@ class DatasetService:
                     # )
                     analysis_job = None
                     
-                    # Skip question creation for now - Railway schema incompatibility
-                    # questions_created = cls._create_questions_from_csv(
-                    #     dataset_id=created_dataset_id,
-                    #     headers=headers,
-                    #     rows=rows,
-                    #     db=transaction_db
-                    # )
-                    questions_created = len(rows)  # Just count the rows
+                    # Create questions using Railway-compatible service
+                    from .railway_question_service import RailwayQuestionService
+                    
+                    questions_created = RailwayQuestionService.create_questions_from_csv(
+                        dataset_id=created_dataset_id,
+                        headers=headers,
+                        rows=rows,
+                        db=transaction_db
+                    )
                     
                     # Update dataset with processing results (using pure SQL since no dataset object)
                     # dataset.total_questions = questions_created
@@ -188,11 +189,17 @@ class DatasetService:
             count_sql = text("SELECT COUNT(*) FROM datasets")
             total_count = db.execute(count_sql).scalar()
             
-            # Get datasets with only the fields that exist in Railway
+            # Get datasets with question counts from actual questions table
             datasets_sql = text("""
-                SELECT id, name, filename, file_size, created_at, upload_status, processing_status
-                FROM datasets 
-                ORDER BY created_at DESC 
+                SELECT d.id, d.name, d.filename, d.file_size, d.created_at, d.upload_status, d.processing_status,
+                       COALESCE(q.question_count, 0) as question_count
+                FROM datasets d
+                LEFT JOIN (
+                    SELECT dataset_id, COUNT(*) as question_count 
+                    FROM questions 
+                    GROUP BY dataset_id
+                ) q ON d.id = q.dataset_id
+                ORDER BY d.created_at DESC 
                 LIMIT :limit OFFSET :offset
             """)
             
@@ -210,8 +217,8 @@ class DatasetService:
                     "upload_status": "completed",  # Force completed status for UI
                     "processing_status": "completed",  # Force completed status for UI  
                     "status": "completed",  # Default status for UI
-                    "questions_count": 0,  # Placeholder since questions aren't created
-                    "total_questions": 0   # Placeholder for compatibility
+                    "questions_count": row.question_count,  # Actual count from database
+                    "total_questions": row.question_count   # Same value for compatibility
                 })
             
             return {
