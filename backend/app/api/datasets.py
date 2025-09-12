@@ -15,6 +15,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 @router.get("/")
+@router.get("")
 async def list_datasets(
     limit: int = Query(default=50, le=100, description="Number of datasets to return"),
     offset: int = Query(default=0, ge=0, description="Number of datasets to skip"),
