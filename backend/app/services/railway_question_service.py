@@ -76,51 +76,36 @@ class RailwayQuestionService:
                 if not question_text or not response_text:
                     continue
                 
-                # Try different column combinations to find what Railway's questions table has
-                # Start with the most basic columns
+                # Create a questions table if it doesn't exist and insert the question
                 try:
-                    # Try basic column names first
+                    # First, try to create the questions table if it doesn't exist
+                    create_table_sql = text("""
+                        CREATE TABLE IF NOT EXISTS questions (
+                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                            dataset_id UUID,
+                            question_text TEXT,
+                            answer_text TEXT,
+                            created_at TIMESTAMP DEFAULT NOW()
+                        )
+                    """)
+                    db.execute(create_table_sql)
+                    
+                    # Now insert the question
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, original_question, ai_response)
-                        VALUES (:id, :dataset_id, :original_question, :ai_response)
+                        INSERT INTO questions (id, dataset_id, question_text, answer_text)
+                        VALUES (:id, :dataset_id, :question_text, :answer_text)
                     """)
                     db.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
-                        'original_question': question_text[:2000],
-                        'ai_response': response_text[:5000]
+                        'question_text': question_text[:2000],
+                        'answer_text': response_text[:5000]
                     })
-                except Exception as e1:
-                    logger.warning(f"Failed with original_question/ai_response: {e1}")
-                    try:
-                        # Try common alternative column names
-                        sql = text("""
-                            INSERT INTO questions (id, dataset_id, question, response)
-                            VALUES (:id, :dataset_id, :question, :response)
-                        """)
-                        db.execute(sql, {
-                            'id': str(uuid.uuid4()),
-                            'dataset_id': str(dataset_id),
-                            'question': question_text[:2000],
-                            'response': response_text[:5000]
-                        })
-                    except Exception as e2:
-                        logger.warning(f"Failed with question/response: {e2}")
-                        try:
-                            # Try minimal columns
-                            sql = text("""
-                                INSERT INTO questions (id, dataset_id, question_text, answer_text)
-                                VALUES (:id, :dataset_id, :question_text, :answer_text)
-                            """)
-                            db.execute(sql, {
-                                'id': str(uuid.uuid4()),
-                                'dataset_id': str(dataset_id),
-                                'question_text': question_text[:2000],
-                                'answer_text': response_text[:5000]
-                            })
-                        except Exception as e3:
-                            logger.error(f"All question insert attempts failed: {e1}, {e2}, {e3}")
-                            continue
+                    
+                except Exception as e:
+                    logger.error(f"Failed to create/insert question: {e}")
+                    # If all else fails, just skip this question but log it
+                    continue
                 
                 questions_created += 1
             
@@ -146,7 +131,7 @@ class RailwayQuestionService:
         """
         try:
             sql = text("""
-                SELECT id, dataset_id, original_question, ai_response
+                SELECT id, dataset_id, question_text, answer_text
                 FROM questions 
                 WHERE dataset_id = :dataset_id
                 ORDER BY created_at ASC
@@ -164,8 +149,8 @@ class RailwayQuestionService:
                 questions.append({
                     'id': str(row.id),
                     'dataset_id': str(row.dataset_id),
-                    'original_question': row.original_question,
-                    'ai_response': row.ai_response
+                    'question_text': row.question_text,
+                    'answer_text': row.answer_text
                 })
             
             return questions
