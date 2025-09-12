@@ -142,7 +142,14 @@ class DatasetService:
                     # analysis_job.status = JobStatus.COMPLETED
                     # analysis_job.end_time = datetime.utcnow()
                     
-                    transaction_db.commit()
+                    # Explicit commit with error handling
+                    try:
+                        transaction_db.commit()
+                        logger.info(f"✅ Transaction committed for dataset {created_dataset_id}")
+                    except Exception as commit_error:
+                        logger.error(f"❌ Commit failed: {commit_error}")
+                        transaction_db.rollback()
+                        raise
                     
                     logger.info(f"✅ Dataset uploaded successfully: {created_dataset_id} - {name}")
                     
@@ -189,17 +196,11 @@ class DatasetService:
             count_sql = text("SELECT COUNT(*) FROM datasets")
             total_count = db.execute(count_sql).scalar()
             
-            # Get datasets with question counts from actual questions table
+            # Simplified query without LEFT JOIN to debug
             datasets_sql = text("""
-                SELECT d.id, d.name, d.filename, d.file_size, d.created_at, d.upload_status, d.processing_status,
-                       COALESCE(q.question_count, 0) as question_count
-                FROM datasets d
-                LEFT JOIN (
-                    SELECT dataset_id, COUNT(*) as question_count 
-                    FROM questions 
-                    GROUP BY dataset_id
-                ) q ON d.id = q.dataset_id
-                ORDER BY d.created_at DESC 
+                SELECT id, name, filename, file_size, created_at, upload_status, processing_status
+                FROM datasets 
+                ORDER BY created_at DESC 
                 LIMIT :limit OFFSET :offset
             """)
             
@@ -217,8 +218,8 @@ class DatasetService:
                     "upload_status": "completed",  # Force completed status for UI
                     "processing_status": "completed",  # Force completed status for UI  
                     "status": "completed",  # Default status for UI
-                    "questions_count": row.question_count,  # Actual count from database
-                    "total_questions": row.question_count   # Same value for compatibility
+                    "questions_count": 0,  # Temporarily set to 0 for debugging
+                    "total_questions": 0   # Temporarily set to 0 for debugging
                 })
             
             return {
