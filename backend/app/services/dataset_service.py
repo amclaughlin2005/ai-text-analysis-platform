@@ -182,23 +182,38 @@ class DatasetService:
         Get datasets with pagination and filtering
         """
         try:
-            query = db.query(Dataset)
+            from sqlalchemy import text
             
-            # Filter by user if provided (for when auth is enabled)
-            if user_id:
-                pass  # query = query.filter(Dataset.user_id == user_id)  # Temporarily disabled for Railway
+            # Use pure SQL to avoid SQLAlchemy model field mismatches with Railway
+            count_sql = text("SELECT COUNT(*) FROM datasets")
+            total_count = db.execute(count_sql).scalar()
             
-            # Get total count for pagination
-            total_count = query.count()
+            # Get datasets with only the fields that exist in Railway
+            datasets_sql = text("""
+                SELECT id, name, filename, file_size, created_at, upload_status, processing_status
+                FROM datasets 
+                ORDER BY created_at DESC 
+                LIMIT :limit OFFSET :offset
+            """)
             
-            # Apply pagination and ordering
-            datasets = query.order_by(desc(Dataset.created_at))\
-                          .limit(limit)\
-                          .offset(offset)\
-                          .all()
+            result = db.execute(datasets_sql, {"limit": limit, "offset": offset}).fetchall()
+            
+            # Convert to dict format
+            datasets = []
+            for row in result:
+                datasets.append({
+                    "id": str(row.id),
+                    "name": row.name,
+                    "filename": row.filename,
+                    "file_size": row.file_size,
+                    "created_at": row.created_at.isoformat() if row.created_at else None,
+                    "upload_status": row.upload_status,
+                    "processing_status": row.processing_status,
+                    "status": "completed"  # Default status for UI
+                })
             
             return {
-                "datasets": [dataset.to_dict() for dataset in datasets],
+                "datasets": datasets,
                 "pagination": {
                     "total": total_count,
                     "limit": limit,
