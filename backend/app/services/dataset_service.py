@@ -100,7 +100,8 @@ class DatasetService:
                     # Insert using pure SQL - add required Railway fields (10 fields discovered so far)
                     sql = text("INSERT INTO datasets (id, name, filename, file_size, file_path, total_rows, total_columns, upload_status, processing_status, questions_count) VALUES (:id, :name, :filename, :file_size, :file_path, :total_rows, :total_columns, :upload_status, :processing_status, :questions_count)")
                     
-                    db.execute(sql, {
+                    # Debug logging before insert
+                    insert_data = {
                         'id': str(dataset_id), 
                         'name': name.strip()[:255],
                         'filename': file.filename or 'unknown.csv',
@@ -111,7 +112,16 @@ class DatasetService:
                         'upload_status': 'completed',
                         'processing_status': 'processing',
                         'questions_count': len(rows)
-                    })
+                    }
+                    
+                    logger.info(f"🔍 Attempting dataset insert with data: {insert_data}")
+                    
+                    try:
+                        result = db.execute(sql, insert_data)
+                        logger.info(f"✅ SQL execution successful, rowcount: {result.rowcount}")
+                    except Exception as sql_error:
+                        logger.error(f"❌ SQL execution failed: {sql_error}")
+                        raise
                     
                     logger.info(f"✅ Pure SQL dataset insert successful: {dataset_id}")
                     created_dataset_id = dataset_id
