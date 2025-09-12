@@ -88,8 +88,8 @@ class DatasetService:
             safe_filename = cls._generate_safe_filename(dataset_id, file.filename)
             file_path = UPLOAD_DIR / safe_filename
             
-            # Use database transaction for atomicity
-            with DatabaseTransaction(db) as transaction_db:
+            # Simplified transaction - just use the main db session
+            try:
                 # Save file to disk
                 await cls._save_file_to_disk(file, file_path)
                 
@@ -100,7 +100,7 @@ class DatasetService:
                     # Insert using pure SQL - add required Railway fields (10 fields discovered so far)
                     sql = text("INSERT INTO datasets (id, name, filename, file_size, file_path, total_rows, total_columns, upload_status, processing_status, questions_count) VALUES (:id, :name, :filename, :file_size, :file_path, :total_rows, :total_columns, :upload_status, :processing_status, :questions_count)")
                     
-                    transaction_db.execute(sql, {
+                    db.execute(sql, {
                         'id': str(dataset_id), 
                         'name': name.strip()[:255],
                         'filename': file.filename or 'unknown.csv',
@@ -130,7 +130,7 @@ class DatasetService:
                         dataset_id=created_dataset_id,
                         headers=headers,
                         rows=rows,
-                        db=transaction_db
+                        db=db
                     )
                     
                     # Update dataset with processing results (using pure SQL since no dataset object)
@@ -144,11 +144,11 @@ class DatasetService:
                     
                     # Explicit commit with error handling
                     try:
-                        transaction_db.commit()
+                        db.commit()
                         logger.info(f"✅ Transaction committed for dataset {created_dataset_id}")
                     except Exception as commit_error:
                         logger.error(f"❌ Commit failed: {commit_error}")
-                        transaction_db.rollback()
+                        db.rollback()
                         raise
                     
                     logger.info(f"✅ Dataset uploaded successfully: {created_dataset_id} - {name}")
