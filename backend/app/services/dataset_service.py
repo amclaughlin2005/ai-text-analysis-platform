@@ -282,6 +282,8 @@ class DatasetService:
         Delete dataset and all associated data - Railway compatible version
         """
         try:
+            from sqlalchemy import text
+            
             # Check if dataset exists using pure SQL
             check_sql = text("SELECT name, filename FROM datasets WHERE id = :dataset_id")
             result = db.execute(check_sql, {"dataset_id": dataset_id}).fetchone()
