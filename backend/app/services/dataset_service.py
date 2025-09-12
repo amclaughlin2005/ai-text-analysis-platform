@@ -279,31 +279,49 @@ class DatasetService:
     @classmethod
     def delete_dataset(cls, dataset_id: str, db: Session) -> Dict[str, Any]:
         """
-        Delete dataset and all associated data
+        Delete dataset and all associated data - Railway compatible version
         """
         try:
-            with DatabaseTransaction(db) as transaction_db:
-                dataset = transaction_db.query(Dataset)\
-                                       .filter(Dataset.id == dataset_id)\
-                                       .first()
-                
-                if not dataset:
-                    raise HTTPException(status_code=404, detail="Dataset not found")
-                
-                # Clean up file
-                if dataset.file_path and os.path.exists(dataset.file_path):
-                    cls._cleanup_file(Path(dataset.file_path))
-                
-                # Delete dataset (cascades to related data)
-                transaction_db.delete(dataset)
-                transaction_db.commit()
-                
-                logger.info(f"✅ Dataset deleted: {dataset_id}")
-                
-                return {
-                    "success": True,
-                    "message": f"Dataset '{dataset.name}' deleted successfully"
-                }
+            # Check if dataset exists using pure SQL
+            check_sql = text("SELECT name, filename FROM datasets WHERE id = :dataset_id")
+            result = db.execute(check_sql, {"dataset_id": dataset_id}).fetchone()
+            
+            if not result:
+                raise HTTPException(status_code=404, detail="Dataset not found")
+            
+            dataset_name = result.name
+            
+            # Delete questions first (if questions table exists)
+            try:
+                delete_questions_sql = text("DELETE FROM questions WHERE dataset_id = :dataset_id")
+                questions_deleted = db.execute(delete_questions_sql, {"dataset_id": dataset_id})
+                logger.info(f"🗑️ Deleted {questions_deleted.rowcount} questions for dataset {dataset_id}")
+            except Exception as e:
+                logger.warning(f"Questions deletion failed (table may not exist): {e}")
+            
+            # Delete analysis jobs (if table exists)
+            try:
+                delete_jobs_sql = text("DELETE FROM analysis_jobs WHERE dataset_id = :dataset_id")
+                jobs_deleted = db.execute(delete_jobs_sql, {"dataset_id": dataset_id})
+                logger.info(f"🗑️ Deleted {jobs_deleted.rowcount} analysis jobs for dataset {dataset_id}")
+            except Exception as e:
+                logger.warning(f"Analysis jobs deletion failed (table may not exist): {e}")
+            
+            # Delete the dataset itself
+            delete_dataset_sql = text("DELETE FROM datasets WHERE id = :dataset_id")
+            dataset_deleted = db.execute(delete_dataset_sql, {"dataset_id": dataset_id})
+            
+            if dataset_deleted.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Dataset not found or already deleted")
+            
+            db.commit()
+            
+            logger.info(f"✅ Dataset deleted: {dataset_id} - {dataset_name}")
+            
+            return {
+                "success": True,
+                "message": f"Dataset '{dataset_name}' deleted successfully"
+            }
                 
         except HTTPException:
             raise
