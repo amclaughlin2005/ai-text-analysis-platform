@@ -152,10 +152,20 @@ class DatasetService:
                     # analysis_job.status = JobStatus.COMPLETED
                     # analysis_job.end_time = datetime.utcnow()
                     
-                    # Explicit commit with error handling
+                    # Explicit commit with error handling and verification
                     try:
                         db.commit()
                         logger.info(f"✅ Transaction committed for dataset {created_dataset_id}")
+                        
+                        # Immediate verification - check if the record exists
+                        verify_sql = text("SELECT COUNT(*) FROM datasets WHERE id = :id")
+                        verify_result = db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
+                        logger.info(f"🔍 Verification: Found {verify_result} records with id {created_dataset_id}")
+                        
+                        if verify_result == 0:
+                            logger.error(f"❌ CRITICAL: Dataset {created_dataset_id} was not found after commit!")
+                            raise Exception("Dataset insertion failed - record not found after commit")
+                            
                     except Exception as commit_error:
                         logger.error(f"❌ Commit failed: {commit_error}")
                         db.rollback()
