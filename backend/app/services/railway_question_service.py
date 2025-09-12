@@ -76,18 +76,51 @@ class RailwayQuestionService:
                 if not question_text or not response_text:
                     continue
                 
-                # Use pure SQL insert with only basic fields that Railway should have
-                sql = text("""
-                    INSERT INTO questions (id, dataset_id, original_question, ai_response)
-                    VALUES (:id, :dataset_id, :original_question, :ai_response)
-                """)
-                
-                db.execute(sql, {
-                    'id': str(uuid.uuid4()),
-                    'dataset_id': str(dataset_id),
-                    'original_question': question_text[:2000],  # Truncate if too long
-                    'ai_response': response_text[:5000]  # Truncate if too long
-                })
+                # Try different column combinations to find what Railway's questions table has
+                # Start with the most basic columns
+                try:
+                    # Try basic column names first
+                    sql = text("""
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response)
+                    """)
+                    db.execute(sql, {
+                        'id': str(uuid.uuid4()),
+                        'dataset_id': str(dataset_id),
+                        'original_question': question_text[:2000],
+                        'ai_response': response_text[:5000]
+                    })
+                except Exception as e1:
+                    logger.warning(f"Failed with original_question/ai_response: {e1}")
+                    try:
+                        # Try common alternative column names
+                        sql = text("""
+                            INSERT INTO questions (id, dataset_id, question, response)
+                            VALUES (:id, :dataset_id, :question, :response)
+                        """)
+                        db.execute(sql, {
+                            'id': str(uuid.uuid4()),
+                            'dataset_id': str(dataset_id),
+                            'question': question_text[:2000],
+                            'response': response_text[:5000]
+                        })
+                    except Exception as e2:
+                        logger.warning(f"Failed with question/response: {e2}")
+                        try:
+                            # Try minimal columns
+                            sql = text("""
+                                INSERT INTO questions (id, dataset_id, question_text, answer_text)
+                                VALUES (:id, :dataset_id, :question_text, :answer_text)
+                            """)
+                            db.execute(sql, {
+                                'id': str(uuid.uuid4()),
+                                'dataset_id': str(dataset_id),
+                                'question_text': question_text[:2000],
+                                'answer_text': response_text[:5000]
+                            })
+                        except Exception as e3:
+                            logger.error(f"All question insert attempts failed: {e1}, {e2}, {e3}")
+                            continue
                 
                 questions_created += 1
             
