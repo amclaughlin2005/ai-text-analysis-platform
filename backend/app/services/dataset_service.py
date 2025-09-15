@@ -152,23 +152,34 @@ class DatasetService:
                     # analysis_job.status = JobStatus.COMPLETED
                     # analysis_job.end_time = datetime.utcnow()
                     
-                    # Explicit commit with error handling and verification
+                    # Force commit and refresh session for Railway compatibility
                     try:
+                        # First commit
                         db.commit()
                         logger.info(f"✅ Transaction committed for dataset {created_dataset_id}")
                         
-                        # Immediate verification - check if the record exists
+                        # Force a fresh connection by closing and reopening
+                        db.close()
+                        from ..core.database import get_db
+                        fresh_db = next(get_db())
+                        
+                        # Verify with fresh connection
                         verify_sql = text("SELECT COUNT(*) FROM datasets WHERE id = :id")
-                        verify_result = db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
-                        logger.info(f"🔍 Verification: Found {verify_result} records with id {created_dataset_id}")
+                        verify_result = fresh_db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
+                        logger.info(f"🔍 Fresh connection verification: Found {verify_result} records with id {created_dataset_id}")
+                        
+                        fresh_db.close()
                         
                         if verify_result == 0:
-                            logger.error(f"❌ CRITICAL: Dataset {created_dataset_id} was not found after commit!")
-                            raise Exception("Dataset insertion failed - record not found after commit")
+                            logger.error(f"❌ CRITICAL: Dataset {created_dataset_id} was not found with fresh connection!")
+                            raise Exception("Dataset insertion failed - record not visible to fresh connection")
                             
                     except Exception as commit_error:
-                        logger.error(f"❌ Commit failed: {commit_error}")
-                        db.rollback()
+                        logger.error(f"❌ Commit or verification failed: {commit_error}")
+                        try:
+                            db.rollback()
+                        except:
+                            pass
                         raise
                     
                     logger.info(f"✅ Dataset uploaded successfully: {created_dataset_id} - {name}")
@@ -332,7 +343,17 @@ class DatasetService:
             
             dataset_name = result.name
             
-            # Delete questions first (if questions table exists)
+            # Delete related data in proper order (child tables first)
+            
+            # Delete word_frequencies first (causing the foreign key violation)
+            try:
+                delete_word_frequencies_sql = text("DELETE FROM word_frequencies WHERE dataset_id = :dataset_id")
+                word_freq_deleted = db.execute(delete_word_frequencies_sql, {"dataset_id": dataset_id})
+                logger.info(f"🗑️ Deleted {word_freq_deleted.rowcount} word frequencies for dataset {dataset_id}")
+            except Exception as e:
+                logger.warning(f"Word frequencies deletion failed (table may not exist): {e}")
+            
+            # Delete questions (if questions table exists)
             try:
                 delete_questions_sql = text("DELETE FROM questions WHERE dataset_id = :dataset_id")
                 questions_deleted = db.execute(delete_questions_sql, {"dataset_id": dataset_id})
@@ -347,6 +368,14 @@ class DatasetService:
                 logger.info(f"🗑️ Deleted {jobs_deleted.rowcount} analysis jobs for dataset {dataset_id}")
             except Exception as e:
                 logger.warning(f"Analysis jobs deletion failed (table may not exist): {e}")
+            
+            # Delete any other related tables that might exist
+            try:
+                delete_analytics_sql = text("DELETE FROM analytics WHERE dataset_id = :dataset_id")
+                analytics_deleted = db.execute(delete_analytics_sql, {"dataset_id": dataset_id})
+                logger.info(f"🗑️ Deleted {analytics_deleted.rowcount} analytics records for dataset {dataset_id}")
+            except Exception as e:
+                logger.warning(f"Analytics deletion failed (table may not exist): {e}")
             
             # Delete the dataset itself
             delete_dataset_sql = text("DELETE FROM datasets WHERE id = :dataset_id")
