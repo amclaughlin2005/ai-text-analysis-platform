@@ -203,7 +203,7 @@ async def debug_questions_schema(db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e), "message": "Failed to get schema info"}
 
-@router.get("/questions")
+@router.get("/dataset-questions")
 async def get_dataset_questions(
     dataset_id: str = Query(..., description="Dataset ID to fetch questions for"),
     page: int = Query(default=1, ge=1, description="Page number"),
