@@ -189,6 +189,11 @@ class DatasetService:
                     cls._cleanup_file(file_path)
                     raise
                     
+            except Exception as e:
+                # Clean up file on any error in the main try block
+                cls._cleanup_file(file_path)
+                raise
+                    
         except HTTPException:
             raise
         except Exception as e:
