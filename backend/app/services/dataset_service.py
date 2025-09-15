@@ -216,11 +216,17 @@ class DatasetService:
             count_sql = text("SELECT COUNT(*) FROM datasets")
             total_count = db.execute(count_sql).scalar()
             
-            # Simplified query without LEFT JOIN to debug
+            # Get datasets with actual question counts from questions table
             datasets_sql = text("""
-                SELECT id, name, filename, file_size, created_at, upload_status, processing_status
-                FROM datasets 
-                ORDER BY created_at DESC 
+                SELECT d.id, d.name, d.filename, d.file_size, d.created_at, d.upload_status, d.processing_status,
+                       COALESCE(q.question_count, 0) as question_count
+                FROM datasets d
+                LEFT JOIN (
+                    SELECT dataset_id, COUNT(*) as question_count 
+                    FROM questions 
+                    GROUP BY dataset_id
+                ) q ON d.id = q.dataset_id
+                ORDER BY d.created_at DESC 
                 LIMIT :limit OFFSET :offset
             """)
             
@@ -238,8 +244,8 @@ class DatasetService:
                     "upload_status": "completed",  # Force completed status for UI
                     "processing_status": "completed",  # Force completed status for UI  
                     "status": "completed",  # Default status for UI
-                    "questions_count": 0,  # Temporarily set to 0 for debugging
-                    "total_questions": 0   # Temporarily set to 0 for debugging
+                    "questions_count": row.question_count,  # Actual count from database
+                    "total_questions": row.question_count   # Same value for compatibility
                 })
             
             return {
