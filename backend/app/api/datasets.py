@@ -202,3 +202,66 @@ async def debug_questions_schema(db: Session = Depends(get_db)):
         
     except Exception as e:
         return {"error": str(e), "message": "Failed to get schema info"}
+
+@router.get("/questions")
+async def get_dataset_questions(
+    dataset_id: str = Query(..., description="Dataset ID to fetch questions for"),
+    page: int = Query(default=1, ge=1, description="Page number"),
+    page_size: int = Query(default=50, ge=1, le=100, description="Questions per page"),
+    db: Session = Depends(get_db)
+):
+    """Get questions for a dataset with pagination"""
+    try:
+        # Calculate offset
+        offset = (page - 1) * page_size
+        
+        # Get questions using pure SQL to match Railway schema
+        questions_sql = text("""
+            SELECT id, original_question, ai_response, csv_row_number, created_at
+            FROM questions 
+            WHERE dataset_id = :dataset_id
+            ORDER BY csv_row_number ASC
+            LIMIT :limit OFFSET :offset
+        """)
+        
+        questions_result = db.execute(questions_sql, {
+            "dataset_id": dataset_id,
+            "limit": page_size,
+            "offset": offset
+        }).fetchall()
+        
+        # Get total count
+        count_sql = text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id")
+        total_count = db.execute(count_sql, {"dataset_id": dataset_id}).scalar()
+        
+        # Format questions for frontend
+        questions = []
+        for row in questions_result:
+            questions.append({
+                "id": str(row.id),
+                "question": row.original_question,
+                "response": row.ai_response,
+                "row_number": row.csv_row_number,
+                "created_at": row.created_at.isoformat() if row.created_at else None
+            })
+        
+        # Calculate pagination info
+        total_pages = (total_count + page_size - 1) // page_size
+        has_next = page < total_pages
+        has_prev = page > 1
+        
+        return {
+            "questions": questions,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total_count,
+                "total_pages": total_pages,
+                "has_next": has_next,
+                "has_prev": has_prev
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get questions for dataset {dataset_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch questions: {str(e)}")
