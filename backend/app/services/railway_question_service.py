@@ -33,6 +33,9 @@ class RailwayQuestionService:
             question_patterns = ['question', 'original_question', 'query', 'prompt', 'input']
             response_patterns = ['response', 'answer', 'ai_response', 'output', 'reply']
             
+            logger.info(f"🔍 Regular session: Looking for question patterns {question_patterns} in headers: {header_lower}")
+            logger.info(f"🔍 Original headers: {headers}")
+            
             question_col = None
             response_col = None
             
@@ -41,21 +44,27 @@ class RailwayQuestionService:
                 for i, header in enumerate(header_lower):
                     if pattern in header:
                         question_col = i
+                        logger.info(f"✅ Found question pattern '{pattern}' in header '{header}' at index {i}")
                         break
                 if question_col is not None:
                     break
             
             # Find response column  
+            logger.info(f"🔍 Regular session: Looking for response patterns {response_patterns} in headers: {header_lower}")
             for pattern in response_patterns:
                 for i, header in enumerate(header_lower):
                     if pattern in header:
                         response_col = i
+                        logger.info(f"✅ Found response pattern '{pattern}' in header '{header}' at index {i}")
                         break
                 if response_col is not None:
                     break
             
             if question_col is None or response_col is None:
-                logger.warning(f"Could not find question/response columns in headers: {headers}")
+                logger.error(f"❌ Regular session: Could not find question/response columns. Question col: {question_col}, Response col: {response_col}")
+                logger.error(f"❌ Headers: {headers}")
+                logger.error(f"❌ Lower headers: {header_lower}")
+                logger.error(f"❌ Patterns: Q={question_patterns}, R={response_patterns}")
                 return 0
             
             logger.info(f"📝 Found question column at index {question_col}, response at {response_col}")
