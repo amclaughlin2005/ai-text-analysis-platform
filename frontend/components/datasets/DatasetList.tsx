@@ -224,7 +224,10 @@ export default function DatasetList({
 
   const handleAnalytics = (dataset: Dataset, e: React.MouseEvent) => {
     e.stopPropagation();
-    toast.info('Analytics feature coming soon!');
+    toast('Analytics feature coming soon!', {
+      icon: '📊',
+      duration: 3000,
+    });
     closeActionMenu();
   };
 
