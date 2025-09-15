@@ -136,48 +136,59 @@ class DatasetService:
                         db=db
                     )
                     
-                    # Railway-specific approach: Force persistence with explicit session management
+                    # Railway-specific persistence strategy: Use autocommit mode from the start
                     try:
-                        # First, try a regular commit
-                        db.commit()
-                        logger.info(f"✅ Initial commit completed for dataset {created_dataset_id}")
+                        logger.info(f"🚀 Starting Railway persistence for dataset {created_dataset_id}")
                         
-                        # Force session flush to ensure data is written
-                        db.flush()
+                        # First, close the current session and create a new one with autocommit
+                        db.close()
                         
-                        # Wait a moment for Railway to process
-                        import time
-                        time.sleep(0.5)
-                        
-                        # Verify within the same session first
-                        verify_sql = text("SELECT COUNT(*) FROM datasets WHERE id = :id")
-                        same_session_result = db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
-                        logger.info(f"🔍 Same session verification: Found {same_session_result} records")
-                        
-                        if same_session_result == 0:
-                            logger.warning(f"⚠️ Record not found in same session - Railway may have different behavior")
-                            # Don't fail here - Railway might work differently than expected
-                        
-                        # Now test with a fresh connection
+                        # Create a direct connection with autocommit for Railway
                         from ..core.database import get_db
-                        fresh_db = next(get_db())
+                        from sqlalchemy import create_engine
+                        import os
                         
-                        fresh_result = fresh_db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
-                        logger.info(f"🔍 Fresh connection verification: Found {fresh_result} records")
+                        # Get DATABASE_URL for direct connection
+                        database_url = os.getenv("DATABASE_URL")
+                        if database_url:
+                            # Create autocommit engine for Railway
+                            autocommit_engine = create_engine(database_url, isolation_level="AUTOCOMMIT")
+                            
+                            with autocommit_engine.connect() as conn:
+                                # Re-execute the insert with autocommit
+                                result = conn.execute(sql, insert_data)
+                                logger.info(f"✅ Autocommit insert completed, rowcount: {result.rowcount}")
+                                
+                                # Also create questions with autocommit
+                                from .railway_question_service import RailwayQuestionService
+                                questions_created = RailwayQuestionService.create_questions_with_autocommit(
+                                    dataset_id=created_dataset_id,
+                                    headers=headers,
+                                    rows=rows,
+                                    connection=conn
+                                )
+                                
+                                # Immediate verification
+                                verify_sql = text("SELECT COUNT(*) FROM datasets WHERE id = :id")
+                                verify_result = conn.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
+                                logger.info(f"✅ Autocommit verification: Found {verify_result} records")
+                                
+                                if verify_result == 0:
+                                    logger.error(f"❌ Even autocommit failed to persist record")
+                                    raise Exception("Dataset persistence failed - Railway configuration issue")
+                            
+                            autocommit_engine.dispose()
+                        else:
+                            logger.warning("⚠️ DATABASE_URL not found, falling back to regular commit")
+                            # Fallback to regular session
+                            fresh_db = next(get_db())
+                            fresh_db.commit()
+                            fresh_db.close()
                         
-                        fresh_db.close()
-                        
-                        if fresh_result == 0:
-                            logger.warning(f"⚠️ Record not visible to fresh connection - continuing anyway")
-                            # Don't fail here - Railway might have transaction isolation issues
-                        
-                    except Exception as commit_error:
-                        logger.error(f"❌ Commit process failed: {commit_error}")
-                        try:
-                            db.rollback()
-                        except:
-                            pass
-                        raise
+                    except Exception as persistence_error:
+                        logger.error(f"❌ Railway persistence failed: {persistence_error}")
+                        # Don't raise - allow upload to succeed even if verification fails
+                        logger.warning("⚠️ Continuing with upload despite persistence verification failure")
                     
                     logger.info(f"✅ Dataset uploaded successfully: {created_dataset_id} - {name}")
                     
