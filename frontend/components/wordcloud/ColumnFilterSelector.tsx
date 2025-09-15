@@ -104,20 +104,8 @@ export default function ColumnFilterSelector({
             console.log('Production API not available, trying localhost...');
           }
           
-          // Fallback to localhost for development
-          try {
-            const response = await fetch('http://localhost:8002/columns');
-            if (response.ok) {
-              const data = await response.json();
-              console.log('📋 Column info loaded from localhost:', data);
-              if (data.columns) {
-                setColumns(data.columns);
-                return;
-              }
-            }
-          } catch (localError) {
-            console.log('Localhost also not available, using fallback data');
-          }
+          // Skip localhost fallback - use Railway API only
+          console.log('Using Railway API only - skipping localhost fallback');
           
           // Final fallback - use hardcoded legal dataset structure
           setColumns([

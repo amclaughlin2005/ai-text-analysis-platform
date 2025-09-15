@@ -57,6 +57,51 @@ async def get_dataset(dataset_id: str, db: Session = Depends(get_db)):
     
     return DatasetService.get_dataset(dataset_id, db)
 
+@router.get("/{dataset_id}/columns")
+async def get_dataset_columns(dataset_id: str, db: Session = Depends(get_db)):
+    """Get dataset column information for filtering"""
+    logger.info(f"📊 Getting column info for dataset: {dataset_id}")
+    
+    try:
+        from sqlalchemy import text
+        
+        # Check if dataset exists
+        dataset_sql = text("SELECT name FROM datasets WHERE id = :dataset_id")
+        dataset_result = db.execute(dataset_sql, {"dataset_id": dataset_id}).fetchone()
+        
+        if not dataset_result:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        
+        # Return standard column structure for Q&A datasets
+        return {
+            "success": True,
+            "columns": [
+                {
+                    "index": 0,
+                    "name": "Questions", 
+                    "type": "text",
+                    "description": "Original questions from the dataset",
+                    "sample": "Sample question text..."
+                },
+                {
+                    "index": 1,
+                    "name": "Responses",
+                    "type": "text", 
+                    "description": "AI responses and answers",
+                    "sample": "Sample response text..."
+                }
+            ]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to get columns for dataset {dataset_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get dataset columns: {str(e)}"
+        )
+
 @router.delete("/{dataset_id}")
 async def delete_dataset(dataset_id: str, db: Session = Depends(get_db)):
     """Delete dataset and all associated data"""
