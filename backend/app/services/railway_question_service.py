@@ -351,9 +351,10 @@ class RailwayQuestionService:
                 
                 # Create autocommit connection for question creation
                 from sqlalchemy import create_engine
-                from ..core.database import DATABASE_URL
+                from ..core.config import get_settings
                 
-                engine = create_engine(DATABASE_URL, isolation_level="AUTOCOMMIT")
+                settings = get_settings()
+                engine = create_engine(settings.DATABASE_URL, isolation_level="AUTOCOMMIT")
                 connection = engine.connect()
                 
                 try:
@@ -391,9 +392,10 @@ class RailwayQuestionService:
                         
                         # Create autocommit connection for question creation
                         from sqlalchemy import create_engine
-                        from ..core.database import DATABASE_URL
+                        from ..core.config import get_settings
                         
-                        engine = create_engine(DATABASE_URL, isolation_level="AUTOCOMMIT")
+                        settings = get_settings()
+                        engine = create_engine(settings.DATABASE_URL, isolation_level="AUTOCOMMIT")
                         connection = engine.connect()
                         
                         try:
