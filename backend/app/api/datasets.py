@@ -203,93 +203,36 @@ async def debug_questions_schema(db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e), "message": "Failed to get schema info"}
 
-@router.get("/dataset-questions")
+@router.get("/questions")
 async def get_dataset_questions(
     dataset_id: str = Query(..., description="Dataset ID to fetch questions for"),
-    page: int = Query(default=1, ge=1, description="Page number"),
-    page_size: int = Query(default=50, ge=1, le=100, description="Questions per page"),
     db: Session = Depends(get_db)
 ):
-    """Get questions for a dataset with pagination"""
+    """Get questions for a dataset (simple version for table view)"""
     try:
-        logger.info(f"Fetching questions for dataset {dataset_id}, page {page}")
+        # Use the same query as word cloud API since that works
+        questions_sql = text("SELECT original_question, ai_response FROM questions WHERE dataset_id = :dataset_id ORDER BY csv_row_number ASC")
+        questions_result = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
         
-        # Calculate offset
-        offset = (page - 1) * page_size
-        
-        # Simple query first to test
-        count_sql = text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id")
-        total_count = db.execute(count_sql, {"dataset_id": dataset_id}).scalar() or 0
-        
-        logger.info(f"Found {total_count} total questions for dataset {dataset_id}")
-        
-        if total_count == 0:
-            return {
-                "questions": [],
-                "pagination": {
-                    "page": page,
-                    "page_size": page_size,
-                    "total": 0,
-                    "total_pages": 0,
-                    "has_next": False,
-                    "has_prev": False
-                }
-            }
-        
-        # Get questions with simpler query
-        questions_sql = text("""
-            SELECT original_question, ai_response, csv_row_number
-            FROM questions 
-            WHERE dataset_id = :dataset_id
-            ORDER BY csv_row_number ASC
-            LIMIT :limit OFFSET :offset
-        """)
-        
-        questions_result = db.execute(questions_sql, {
-            "dataset_id": dataset_id,
-            "limit": page_size,
-            "offset": offset
-        }).fetchall()
-        
-        # Format questions for frontend
+        # Format for table view
         questions = []
         for i, row in enumerate(questions_result):
             questions.append({
-                "id": f"{dataset_id}_{offset + i + 1}",
+                "id": i + 1,
                 "question": str(row[0]) if row[0] else "",
                 "response": str(row[1]) if row[1] else "",
-                "row_number": int(row[2]) if row[2] else (offset + i + 1),
-                "created_at": None
+                "created": None
             })
-        
-        # Calculate pagination info
-        total_pages = (total_count + page_size - 1) // page_size
-        has_next = page < total_pages
-        has_prev = page > 1
         
         return {
             "questions": questions,
-            "pagination": {
-                "page": page,
-                "page_size": page_size,
-                "total": total_count,
-                "total_pages": total_pages,
-                "has_next": has_next,
-                "has_prev": has_prev
-            }
+            "total": len(questions)
         }
         
     except Exception as e:
-        logger.error(f"Failed to get questions for dataset {dataset_id}: {e}")
+        logger.error(f"Questions API error: {e}")
         return {
-            "error": str(e),
             "questions": [],
-            "pagination": {
-                "page": 1,
-                "page_size": page_size,
-                "total": 0,
-                "total_pages": 0,
-                "has_next": False,
-                "has_prev": False
-            }
+            "total": 0,
+            "error": str(e)
         }
