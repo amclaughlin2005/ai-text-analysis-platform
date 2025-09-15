@@ -238,11 +238,11 @@ async def get_dataset_questions(
         questions = []
         for row in questions_result:
             questions.append({
-                "id": str(row.id),
-                "question": row.original_question,
-                "response": row.ai_response,
-                "row_number": row.csv_row_number,
-                "created_at": row.created_at.isoformat() if row.created_at else None
+                "id": str(row[0]),
+                "question": row[1] or "",
+                "response": row[2] or "",
+                "row_number": row[3] or 0,
+                "created_at": row[4].isoformat() if row[4] else None
             })
         
         # Calculate pagination info
