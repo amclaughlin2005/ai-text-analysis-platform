@@ -16,7 +16,13 @@ import {
   Cloud,
   Plus,
   BarChart3,
-  ExternalLink
+  ExternalLink,
+  Square,
+  CheckSquare,
+  Search,
+  Filter,
+  Archive,
+  Merge
 } from 'lucide-react';
 import { Dataset, DatasetStatus } from '@/lib/types';
 import { cn, formatFileSize, formatRelativeTime, getStatusColor } from '@/lib/utils';
@@ -34,6 +40,8 @@ interface DatasetListState {
   error: string | null;
   selectedDataset: string | null;
   actionMenuOpen: string | null; // ID of dataset with open action menu
+  bulkSelectedDatasets: Set<string>; // IDs of datasets selected for bulk operations
+  bulkMode: boolean; // Whether bulk selection mode is active
 }
 
 export default function DatasetList({
@@ -46,11 +54,13 @@ export default function DatasetList({
     loading: true,
     error: null,
     selectedDataset: null,
-    actionMenuOpen: null
+    actionMenuOpen: null,
+    bulkSelectedDatasets: new Set<string>(),
+    bulkMode: false
   });
   
-  // Debug: Log state changes
-  console.log('DatasetList state:', { actionMenuOpen: state.actionMenuOpen });
+  // Debug: Log state changes (TODO: Remove after action menu is working)
+  console.log('DatasetList state:', { actionMenuOpen: state.actionMenuOpen, bulkMode: state.bulkMode, selectedCount: state.bulkSelectedDatasets.size });
 
   // Fetch datasets from backend
   const fetchDatasets = async () => {
@@ -231,6 +241,76 @@ export default function DatasetList({
     closeActionMenu();
   };
 
+  // Bulk operation handlers
+  const toggleBulkMode = () => {
+    setState(prev => ({
+      ...prev,
+      bulkMode: !prev.bulkMode,
+      bulkSelectedDatasets: new Set<string>(), // Clear selections when toggling mode
+      actionMenuOpen: null // Close any open action menus
+    }));
+  };
+
+  const toggleDatasetSelection = (datasetId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setState(prev => {
+      const newSelected = new Set(prev.bulkSelectedDatasets);
+      if (newSelected.has(datasetId)) {
+        newSelected.delete(datasetId);
+      } else {
+        newSelected.add(datasetId);
+      }
+      return {
+        ...prev,
+        bulkSelectedDatasets: newSelected
+      };
+    });
+  };
+
+  const selectAllDatasets = () => {
+    setState(prev => ({
+      ...prev,
+      bulkSelectedDatasets: new Set(prev.datasets.map(d => d.id))
+    }));
+  };
+
+  const clearAllSelections = () => {
+    setState(prev => ({
+      ...prev,
+      bulkSelectedDatasets: new Set<string>()
+    }));
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedCount = state.bulkSelectedDatasets.size;
+    if (selectedCount === 0) {
+      toast.error('No datasets selected');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedCount} datasets? This action cannot be undone.`)) {
+      return;
+    }
+
+    toast('Bulk delete functionality coming soon!', {
+      icon: '🗑️',
+      duration: 3000,
+    });
+  };
+
+  const handleBulkExport = () => {
+    const selectedCount = state.bulkSelectedDatasets.size;
+    if (selectedCount === 0) {
+      toast.error('No datasets selected');
+      return;
+    }
+
+    toast('Bulk export functionality coming soon!', {
+      icon: '📦',
+      duration: 3000,
+    });
+  };
+
   // Handle dataset deletion
   const handleDelete = async (datasetId: string, datasetName: string) => {
     if (!confirm(`Are you sure you want to delete "${datasetName}"? This action cannot be undone.`)) {
@@ -314,20 +394,98 @@ export default function DatasetList({
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <Database className="h-5 w-5" />
-          Datasets ({state.datasets.length})
-        </h3>
+        <div className="flex items-center gap-4">
+          <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Datasets ({state.datasets.length})
+          </h3>
+          {state.bulkSelectedDatasets.size > 0 && (
+            <span className="text-sm text-primary-600 font-medium">
+              {state.bulkSelectedDatasets.size} selected
+            </span>
+          )}
+        </div>
         
-        <button
-          onClick={refreshDatasets}
-          disabled={state.loading}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={cn("h-4 w-4", state.loading && "animate-spin")} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {state.bulkMode && (
+            <>
+              <button
+                onClick={selectAllDatasets}
+                className="text-sm text-primary-600 hover:text-primary-700 px-2 py-1 rounded"
+              >
+                Select All
+              </button>
+              <button
+                onClick={clearAllSelections}
+                className="text-sm text-gray-600 hover:text-gray-700 px-2 py-1 rounded"
+              >
+                Clear
+              </button>
+            </>
+          )}
+          <button
+            onClick={toggleBulkMode}
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors",
+              state.bulkMode 
+                ? "bg-primary-100 text-primary-700 hover:bg-primary-200" 
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+            )}
+          >
+            <CheckSquare className="h-4 w-4" />
+            {state.bulkMode ? 'Exit Select' : 'Select'}
+          </button>
+          <button
+            onClick={refreshDatasets}
+            disabled={state.loading}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={cn("h-4 w-4", state.loading && "animate-spin")} />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {/* Bulk Actions Toolbar */}
+      {state.bulkMode && state.bulkSelectedDatasets.size > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-primary-50 border border-primary-200 rounded-lg p-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="h-5 w-5 text-primary-600" />
+              <span className="text-sm font-medium text-primary-900">
+                {state.bulkSelectedDatasets.size} dataset{state.bulkSelectedDatasets.size !== 1 ? 's' : ''} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleBulkExport}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-primary-700 hover:text-primary-800 hover:bg-primary-100 rounded-lg transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </button>
+              <button
+                onClick={() => toast('Merge functionality coming soon!', { icon: '🔗' })}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-primary-700 hover:text-primary-800 hover:bg-primary-100 rounded-lg transition-colors"
+              >
+                <Merge className="h-4 w-4" />
+                Merge
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Error State */}
       {state.error && (
@@ -351,6 +509,7 @@ export default function DatasetList({
         <AnimatePresence>
           {state.datasets.map((dataset, index) => {
             const isSelected = state.selectedDataset === dataset.id;
+            const isBulkSelected = state.bulkSelectedDatasets.has(dataset.id);
             
             return (
               <motion.div
@@ -361,13 +520,29 @@ export default function DatasetList({
                 transition={{ delay: index * 0.1 }}
                 className={cn(
                   "bg-white border rounded-xl p-6 cursor-pointer transition-all duration-200",
-                  isSelected ? "border-primary-300 ring-2 ring-primary-100" : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                  state.bulkMode && isBulkSelected 
+                    ? "border-primary-300 ring-2 ring-primary-100 bg-primary-25" 
+                    : isSelected 
+                      ? "border-primary-300 ring-2 ring-primary-100" 
+                      : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                 )}
-                onClick={() => handleDatasetClick(dataset)}
+                onClick={() => state.bulkMode ? toggleDatasetSelection(dataset.id, {} as React.MouseEvent) : handleDatasetClick(dataset)}
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
+                    {state.bulkMode && (
+                      <button
+                        onClick={(e) => toggleDatasetSelection(dataset.id, e)}
+                        className="flex items-center justify-center w-5 h-5 transition-colors"
+                      >
+                        {isBulkSelected ? (
+                          <CheckSquare className="h-5 w-5 text-primary-600" />
+                        ) : (
+                          <Square className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        )}
+                      </button>
+                    )}
                     {getStatusIcon((dataset.processing_status || dataset.upload_status || 'failed') as DatasetStatus)}
                     <div>
                       <h4 className="text-lg font-semibold text-gray-900">{dataset.name}</h4>
@@ -391,20 +566,20 @@ export default function DatasetList({
                       );
                     })()}
                     
-                    <div className="relative" data-action-menu>
-                      <button
-                        onClick={(e) => toggleActionMenu(dataset.id, e)}
-                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        data-action-menu
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
+                    {!state.bulkMode && (
+                      <div className="relative" data-action-menu>
+                        <button
+                          onClick={(e) => toggleActionMenu(dataset.id, e)}
+                          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          data-action-menu
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
                       
                       {state.actionMenuOpen === dataset.id && (
                         <div 
                           className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-lg border z-50"
                           data-action-menu
-                          style={{ border: '2px solid red' }} // Debug styling
                         >
                           <div className="py-1">
                             <button
@@ -450,7 +625,8 @@ export default function DatasetList({
                           </div>
                         </div>
                       )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
