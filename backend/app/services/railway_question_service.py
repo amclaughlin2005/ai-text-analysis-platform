@@ -119,16 +119,17 @@ class RailwayQuestionService:
                     """)
                     db.execute(create_table_sql)
                     
-                    # Now insert the question (using column names that match word cloud API)
+                    # Now insert the question (including csv_row_number to satisfy NOT NULL constraint)
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, original_question, ai_response)
-                        VALUES (:id, :dataset_id, :original_question, :ai_response)
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response, csv_row_number)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response, :csv_row_number)
                     """)
                     db.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
                         'original_question': question_text[:2000],
-                        'ai_response': response_text[:5000]
+                        'ai_response': response_text[:5000],
+                        'csv_row_number': row_num
                     })
                     
                 except Exception as e:
@@ -285,16 +286,17 @@ class RailwayQuestionService:
                     continue
                 
                 try:
-                    # Insert question with autocommit (using column names that match word cloud API)
+                    # Insert question with autocommit (including csv_row_number to satisfy NOT NULL constraint)
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, original_question, ai_response)
-                        VALUES (:id, :dataset_id, :original_question, :ai_response)
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response, csv_row_number)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response, :csv_row_number)
                     """)
                     connection.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
                         'original_question': question_text[:2000],
-                        'ai_response': response_text[:5000]
+                        'ai_response': response_text[:5000],
+                        'csv_row_number': row_num
                     })
                     
                 except Exception as e:
