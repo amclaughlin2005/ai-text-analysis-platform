@@ -330,6 +330,7 @@ class RailwayQuestionService:
         import csv
         import io
         import json
+        import uuid
         
         try:
             logger.info(f"📝 Processing file {filename} to append to dataset {dataset_id}")
@@ -348,12 +349,22 @@ class RailwayQuestionService:
                 headers = next(csv_reader)
                 rows = list(csv_reader)
                 
-                questions_created = RailwayQuestionService.create_questions_with_autocommit(
-                    dataset_id=dataset_id,
-                    headers=headers,
-                    rows=rows,
-                    db=db
-                )
+                # Create autocommit connection for question creation
+                from sqlalchemy import create_engine
+                from ..core.database import DATABASE_URL
+                
+                engine = create_engine(DATABASE_URL, isolation_level="AUTOCOMMIT")
+                connection = engine.connect()
+                
+                try:
+                    questions_created = RailwayQuestionService.create_questions_with_autocommit(
+                        dataset_id=uuid.UUID(dataset_id),  # Convert string to UUID
+                        headers=headers,
+                        rows=rows,
+                        connection=connection
+                    )
+                finally:
+                    connection.close()
                 
             elif filename.lower().endswith('.json'):
                 # Process JSON file
@@ -378,12 +389,22 @@ class RailwayQuestionService:
                             row = [str(item.get(header, '')) for header in headers]
                             rows.append(row)
                         
-                        questions_created = RailwayQuestionService.create_questions_with_autocommit(
-                            dataset_id=dataset_id,
-                            headers=headers,
-                            rows=rows,
-                            db=db
-                        )
+                        # Create autocommit connection for question creation
+                        from sqlalchemy import create_engine
+                        from ..core.database import DATABASE_URL
+                        
+                        engine = create_engine(DATABASE_URL, isolation_level="AUTOCOMMIT")
+                        connection = engine.connect()
+                        
+                        try:
+                            questions_created = RailwayQuestionService.create_questions_with_autocommit(
+                                dataset_id=uuid.UUID(dataset_id),  # Convert string to UUID
+                                headers=headers,
+                                rows=rows,
+                                connection=connection
+                            )
+                        finally:
+                            connection.close()
                         
                 except json.JSONDecodeError as e:
                     raise ValueError(f"Invalid JSON format: {e}")
