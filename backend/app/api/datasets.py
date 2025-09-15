@@ -212,12 +212,33 @@ async def get_dataset_questions(
 ):
     """Get questions for a dataset with pagination"""
     try:
+        logger.info(f"Fetching questions for dataset {dataset_id}, page {page}")
+        
         # Calculate offset
         offset = (page - 1) * page_size
         
-        # Get questions using pure SQL to match Railway schema
+        # Simple query first to test
+        count_sql = text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id")
+        total_count = db.execute(count_sql, {"dataset_id": dataset_id}).scalar() or 0
+        
+        logger.info(f"Found {total_count} total questions for dataset {dataset_id}")
+        
+        if total_count == 0:
+            return {
+                "questions": [],
+                "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total": 0,
+                    "total_pages": 0,
+                    "has_next": False,
+                    "has_prev": False
+                }
+            }
+        
+        # Get questions with simpler query
         questions_sql = text("""
-            SELECT id, original_question, ai_response, csv_row_number, created_at
+            SELECT original_question, ai_response, csv_row_number
             FROM questions 
             WHERE dataset_id = :dataset_id
             ORDER BY csv_row_number ASC
@@ -230,19 +251,15 @@ async def get_dataset_questions(
             "offset": offset
         }).fetchall()
         
-        # Get total count
-        count_sql = text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id")
-        total_count = db.execute(count_sql, {"dataset_id": dataset_id}).scalar()
-        
         # Format questions for frontend
         questions = []
-        for row in questions_result:
+        for i, row in enumerate(questions_result):
             questions.append({
-                "id": str(row[0]),
-                "question": row[1] or "",
-                "response": row[2] or "",
-                "row_number": row[3] or 0,
-                "created_at": row[4].isoformat() if row[4] else None
+                "id": f"{dataset_id}_{offset + i + 1}",
+                "question": str(row[0]) if row[0] else "",
+                "response": str(row[1]) if row[1] else "",
+                "row_number": int(row[2]) if row[2] else (offset + i + 1),
+                "created_at": None
             })
         
         # Calculate pagination info
@@ -264,4 +281,15 @@ async def get_dataset_questions(
         
     except Exception as e:
         logger.error(f"Failed to get questions for dataset {dataset_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch questions: {str(e)}")
+        return {
+            "error": str(e),
+            "questions": [],
+            "pagination": {
+                "page": 1,
+                "page_size": page_size,
+                "total": 0,
+                "total_pages": 0,
+                "has_next": False,
+                "has_prev": False
+            }
+        }
