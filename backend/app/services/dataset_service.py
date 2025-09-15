@@ -126,13 +126,6 @@ class DatasetService:
                     logger.info(f"✅ Pure SQL dataset insert successful: {dataset_id}")
                     created_dataset_id = dataset_id
                     
-                    # Skip analysis job creation for now - Railway schema incompatibility
-                    # analysis_job = cls._create_analysis_job(
-                    #     dataset_id=created_dataset_id,
-                    #     db=transaction_db
-                    # )
-                    analysis_job = None
-                    
                     # Create questions using Railway-compatible service
                     from .railway_question_service import RailwayQuestionService
                     
@@ -143,32 +136,28 @@ class DatasetService:
                         db=db
                     )
                     
-                    # Update dataset with processing results (using pure SQL since no dataset object)
-                    # dataset.total_questions = questions_created
-                    # dataset.status = DatasetStatus.COMPLETED  
-                    # dataset.processing_completed_at = datetime.utcnow()
-                    
-                    # Update job status (skipped - no analysis job created)
-                    # analysis_job.status = JobStatus.COMPLETED
-                    # analysis_job.end_time = datetime.utcnow()
-                    
-                    # Railway autocommit approach - simpler and more reliable
+                    # Force immediate commit for Railway compatibility
                     try:
-                        # Enable autocommit for Railway compatibility
-                        db.connection().autocommit = True
-                        logger.info(f"✅ Autocommit enabled for dataset {created_dataset_id}")
+                        db.commit()
+                        logger.info(f"✅ Transaction committed for dataset {created_dataset_id}")
                         
-                        # Re-execute the insert with autocommit
-                        result = db.execute(sql, insert_data)
-                        logger.info(f"✅ Re-inserted with autocommit, rowcount: {result.rowcount}")
+                        # Immediate verification with fresh query
+                        db.close()  # Close current connection
+                        from ..core.database import get_db
+                        fresh_db = next(get_db())
                         
-                        # Verification should now work
                         verify_sql = text("SELECT COUNT(*) FROM datasets WHERE id = :id")
-                        verify_result = db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
-                        logger.info(f"🔍 Autocommit verification: Found {verify_result} records with id {created_dataset_id}")
+                        verify_result = fresh_db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
+                        logger.info(f"🔍 Fresh connection verification: Found {verify_result} records with id {created_dataset_id}")
+                        
+                        fresh_db.close()
+                        
+                        if verify_result == 0:
+                            logger.error(f"❌ CRITICAL: Dataset not found after commit - possible Railway rollback")
+                            raise Exception("Dataset upload failed - record not persisted")
                         
                     except Exception as commit_error:
-                        logger.error(f"❌ Autocommit failed: {commit_error}")
+                        logger.error(f"❌ Commit or verification failed: {commit_error}")
                         raise
                     
                     logger.info(f"✅ Dataset uploaded successfully: {created_dataset_id} - {name}")

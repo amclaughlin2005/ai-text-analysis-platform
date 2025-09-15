@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Brain, Home, BarChart3, Upload, MessageSquare } from 'lucide-react';
+import { Brain, Home, BarChart3, Upload, MessageSquare, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigationItems = [
@@ -15,6 +15,11 @@ const navigationItems = [
     name: 'Upload Dataset',
     href: '/upload',
     icon: Upload,
+  },
+  {
+    name: 'Datasets',
+    href: '/datasets',
+    icon: Database,
   },
   {
     name: 'Dashboard',
