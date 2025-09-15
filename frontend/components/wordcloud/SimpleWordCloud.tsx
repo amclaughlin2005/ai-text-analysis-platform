@@ -252,7 +252,7 @@ export default function SimpleWordCloud({
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showColumnFilterUI, setShowColumnFilterUI] = useState(
-    datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9' // Default open for legal dataset
+    datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9') // Default open for legal dataset
   );
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -398,7 +398,7 @@ export default function SimpleWordCloud({
           
           // Generate enhanced mock data that respects column filtering
           let newWords;
-          if (datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9') {
+          if (datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9')) {
             // Use enhanced legal data with column filtering - up to 100 words
             newWords = generateFilteredLegalDataByColumns(mode, selectedColumns);
             // If still too few words, supplement with more
@@ -499,7 +499,7 @@ export default function SimpleWordCloud({
           </h3>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>{formatNumber(words.length)} words • Interactive mode enabled</span>
-            {datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9' && (
+            {datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9') && (
               <>
                 <span>•</span>
                 <div className="flex items-center gap-1">
@@ -518,7 +518,7 @@ export default function SimpleWordCloud({
         
         <div className="flex items-center gap-2">
           {/* Column Filter Toggle (only for legal dataset) */}
-          {datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9' && (
+          {datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9') && (
             <button
               onClick={() => setShowColumnFilterUI(!showColumnFilterUI)}
               className={cn(
@@ -575,7 +575,7 @@ export default function SimpleWordCloud({
 
       {/* Column Filter Panel */}
       <AnimatePresence>
-        {showColumnFilterUI && datasetId === '06a8437a-27e8-412f-a530-6cb04f7b6dc9' && (
+        {showColumnFilterUI && datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9') && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -601,7 +601,7 @@ export default function SimpleWordCloud({
             </div>
             
             <ColumnFilterSelector
-              datasetId={datasetId}
+              datasetId={datasetsToUse[0] || ''} // Use first dataset or empty string
               selectedColumns={selectedColumns}
               onColumnsChange={(columns) => {
                 console.log('📊 Column selection changed from:', selectedColumns, 'to:', columns);
@@ -654,7 +654,7 @@ export default function SimpleWordCloud({
             {viewMode === 'cloud' ? (
               <div className="min-w-[1200px] w-full flex justify-center">
                 <ModernWordCloud
-                  datasetId={datasetId}
+                  datasetId={datasetsToUse[0] || ''} // Use first dataset or empty string
                   mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
                   height={600}
                   width={1200}
