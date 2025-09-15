@@ -12,7 +12,11 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Cloud,
+  Plus,
+  BarChart3,
+  ExternalLink
 } from 'lucide-react';
 import { Dataset, DatasetStatus } from '@/lib/types';
 import { cn, formatFileSize, formatRelativeTime, getStatusColor } from '@/lib/utils';
@@ -29,6 +33,7 @@ interface DatasetListState {
   loading: boolean;
   error: string | null;
   selectedDataset: string | null;
+  actionMenuOpen: string | null; // ID of dataset with open action menu
 }
 
 export default function DatasetList({
@@ -40,7 +45,8 @@ export default function DatasetList({
     datasets: [],
     loading: true,
     error: null,
-    selectedDataset: null
+    selectedDataset: null,
+    actionMenuOpen: null
   });
 
   // Fetch datasets from backend
@@ -172,6 +178,45 @@ export default function DatasetList({
     }
   };
 
+  // Handle action menu toggle
+  const toggleActionMenu = (datasetId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setState(prev => ({
+      ...prev,
+      actionMenuOpen: prev.actionMenuOpen === datasetId ? null : datasetId
+    }));
+  };
+
+  // Close action menu when clicking outside
+  const closeActionMenu = () => {
+    setState(prev => ({ ...prev, actionMenuOpen: null }));
+  };
+
+  // Dataset action handlers
+  const handleViewDataset = (dataset: Dataset, e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(`/dataset/${dataset.id}`, '_blank');
+    closeActionMenu();
+  };
+
+  const handleWordCloud = (dataset: Dataset, e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(`/wordcloud?dataset=${dataset.id}`, '_blank');
+    closeActionMenu();
+  };
+
+  const handleAppendData = (dataset: Dataset, e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.location.href = `/upload?append=${dataset.id}&name=${encodeURIComponent(dataset.name)}`;
+    closeActionMenu();
+  };
+
+  const handleAnalytics = (dataset: Dataset, e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast.info('Analytics feature coming soon!');
+    closeActionMenu();
+  };
+
   // Handle dataset deletion
   const handleDelete = async (datasetId: string, datasetName: string) => {
     if (!confirm(`Are you sure you want to delete "${datasetName}"? This action cannot be undone.`)) {
@@ -249,7 +294,10 @@ export default function DatasetList({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div 
+      className={cn("space-y-4", className)}
+      onClick={closeActionMenu}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
@@ -329,15 +377,61 @@ export default function DatasetList({
                       );
                     })()}
                     
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Show actions menu
-                      }}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => toggleActionMenu(dataset.id, e)}
+                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                      
+                      {state.actionMenuOpen === dataset.id && (
+                        <div className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-lg border z-50">
+                          <div className="py-1">
+                            <button
+                              onClick={(e) => handleViewDataset(dataset, e)}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <Eye className="h-4 w-4 mr-3" />
+                              View Details
+                            </button>
+                            <button
+                              onClick={(e) => handleWordCloud(dataset, e)}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <Cloud className="h-4 w-4 mr-3" />
+                              Word Cloud
+                            </button>
+                            <button
+                              onClick={(e) => handleAppendData(dataset, e)}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <Plus className="h-4 w-4 mr-3" />
+                              Add More Data
+                            </button>
+                            <button
+                              onClick={(e) => handleAnalytics(dataset, e)}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <BarChart3 className="h-4 w-4 mr-3" />
+                              Analytics
+                            </button>
+                            <div className="border-t border-gray-100 my-1"></div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(dataset.id, dataset.name);
+                                closeActionMenu();
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-3" />
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

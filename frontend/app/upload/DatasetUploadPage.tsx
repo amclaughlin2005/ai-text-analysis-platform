@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Database, List, Bug, Sparkles } from 'lucide-react';
 import DatasetUpload from '@/components/datasets/DatasetUpload';
@@ -8,6 +8,7 @@ import DatasetList from '@/components/datasets/DatasetList';
 import UploadProgress from '@/components/datasets/UploadProgress';
 import ConnectionTest from '@/components/debug/ConnectionTest';
 import FlexibleDataUpload from '@/components/datasets/FlexibleDataUpload';
+import AppendDataUpload from '@/components/datasets/AppendDataUpload';
 import { Dataset } from '@/lib/types';
 
 type ViewMode = 'upload' | 'flexible' | 'progress' | 'list' | 'debug';
@@ -16,7 +17,25 @@ export default function DatasetUploadPage() {
   const [currentView, setCurrentView] = useState<ViewMode>('upload');
   const [uploadingJobId, setUploadingJobId] = useState<string | null>(null);
   const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
+  const [appendMode, setAppendMode] = useState<{datasetId: string, datasetName: string} | null>(null);
 
+  // Handle URL parameters for append mode
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const appendDatasetId = urlParams.get('append');
+    const appendDatasetName = urlParams.get('name');
+    const mode = urlParams.get('mode');
+    
+    if (appendDatasetId && appendDatasetName) {
+      setAppendMode({
+        datasetId: appendDatasetId,
+        datasetName: decodeURIComponent(appendDatasetName)
+      });
+      setCurrentView('upload'); // Show upload form for appending
+    } else if (mode === 'flexible') {
+      setCurrentView('flexible');
+    }
+  }, []);
 
   const handleUploadComplete = (datasetId: string) => {
     console.log('Upload completed for dataset:', datasetId);
@@ -28,6 +47,22 @@ export default function DatasetUploadPage() {
     console.error('Upload error:', error);
     setUploadingJobId(null);
     setCurrentView('upload');
+  };
+
+  const handleAppendComplete = (datasetId: string, questionsAdded: number) => {
+    console.log(`Append completed: ${questionsAdded} questions added to dataset ${datasetId}`);
+    setAppendMode(null); // Clear append mode
+    setCurrentView('list'); // Show updated dataset list
+  };
+
+  const handleAppendError = (error: string) => {
+    console.error('Append error:', error);
+    // Stay in append mode for retry
+  };
+
+  const handleAppendCancel = () => {
+    setAppendMode(null);
+    setCurrentView('list');
   };
 
   const handleDatasetSelect = (dataset: Dataset) => {
@@ -121,17 +156,31 @@ export default function DatasetUploadPage() {
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="bg-white border border-gray-200 rounded-xl p-6">
-                  <div className="flex items-center gap-2 mb-6">
-                    <Upload className="h-5 w-5 text-primary-600" />
-                    <h2 className="text-xl font-semibold text-gray-900">Upload New Dataset</h2>
+                {appendMode ? (
+                  // Append mode: Add data to existing dataset
+                  <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <AppendDataUpload
+                      datasetId={appendMode.datasetId}
+                      datasetName={appendMode.datasetName}
+                      onUploadComplete={handleAppendComplete}
+                      onUploadError={handleAppendError}
+                      onCancel={handleAppendCancel}
+                    />
                   </div>
-                  
-                  <DatasetUpload
-                    onUploadComplete={handleUploadComplete}
-                    onUploadProgress={(progress) => console.log('Upload progress:', progress)}
-                  />
-                </div>
+                ) : (
+                  // Normal mode: Create new dataset
+                  <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <div className="flex items-center gap-2 mb-6">
+                      <Upload className="h-5 w-5 text-primary-600" />
+                      <h2 className="text-xl font-semibold text-gray-900">Upload New Dataset</h2>
+                    </div>
+                    
+                    <DatasetUpload
+                      onUploadComplete={handleUploadComplete}
+                      onUploadProgress={(progress) => console.log('Upload progress:', progress)}
+                    />
+                  </div>
+                )}
               </motion.div>
             )}
 

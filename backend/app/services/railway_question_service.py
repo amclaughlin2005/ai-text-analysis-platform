@@ -315,3 +315,85 @@ class RailwayQuestionService:
         except Exception as e:
             logger.error(f"❌ Failed to create questions with autocommit: {e}")
             return 0
+    
+    @staticmethod
+    async def append_questions_to_dataset(
+        dataset_id: str,
+        file_content: bytes,
+        filename: str,
+        db: Session
+    ) -> int:
+        """
+        Append questions from a file to an existing dataset
+        Supports both CSV and JSON files
+        """
+        import csv
+        import io
+        import json
+        
+        try:
+            logger.info(f"📝 Processing file {filename} to append to dataset {dataset_id}")
+            
+            # Decode file content
+            try:
+                content_str = file_content.decode('utf-8')
+            except UnicodeDecodeError:
+                content_str = file_content.decode('latin-1')
+            
+            questions_created = 0
+            
+            if filename.lower().endswith('.csv'):
+                # Process CSV file
+                csv_reader = csv.reader(io.StringIO(content_str))
+                headers = next(csv_reader)
+                rows = list(csv_reader)
+                
+                questions_created = RailwayQuestionService.create_questions_with_autocommit(
+                    dataset_id=dataset_id,
+                    headers=headers,
+                    rows=rows,
+                    db=db
+                )
+                
+            elif filename.lower().endswith('.json'):
+                # Process JSON file
+                try:
+                    json_data = json.loads(content_str)
+                    
+                    # Handle different JSON structures
+                    if isinstance(json_data, list):
+                        data_rows = json_data
+                    elif isinstance(json_data, dict) and 'data' in json_data:
+                        data_rows = json_data['data']
+                    else:
+                        raise ValueError("JSON must be an array or object with 'data' key")
+                    
+                    # Convert JSON to CSV-like structure for processing
+                    if data_rows:
+                        # Use first row to determine headers
+                        headers = list(data_rows[0].keys())
+                        rows = []
+                        
+                        for item in data_rows:
+                            row = [str(item.get(header, '')) for header in headers]
+                            rows.append(row)
+                        
+                        questions_created = RailwayQuestionService.create_questions_with_autocommit(
+                            dataset_id=dataset_id,
+                            headers=headers,
+                            rows=rows,
+                            db=db
+                        )
+                        
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON format: {e}")
+            
+            else:
+                raise ValueError("Unsupported file format. Only CSV and JSON are supported.")
+            
+            logger.info(f"✅ Successfully appended {questions_created} questions to dataset {dataset_id}")
+            return questions_created
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to append questions to dataset {dataset_id}: {e}")
+            raise e

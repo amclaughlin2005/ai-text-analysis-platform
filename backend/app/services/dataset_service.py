@@ -674,3 +674,36 @@ class DatasetService:
                 logger.info(f"🗑️ Cleaned up file: {file_path}")
         except Exception as e:
             logger.warning(f"⚠️ Failed to cleanup file {file_path}: {e}")
+    
+    @classmethod
+    def update_dataset_stats(cls, dataset_id: str, db: Session):
+        """Update dataset statistics after appending data"""
+        try:
+            from sqlalchemy import text
+            
+            # Count total questions for this dataset
+            count_sql = text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id")
+            result = db.execute(count_sql, {"dataset_id": dataset_id}).fetchone()
+            total_questions = result[0] if result else 0
+            
+            # Update dataset with new question count
+            update_sql = text("""
+                UPDATE datasets 
+                SET total_questions = :total_questions, 
+                    questions_count = :questions_count,
+                    updated_at = NOW()
+                WHERE id = :dataset_id
+            """)
+            
+            db.execute(update_sql, {
+                "dataset_id": dataset_id,
+                "total_questions": total_questions,
+                "questions_count": total_questions
+            })
+            db.commit()
+            
+            logger.info(f"✅ Updated dataset {dataset_id} stats: {total_questions} total questions")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to update dataset stats: {e}")
+            db.rollback()

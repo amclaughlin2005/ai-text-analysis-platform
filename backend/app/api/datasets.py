@@ -260,3 +260,70 @@ async def get_dataset_questions(
                 "total_pages": 0
             }
         }
+
+@router.post("/{dataset_id}/append")
+async def append_data_to_dataset(
+    dataset_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """Append new data to an existing dataset"""
+    try:
+        from ..services.dataset_service import DatasetService
+        from ..services.railway_question_service import RailwayQuestionService
+        
+        logger.info(f"📝 Appending data to dataset: {dataset_id}")
+        logger.info(f"📁 File: {file.filename}, Size: {file.size} bytes")
+        
+        # Verify dataset exists
+        existing_dataset = DatasetService.get_dataset(dataset_id, db)
+        if not existing_dataset:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        
+        # Read and validate file
+        file_content = await file.read()
+        if len(file_content) == 0:
+            raise HTTPException(status_code=400, detail="File is empty")
+        
+        # Validate file type
+        if not file.filename.lower().endswith(('.csv', '.json')):
+            raise HTTPException(status_code=400, detail="Only CSV and JSON files are supported")
+        
+        # Process the file and append questions
+        try:
+            # Use the Railway question service to append questions
+            questions_created = await RailwayQuestionService.append_questions_to_dataset(
+                dataset_id=dataset_id,
+                file_content=file_content,
+                filename=file.filename,
+                db=db
+            )
+            
+            # Update dataset statistics
+            DatasetService.update_dataset_stats(dataset_id, db)
+            
+            logger.info(f"✅ Successfully appended {questions_created} questions to dataset {dataset_id}")
+            
+            return {
+                "success": True,
+                "message": f"Successfully appended {questions_created} questions to dataset",
+                "dataset_id": dataset_id,
+                "questions_added": questions_created,
+                "filename": file.filename
+            }
+            
+        except Exception as processing_error:
+            logger.error(f"❌ Failed to process appended file: {processing_error}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to process file: {str(processing_error)}"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Append data operation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Append operation failed: {str(e)}"
+        )

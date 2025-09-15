@@ -19,6 +19,15 @@ from database import get_db, create_all_tables, check_database_connection
 from database_service import DatabaseInitService, DatasetService, QuestionService, WordFrequencyService, AnalysisJobService, DatabaseUtilityService
 from models import Dataset, Question, WordFrequency, AnalysisJob
 
+# Import schema endpoints for flexible upload
+try:
+    from app.api import schema
+    SCHEMA_AVAILABLE = True
+    print("✅ Schema endpoints available")
+except ImportError as e:
+    SCHEMA_AVAILABLE = False
+    print(f"⚠️ Schema endpoints not available: {e}")
+
 # Initialize FastAPI app
 app = FastAPI(
     title="AI-Powered Text Analysis Platform API (Database Version)",

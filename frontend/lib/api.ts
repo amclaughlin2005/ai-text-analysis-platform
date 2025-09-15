@@ -123,7 +123,7 @@ export class DatasetService {
 
   static async delete(id: string, token: string): Promise<void> {
     const client = createApiClient(token);
-    await client.delete(`/api/datasets/${id}/`);
+    await client.delete(`/api/datasets/${id}`);
   }
 
   static async reprocess(id: string, config: AnalysisConfigForm, token: string): Promise<AnalysisJob> {
