@@ -190,15 +190,8 @@ async def debug_questions_schema(db: Session = Depends(get_db)):
                 "column_default": row.column_default
             })
         
-        # Also get constraints
-        constraints_sql = text("""
-            SELECT conname, confrelid::regclass, conkey, confkey
-            FROM pg_constraint 
-            WHERE conrelid = 'questions'::regclass
-        """)
-        
-        constraints_result = db.execute(constraints_sql).fetchall()
-        constraints = [dict(row) for row in constraints_result]
+        # Skip constraints for now - just get basic schema
+        constraints = []
         
         return {
             "table_name": "questions",
