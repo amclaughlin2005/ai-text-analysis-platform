@@ -172,6 +172,16 @@ export default function ModernWordCloud({
         wordsArray = data;
       }
 
+      // Convert API format to frontend format
+      if (wordsArray.length > 0) {
+        const convertedWords = wordsArray.map((w: any) => ({
+          word: w.word || w.text,  // Handle both formats
+          frequency: w.frequency || w.value || w.weight,  // Handle both formats
+          sentiment: w.sentiment || 'neutral'
+        }));
+        wordsArray = convertedWords;
+      }
+
       if (wordsArray.length > 0) {
         processWordPositions(wordsArray);
       } else {

@@ -321,11 +321,11 @@ export default function SimpleWordCloud({
           
           if (wordsArray.length > 0) {
             const apiWords = wordsArray.map((w: any) => ({
-              word: w.word,
-              frequency: w.frequency,
+              word: w.word || w.text,  // Handle both formats
+              frequency: w.frequency || w.value || w.weight,  // Handle both formats
               sentiment: w.sentiment || w.sentiment_association || 'neutral',
               category: mode,
-              size: w.size || Math.max(0.1, w.frequency / 100),
+              size: w.size || Math.max(0.1, (w.frequency || w.value || w.weight || 0) / 100),
               color: getSentimentColor(w.sentiment || w.sentiment_association || 'neutral')
             }));
             
