@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import DatasetList from '@/components/datasets/DatasetList';
-import { Button } from '@/components/ui/button';
 import { Upload, Plus, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,21 +38,19 @@ export default function DatasetsPage() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <Button
+              <button
                 onClick={handleRefresh}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />
                 <span>Refresh</span>
-              </Button>
+              </button>
               
               <Link href="/upload">
-                <Button className="flex items-center space-x-2">
+                <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                   <Upload className="h-4 w-4" />
                   <span>Upload New Dataset</span>
-                </Button>
+                </button>
               </Link>
             </div>
           </div>
