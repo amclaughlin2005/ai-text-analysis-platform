@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import SimpleWordCloud from '@/components/wordcloud/SimpleWordCloud';
+import DatasetSelector from '@/components/datasets/DatasetSelector';
 import { WordCloudFilters } from '@/lib/types';
+import { Database, Users, Sparkles } from 'lucide-react';
 
 const ANALYSIS_MODES = [
   { 
@@ -43,16 +45,20 @@ export default function WordCloud() {
   const filters: WordCloudFilters = {};
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   
-  // Check for dataset parameter in URL
-  const [datasetId, setDatasetId] = useState<string>('06a8437a-27e8-412f-a530-6cb04f7b6dc9'); // Default to legal dataset
+  // Dataset selection state
+  const [selectedDatasets, setSelectedDatasets] = useState<string[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<number[]>([1, 2]); // Default: questions + responses
   
+  // Check for dataset parameter in URL on load
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const datasetParam = urlParams.get('dataset');
     if (datasetParam) {
       console.log('📊 Using dataset from URL:', datasetParam);
-      setDatasetId(datasetParam);
+      setSelectedDatasets([datasetParam]);
+    } else {
+      // Default to legal dataset if no URL parameter
+      setSelectedDatasets(['06a8437a-27e8-412f-a530-6cb04f7b6dc9']);
     }
   }, []);
 
@@ -100,30 +106,89 @@ export default function WordCloud() {
         </div>
       </div>
 
-      {/* Dataset Word Cloud Analysis */}
-      <div className="bg-white rounded-lg border border-primary-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b bg-primary-50">
-          <h4 className="text-lg font-semibold text-primary-900">
-            📊 Dataset Analysis - {selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Mode
-          </h4>
-          <p className="text-sm text-primary-700 mt-1">
-            Interactive word cloud with advanced filtering and column selection
-          </p>
-          <p className="text-xs text-primary-600 mt-2">
-            Dataset ID: {datasetId} • Noise words automatically filtered • Column filtering available
-          </p>
+      {/* Dataset Selection */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+            <Database className="h-5 w-5 text-primary-600" />
+            <span>Dataset Selection</span>
+          </h2>
+          {selectedDatasets.length > 1 && (
+            <div className="flex items-center space-x-2 text-sm text-primary-600">
+              <Users className="h-4 w-4" />
+              <span>Multi-dataset analysis</span>
+            </div>
+          )}
         </div>
-        <SimpleWordCloud
-          datasetId={datasetId}
-          mode={selectedMode as any}
-          filters={filters}
-          selectedColumns={selectedColumns}
-          showColumnFilter={true}
-          onWordClick={handleWordClick}
-          onColumnsChange={setSelectedColumns}
-          className="w-full"
+        
+        <p className="text-gray-600 mb-4">
+          Choose one or multiple datasets to analyze. Multi-dataset selection combines data for comprehensive insights.
+        </p>
+        
+        <DatasetSelector
+          selectedDatasets={selectedDatasets}
+          onDatasetChange={setSelectedDatasets}
+          multiSelect={true}
+          placeholder="Select datasets for analysis"
+          className="max-w-2xl"
         />
+        
+        {selectedDatasets.length > 0 && (
+          <div className="mt-4 p-3 bg-primary-50 rounded-lg">
+            <div className="flex items-center space-x-2 text-primary-800">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                {selectedDatasets.length === 1 
+                  ? 'Analyzing 1 dataset' 
+                  : `Combining ${selectedDatasets.length} datasets for analysis`}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Dataset Word Cloud Analysis */}
+      {selectedDatasets.length > 0 ? (
+        <div className="bg-white rounded-lg border border-primary-200 shadow-sm overflow-hidden">
+          <div className="p-4 border-b bg-primary-50">
+            <h4 className="text-lg font-semibold text-primary-900">
+              📊 Dataset Analysis - {selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Mode
+            </h4>
+            <p className="text-sm text-primary-700 mt-1">
+              Interactive word cloud with advanced filtering and column selection
+            </p>
+            <p className="text-xs text-primary-600 mt-2">
+              {selectedDatasets.length === 1 
+                ? `Dataset: ${selectedDatasets[0].slice(0, 8)}...` 
+                : `Analyzing ${selectedDatasets.length} datasets combined`} 
+              • Noise words automatically filtered • Column filtering available
+            </p>
+          </div>
+          <SimpleWordCloud
+            datasetIds={selectedDatasets} // Pass all selected datasets for multi-dataset analysis
+            mode={selectedMode as any}
+            filters={filters}
+            selectedColumns={selectedColumns}
+            showColumnFilter={true}
+            onWordClick={handleWordClick}
+            onColumnsChange={setSelectedColumns}
+            className="w-full"
+          />
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-12 text-center">
+          <Database className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No Dataset Selected
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Please select at least one dataset above to generate a word cloud analysis.
+          </p>
+          <div className="text-sm text-gray-500">
+            💡 Upload datasets from the Upload page if you don't have any yet.
+          </div>
+        </div>
+      )}
 
       {/* Features Highlight */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

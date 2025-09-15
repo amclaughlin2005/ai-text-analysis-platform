@@ -10,7 +10,8 @@ import ModernWordCloud from './ModernWordCloud';
 import SimpleTextView from './SimpleTextView';
 
 interface SimpleWordCloudProps {
-  datasetId: string;
+  datasetId?: string; // Single dataset (for backwards compatibility)
+  datasetIds?: string[]; // Multiple datasets (new feature)
   mode: 'all' | 'verbs' | 'themes' | 'emotions' | 'entities' | 'topics';
   filters: WordCloudFilters;
   selectedColumns?: number[];
@@ -233,6 +234,7 @@ function generateFilteredLegalDataByColumns(mode: string, selectedColumns: numbe
 
 export default function SimpleWordCloud({ 
   datasetId, 
+  datasetIds,
   mode, 
   filters, 
   selectedColumns = [1, 2], // Default: questions and responses
@@ -241,6 +243,10 @@ export default function SimpleWordCloud({
   onColumnsChange,
   className 
 }: SimpleWordCloudProps) {
+  
+  // Determine which datasets to use (prioritize datasetIds over datasetId)
+  const datasetsToUse = datasetIds && datasetIds.length > 0 ? datasetIds : (datasetId ? [datasetId] : []);
+  const isMultiDataset = datasetsToUse.length > 1;
   // Initialize with immediate data to prevent loading stuck
   const [words, setWords] = useState<WordCloudData[]>(() => generateSimpleWordData(mode));
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
@@ -273,25 +279,53 @@ export default function SimpleWordCloud({
       isRequestingRef.current = true;
       setLoading(true);
       
-      console.log('🚀 fetchWordCloudData called with datasetId:', datasetId, 'mode:', mode, 'columns:', selectedColumns);
+      console.log('🚀 fetchWordCloudData called with datasets:', datasetsToUse, 'mode:', mode, 'columns:', selectedColumns);
+      
+      if (datasetsToUse.length === 0) {
+        console.log('⚠️ No datasets provided, skipping API call');
+        setWords(generateSimpleWordData(mode));
+        isRequestingRef.current = false;
+        setLoading(false);
+        return;
+      }
       
       try {        
-        // Use Railway API for ALL datasets - it handles column filtering properly
-        console.log('🚀 Using Railway API for all datasets with column filtering');
-        
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
         console.log('🚀 Making API call with selectedColumns:', selectedColumns);
-        const apiPayload = {
-          dataset_id: datasetId,
-          mode: mode,
-          selected_columns: selectedColumns,
-          exclude_words: filters?.excludeWords,
-          max_words: filters?.maxWords || 100,
-          filters: filters
-        };
-        console.log('📤 API Payload:', apiPayload);
         
-        const response = await fetch(`${API_BASE_URL}/api/wordcloud/generate`, {
+        let apiPayload: any;
+        let endpoint: string;
+        
+        if (isMultiDataset) {
+          // Use multi-dataset endpoint
+          console.log('🚀 Using multi-dataset API for combined analysis');
+          apiPayload = {
+            dataset_ids: datasetsToUse,
+            mode: mode,
+            selected_columns: selectedColumns,
+            exclude_words: filters?.excludeWords,
+            max_words: filters?.maxWords || 100,
+            filters: filters
+          };
+          endpoint = `${API_BASE_URL}/api/wordcloud/generate-multi`;
+        } else {
+          // Use single dataset endpoint
+          console.log('🚀 Using single dataset API');
+          apiPayload = {
+            dataset_id: datasetsToUse[0],
+            mode: mode,
+            selected_columns: selectedColumns,
+            exclude_words: filters?.excludeWords,
+            max_words: filters?.maxWords || 100,
+            filters: filters
+          };
+          endpoint = `${API_BASE_URL}/api/wordcloud/generate`;
+        }
+        
+        console.log('📤 API Payload:', apiPayload);
+        console.log('📤 API Endpoint:', endpoint);
+        
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -384,9 +418,9 @@ export default function SimpleWordCloud({
       }
     };
     
-    console.log('🔄 useEffect triggered - mode:', mode, 'datasetId:', datasetId, 'selectedColumns:', selectedColumns, 'retryCount:', retryCount);
+    console.log('🔄 useEffect triggered - mode:', mode, 'datasets:', datasetsToUse, 'selectedColumns:', selectedColumns, 'retryCount:', retryCount);
     fetchWordCloudData();
-  }, [mode, datasetId, JSON.stringify(selectedColumns), retryCount]); // Include retryCount for auto-retry
+  }, [mode, JSON.stringify(datasetsToUse), JSON.stringify(selectedColumns), retryCount]); // Include retryCount for auto-retry
 
   const handleWordClick = (word: WordCloudData) => {
     const isCurrentlySelected = selectedWord === word.word;

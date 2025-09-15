@@ -24,6 +24,16 @@ class WordCloudRequest(BaseModel):
     exclude_words: Optional[List[str]] = None
     filters: Optional[dict] = None
 
+class MultiWordCloudRequest(BaseModel):
+    dataset_ids: List[str]
+    mode: str = "all"
+    analysis_mode: Optional[str] = None  # Alternative name
+    max_words: int = 50
+    limit: Optional[int] = None  # Alternative name
+    selected_columns: Optional[List[int]] = None
+    exclude_words: Optional[List[str]] = None
+    filters: Optional[dict] = None
+
 # Word cloud generation endpoints
 @router.post("/generate")
 async def generate_wordcloud(
@@ -222,6 +232,163 @@ async def generate_wordcloud(
         raise HTTPException(
             status_code=500,
             detail=f"Word cloud generation failed: {str(e)}"
+        )
+
+@router.post("/generate-multi")
+async def generate_multi_wordcloud(
+    request: MultiWordCloudRequest,
+    db: Session = Depends(get_db)
+):
+    """Generate word cloud data from multiple datasets combined"""
+    try:
+        from sqlalchemy import text
+        from collections import Counter
+        import re
+        
+        # Extract parameters from request
+        dataset_ids = request.dataset_ids
+        analysis_mode = request.analysis_mode or request.mode
+        limit = request.limit or request.max_words
+        exclude_words = request.exclude_words or []
+        
+        logger.info(f"🎨 Generating multi-dataset word cloud for {len(dataset_ids)} datasets with mode {analysis_mode}")
+        
+        if not dataset_ids:
+            raise HTTPException(status_code=400, detail="No dataset IDs provided")
+        
+        # Verify all datasets exist and collect questions
+        all_questions = []
+        valid_datasets = []
+        
+        for dataset_id in dataset_ids:
+            dataset_sql = text("SELECT name FROM datasets WHERE id = :dataset_id")
+            dataset_result = db.execute(dataset_sql, {"dataset_id": dataset_id}).fetchone()
+            
+            if dataset_result:
+                valid_datasets.append(dataset_id)
+                # Get questions from this dataset
+                questions_sql = text("SELECT original_question, ai_response FROM questions WHERE dataset_id = :dataset_id")
+                questions_result = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
+                all_questions.extend(questions_result)
+                logger.info(f"Dataset {dataset_id}: {len(questions_result)} questions")
+            else:
+                logger.warning(f"Dataset {dataset_id} not found, skipping")
+        
+        if not valid_datasets:
+            raise HTTPException(status_code=404, detail="No valid datasets found")
+        
+        if not all_questions:
+            logger.warning(f"No questions found across {len(valid_datasets)} datasets")
+            return {
+                "dataset_ids": valid_datasets,
+                "analysis_mode": analysis_mode,
+                "words": [],
+                "word_count": 0,
+                "message": f"No questions found across {len(valid_datasets)} datasets"
+            }
+        
+        # Extract text from all questions and answers
+        all_text = ""
+        for row in all_questions:
+            if row.original_question:
+                all_text += " " + str(row.original_question)
+            if row.ai_response:
+                all_text += " " + str(row.ai_response)
+        
+        # Use the same word analysis logic as single dataset
+        # Different analysis modes
+        if analysis_mode == "all":
+            # Get all significant words
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', all_text.lower())
+        elif analysis_mode == "action" or analysis_mode == "verbs":
+            # Simple verb detection (words ending in common verb patterns)
+            words = re.findall(r'\b\w*(?:ing|ed|ize|ise|ate|ify)\b|\b(?:make|take|give|get|go|come|know|think|see|look|use|find|tell|ask|work|seem|feel|try|leave|call|move|live|believe|hold|bring|happen|write|sit|stand|lose|pay|meet|include|continue|set|learn|change|lead|understand|watch|follow|stop|create|speak|read|allow|add|spend|grow|open|walk|win|offer|remember|love|consider|appear|buy|wait|serve|die|send|expect|build|stay|fall|cut|reach|kill|remain)\b', all_text.lower())
+        elif analysis_mode == "entities":
+            # Simple entity detection (capitalized words)
+            words = re.findall(r'\b[A-Z][a-z]+\b', all_text)
+        elif analysis_mode == "emotions":
+            # Emotion-related words
+            emotion_words = r'\b(?:happy|sad|angry|excited|frustrated|pleased|disappointed|worried|confident|nervous|proud|ashamed|grateful|jealous|hopeful|fearful|surprised|shocked|calm|stressed|relaxed|anxious|joyful|depressed|elated|furious|content|miserable|ecstatic|livid|serene|panicked|love|hate|like|dislike|enjoy|despise|adore|loathe|appreciate|detest|cherish|abhor|positive|negative|good|bad|excellent|terrible|amazing|awful|great|poor|best|worst|better|worse|success|failure|win|lose|triumph|defeat|victory|loss)\b'
+            words = re.findall(emotion_words, all_text.lower())
+        elif analysis_mode == "themes":
+            # Common themes (longer phrases and keywords)
+            words = re.findall(r'\b(?:business|technology|education|health|finance|legal|marketing|management|development|research|analysis|strategy|innovation|communication|collaboration|leadership|teamwork|productivity|efficiency|quality|performance|customer|client|service|support|solution|problem|challenge|opportunity|success|growth|improvement|optimization|automation|digital|online|software|data|information|knowledge|experience|skill|training|learning|expertise|professional|career|industry|market|trend|future|goal|objective|target|result|outcome|impact|benefit|value|cost|budget|revenue|profit|investment|risk|security|compliance|regulation|policy|procedure|process|system|platform|tool|resource|asset|project|task|activity|work|job|role|responsibility|decision|choice|option|alternative|recommendation|suggestion|advice|guidance|feedback|review|assessment|evaluation|measurement|metric|indicator|benchmark|standard|requirement|specification|criteria|condition|term|agreement|contract|partnership|relationship|network|community|organization|company|enterprise|corporation|institution|agency|department|team|group|individual|person|people|human|user|customer|client|stakeholder|partner|vendor|supplier|provider|contractor|consultant|expert|specialist|professional|manager|leader|director|executive|officer|employee|staff|member|representative|agent|coordinator|administrator|analyst|developer|designer|engineer|architect|scientist|researcher|consultant|advisor|mentor|coach|instructor|teacher|student|learner|participant|attendee|guest|visitor|audience|public|community|society|culture|environment|sustainability|responsibility|ethics|values|principles|standards|best|practices|guidelines|framework|methodology|approach|technique|method|strategy|tactic|plan|roadmap|timeline|schedule|deadline|milestone|deliverable|objective|goal|target|outcome|result|achievement|accomplishment|success|failure|challenge|obstacle|barrier|issue|problem|concern|risk|threat|opportunity|advantage|benefit|value|cost|expense|budget|investment|return|profit|loss|revenue|income|savings|efficiency|productivity|performance|quality|excellence|innovation|creativity|collaboration|teamwork|communication|transparency|accountability|reliability|consistency|flexibility|adaptability|scalability|sustainability|security|privacy|compliance|governance|oversight|control|monitoring|tracking|reporting|documentation|knowledge|information|data|insight|intelligence|wisdom|understanding|awareness|perception|perspective|viewpoint|opinion|thought|idea|concept|theory|hypothesis|assumption|belief|conviction|confidence|certainty|doubt|uncertainty|ambiguity|clarity|precision|accuracy|correctness|validity|reliability|credibility|trustworthiness|integrity|honesty|transparency|openness|fairness|justice|equality|diversity|inclusion|respect|dignity|empathy|compassion|kindness|generosity|patience|tolerance|acceptance|understanding|support|encouragement|motivation|inspiration|enthusiasm|passion|commitment|dedication|perseverance|resilience|determination|courage|confidence|optimism|hope|faith|trust|belief)\b', all_text.lower())
+        elif analysis_mode == "topics":
+            # Topic modeling simulation (key domain terms)
+            words = re.findall(r'\b(?:artificial|intelligence|machine|learning|deep|neural|network|algorithm|model|prediction|classification|regression|clustering|optimization|automation|robotics|analytics|statistics|probability|mathematics|computation|processing|technology|digital|software|hardware|database|programming|coding|development|engineering|architecture|infrastructure|cloud|platform|framework|library|API|interface|protocol|security|encryption|authentication|authorization|blockchain|cryptocurrency|fintech|healthtech|edtech|startup|venture|capital|funding|investment|market|business|strategy|operations|sales|marketing|advertising|branding|customer|experience|service|product|innovation|design|user|interface|experience|research|analysis|data|science|visualization|dashboard|reporting|metrics|KPI|ROI|growth|scaling|revenue|profit|cost|efficiency|productivity|performance|quality|testing|deployment|monitoring|maintenance|support|documentation|training|onboarding|retention|engagement|satisfaction|feedback|survey|interview|focus|group|persona|journey|mapping|wireframe|prototype|mockup|design|thinking|agile|scrum|kanban|sprint|backlog|epic|story|task|bug|feature|requirement|specification|acceptance|criteria|definition|done|retrospective|planning|estimation|velocity|burndown|capacity|resource|allocation|timeline|milestone|deliverable|release|version|deployment|rollback|hotfix|patch|update|upgrade|migration|integration|testing|automation|continuous|delivery|devops|infrastructure|monitoring|logging|alerting|incident|response|disaster|recovery|backup|restore|availability|reliability|scalability|performance|load|stress|security|vulnerability|penetration|compliance|audit|governance|risk|assessment|mitigation|contingency|business|continuity|legal|regulatory|privacy|GDPR|CCPA|HIPAA|SOX|PCI|ISO|framework|standard|certification|accreditation|validation|verification|audit|review|approval|sign|off)\b', all_text.lower())
+        else:
+            # Default to all words
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', all_text.lower())
+        
+        # Default exclude words list including user's memory preference
+        default_exclude = {
+            'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 
+            'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 
+            'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 
+            'too', 'use', 'that', 'with', 'have', 'this', 'will', 'your', 'from', 'they', 'know', 
+            'want', 'been', 'good', 'much', 'some', 'time', 'very', 'when', 'come', 'here', 'just', 
+            'like', 'long', 'make', 'many', 'over', 'such', 'take', 'than', 'them', 'well', 'were',
+            'details', 'page', 'https', 'filevineapp', 'docviewer', 'view', 'source', 'embedding'  # User's preference
+        }
+        
+        # Combine with user-provided exclude words
+        all_exclude = default_exclude.union(set(exclude_words))
+        
+        # Filter and count words
+        filtered_words = [word for word in words if word.lower() not in all_exclude and len(word) >= 3]
+        word_counts = Counter(filtered_words)
+        
+        # Generate word cloud data with sentiment assignment
+        word_cloud_data = []
+        for word, count in word_counts.most_common(limit):
+            # Assign sentiment based on analysis mode and word content
+            if analysis_mode == "emotions":
+                if word in ['happy', 'pleased', 'satisfied', 'excited', 'positive', 'good', 'excellent', 'amazing', 'great', 'best', 'better', 'success']:
+                    sentiment = "positive"
+                elif word in ['angry', 'sad', 'frustrated', 'worried', 'disappointed', 'shocked', 'negative', 'bad', 'terrible', 'awful', 'poor', 'worst', 'worse', 'problem', 'failure', 'mistake', 'error']:
+                    sentiment = "negative"
+                else:
+                    sentiment = "neutral"
+            elif analysis_mode == "action" or analysis_mode == "verbs":
+                sentiment = "action"
+            elif analysis_mode == "entities":
+                sentiment = "entity"
+            elif analysis_mode == "themes":
+                sentiment = "theme"
+            elif analysis_mode == "topics":
+                sentiment = "topic"
+            else:
+                sentiment = "neutral"
+            
+            word_cloud_data.append({
+                "text": word,  # Keep for compatibility
+                "word": word,  # Add frontend expected format
+                "value": count,
+                "weight": count,
+                "frequency": count,  # Add frontend expected format
+                "sentiment": sentiment,
+                "category": analysis_mode
+            })
+        
+        logger.info(f"✅ Generated multi-dataset word cloud with {len(word_cloud_data)} words from {len(valid_datasets)} datasets")
+        
+        return {
+            "dataset_ids": valid_datasets,
+            "analysis_mode": analysis_mode,
+            "words": word_cloud_data,
+            "word_count": len(word_cloud_data),
+            "total_questions": len(all_questions),
+            "datasets_processed": len(valid_datasets),
+            "success": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Multi-dataset word cloud generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Multi-dataset word cloud generation failed: {str(e)}"
         )
 
 @router.post("/interactive")
