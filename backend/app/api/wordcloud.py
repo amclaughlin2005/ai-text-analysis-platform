@@ -6,18 +6,28 @@ Provides multi-mode word cloud generation and interactive features
 from fastapi import APIRouter, HTTPException, Depends, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from pydantic import BaseModel
 from ..core.database import get_db
 from ..core.logging import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter()
 
+# Request models
+class WordCloudRequest(BaseModel):
+    dataset_id: str
+    mode: str = "all"
+    analysis_mode: Optional[str] = None  # Alternative name
+    max_words: int = 50
+    limit: Optional[int] = None  # Alternative name
+    selected_columns: Optional[List[int]] = None
+    exclude_words: Optional[List[str]] = None
+    filters: Optional[dict] = None
+
 # Word cloud generation endpoints
 @router.post("/generate")
 async def generate_wordcloud(
-    dataset_id: str = Form(...),
-    analysis_mode: str = Form(default="all"),
-    limit: int = Form(default=50),
+    request: WordCloudRequest,
     db: Session = Depends(get_db)
 ):
     """Generate word cloud data from dataset questions"""
@@ -25,6 +35,12 @@ async def generate_wordcloud(
         from sqlalchemy import text
         from collections import Counter
         import re
+        
+        # Extract parameters from request
+        dataset_id = request.dataset_id
+        analysis_mode = request.analysis_mode or request.mode
+        limit = request.limit or request.max_words
+        exclude_words = request.exclude_words or []
         
         logger.info(f"🎨 Generating word cloud for dataset {dataset_id} with mode {analysis_mode}")
         
@@ -68,6 +84,10 @@ async def generate_wordcloud(
             # User specified exclusions
             'details', 'page', 'https', 'filevineapp', 'docviewer', 'view', 'source', 'embedding'
         }
+        
+        # Add custom excluded words from request
+        if exclude_words:
+            excluded_words.update(word.lower() for word in exclude_words)
         
         # Extract words
         words = re.findall(r'\b[a-zA-Z]{3,}\b', all_text.lower())
