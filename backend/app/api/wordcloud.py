@@ -51,8 +51,8 @@ async def generate_wordcloud(
         if not dataset_result:
             raise HTTPException(status_code=404, detail="Dataset not found")
         
-        # Get questions from dataset
-        questions_sql = text("SELECT question_text, answer_text FROM questions WHERE dataset_id = :dataset_id")
+        # Get questions from dataset (using correct Railway column names)
+        questions_sql = text("SELECT original_question, ai_response FROM questions WHERE dataset_id = :dataset_id")
         questions_result = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
         
         if not questions_result:
@@ -68,10 +68,10 @@ async def generate_wordcloud(
         # Extract text from questions and answers
         all_text = ""
         for row in questions_result:
-            if row.question_text:
-                all_text += " " + str(row.question_text)
-            if row.answer_text:
-                all_text += " " + str(row.answer_text)
+            if row.original_question:
+                all_text += " " + str(row.original_question)
+            if row.ai_response:
+                all_text += " " + str(row.ai_response)
         
         # Basic text processing
         # Remove common words and punctuation
