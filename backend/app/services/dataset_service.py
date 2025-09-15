@@ -344,40 +344,49 @@ class DatasetService:
             dataset_name = result.name
             
             # Delete related data in proper order (child tables first)
+            # Each deletion is committed separately to handle foreign key constraints
             
             # Delete word_frequencies first (causing the foreign key violation)
             try:
                 delete_word_frequencies_sql = text("DELETE FROM word_frequencies WHERE dataset_id = :dataset_id")
                 word_freq_deleted = db.execute(delete_word_frequencies_sql, {"dataset_id": dataset_id})
+                db.commit()  # Commit immediately
                 logger.info(f"🗑️ Deleted {word_freq_deleted.rowcount} word frequencies for dataset {dataset_id}")
             except Exception as e:
-                logger.warning(f"Word frequencies deletion failed (table may not exist): {e}")
+                logger.warning(f"Word frequencies deletion failed: {e}")
+                db.rollback()
             
             # Delete questions (if questions table exists)
             try:
                 delete_questions_sql = text("DELETE FROM questions WHERE dataset_id = :dataset_id")
                 questions_deleted = db.execute(delete_questions_sql, {"dataset_id": dataset_id})
+                db.commit()  # Commit immediately
                 logger.info(f"🗑️ Deleted {questions_deleted.rowcount} questions for dataset {dataset_id}")
             except Exception as e:
-                logger.warning(f"Questions deletion failed (table may not exist): {e}")
+                logger.warning(f"Questions deletion failed: {e}")
+                db.rollback()
             
             # Delete analysis jobs (if table exists)
             try:
                 delete_jobs_sql = text("DELETE FROM analysis_jobs WHERE dataset_id = :dataset_id")
                 jobs_deleted = db.execute(delete_jobs_sql, {"dataset_id": dataset_id})
+                db.commit()  # Commit immediately
                 logger.info(f"🗑️ Deleted {jobs_deleted.rowcount} analysis jobs for dataset {dataset_id}")
             except Exception as e:
-                logger.warning(f"Analysis jobs deletion failed (table may not exist): {e}")
+                logger.warning(f"Analysis jobs deletion failed: {e}")
+                db.rollback()
             
             # Delete any other related tables that might exist
             try:
                 delete_analytics_sql = text("DELETE FROM analytics WHERE dataset_id = :dataset_id")
                 analytics_deleted = db.execute(delete_analytics_sql, {"dataset_id": dataset_id})
+                db.commit()  # Commit immediately
                 logger.info(f"🗑️ Deleted {analytics_deleted.rowcount} analytics records for dataset {dataset_id}")
             except Exception as e:
-                logger.warning(f"Analytics deletion failed (table may not exist): {e}")
+                logger.warning(f"Analytics deletion failed: {e}")
+                db.rollback()
             
-            # Delete the dataset itself
+            # Now delete the dataset itself (all foreign key references should be gone)
             delete_dataset_sql = text("DELETE FROM datasets WHERE id = :dataset_id")
             dataset_deleted = db.execute(delete_dataset_sql, {"dataset_id": dataset_id})
             
