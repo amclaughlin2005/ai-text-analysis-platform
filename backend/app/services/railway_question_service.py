@@ -120,17 +120,18 @@ class RailwayQuestionService:
                     """)
                     db.execute(create_table_sql)
                     
-                    # Now insert the question (including csv_row_number to satisfy NOT NULL constraint)
+                    # Now insert the question (including ALL required NOT NULL fields)
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, original_question, ai_response, csv_row_number)
-                        VALUES (:id, :dataset_id, :original_question, :ai_response, :csv_row_number)
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response, csv_row_number, is_valid, created_at, updated_at)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response, :csv_row_number, :is_valid, NOW(), NOW())
                     """)
                     db.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
                         'original_question': question_text[:2000],
                         'ai_response': response_text[:5000],
-                        'csv_row_number': row_num
+                        'csv_row_number': row_num,
+                        'is_valid': True
                     })
                     
                 except Exception as e:
@@ -288,17 +289,18 @@ class RailwayQuestionService:
                     continue
                 
                 try:
-                    # Insert question with autocommit (including csv_row_number to satisfy NOT NULL constraint)
+                    # Insert question with autocommit (including ALL required NOT NULL fields)
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, original_question, ai_response, csv_row_number)
-                        VALUES (:id, :dataset_id, :original_question, :ai_response, :csv_row_number)
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response, csv_row_number, is_valid, created_at, updated_at)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response, :csv_row_number, :is_valid, NOW(), NOW())
                     """)
                     connection.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
                         'original_question': question_text[:2000],
                         'ai_response': response_text[:5000],
-                        'csv_row_number': row_num
+                        'csv_row_number': row_num,
+                        'is_valid': True
                     })
                     
                 except Exception as e:
