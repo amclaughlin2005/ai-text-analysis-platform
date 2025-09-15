@@ -203,22 +203,32 @@ async def debug_questions_schema(db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e), "message": "Failed to get schema info"}
 
-@router.get("/questions")
+@router.get("/{dataset_id}/questions")
 async def get_dataset_questions(
-    dataset_id: str = Query(..., description="Dataset ID to fetch questions for"),
+    dataset_id: str,
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
-    """Get questions for a dataset (simple version for table view)"""
+    """Get questions for a dataset with pagination (table view)"""
     try:
+        logger.info(f"Fetching questions for dataset {dataset_id}")
+        
         # Use the same query as word cloud API since that works
         questions_sql = text("SELECT original_question, ai_response FROM questions WHERE dataset_id = :dataset_id ORDER BY csv_row_number ASC")
         questions_result = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
         
+        # Calculate pagination
+        total = len(questions_result)
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        paginated_questions = questions_result[start_idx:end_idx]
+        
         # Format for table view
         questions = []
-        for i, row in enumerate(questions_result):
+        for i, row in enumerate(paginated_questions):
             questions.append({
-                "id": i + 1,
+                "id": start_idx + i + 1,
                 "question": str(row[0]) if row[0] else "",
                 "response": str(row[1]) if row[1] else "",
                 "created": None
@@ -226,11 +236,14 @@ async def get_dataset_questions(
         
         return {
             "questions": questions,
-            "total": len(questions)
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": (total + per_page - 1) // per_page
         }
         
     except Exception as e:
-        logger.error(f"Questions API error: {e}")
+        logger.error(f"Questions API error for dataset {dataset_id}: {e}")
         return {
             "questions": [],
             "total": 0,
