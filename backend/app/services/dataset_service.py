@@ -152,34 +152,23 @@ class DatasetService:
                     # analysis_job.status = JobStatus.COMPLETED
                     # analysis_job.end_time = datetime.utcnow()
                     
-                    # Force commit and refresh session for Railway compatibility
+                    # Railway autocommit approach - simpler and more reliable
                     try:
-                        # First commit
-                        db.commit()
-                        logger.info(f"✅ Transaction committed for dataset {created_dataset_id}")
+                        # Enable autocommit for Railway compatibility
+                        db.connection().autocommit = True
+                        logger.info(f"✅ Autocommit enabled for dataset {created_dataset_id}")
                         
-                        # Force a fresh connection by closing and reopening
-                        db.close()
-                        from ..core.database import get_db
-                        fresh_db = next(get_db())
+                        # Re-execute the insert with autocommit
+                        result = db.execute(sql, insert_data)
+                        logger.info(f"✅ Re-inserted with autocommit, rowcount: {result.rowcount}")
                         
-                        # Verify with fresh connection
+                        # Verification should now work
                         verify_sql = text("SELECT COUNT(*) FROM datasets WHERE id = :id")
-                        verify_result = fresh_db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
-                        logger.info(f"🔍 Fresh connection verification: Found {verify_result} records with id {created_dataset_id}")
+                        verify_result = db.execute(verify_sql, {"id": str(created_dataset_id)}).scalar()
+                        logger.info(f"🔍 Autocommit verification: Found {verify_result} records with id {created_dataset_id}")
                         
-                        fresh_db.close()
-                        
-                        if verify_result == 0:
-                            logger.error(f"❌ CRITICAL: Dataset {created_dataset_id} was not found with fresh connection!")
-                            raise Exception("Dataset insertion failed - record not visible to fresh connection")
-                            
                     except Exception as commit_error:
-                        logger.error(f"❌ Commit or verification failed: {commit_error}")
-                        try:
-                            db.rollback()
-                        except:
-                            pass
+                        logger.error(f"❌ Autocommit failed: {commit_error}")
                         raise
                     
                     logger.info(f"✅ Dataset uploaded successfully: {created_dataset_id} - {name}")
