@@ -48,6 +48,9 @@ export default function DatasetList({
     selectedDataset: null,
     actionMenuOpen: null
   });
+  
+  // Debug: Log state changes
+  console.log('DatasetList state:', { actionMenuOpen: state.actionMenuOpen });
 
   // Fetch datasets from backend
   const fetchDatasets = async () => {
@@ -180,7 +183,9 @@ export default function DatasetList({
 
   // Handle action menu toggle
   const toggleActionMenu = (datasetId: string, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
+    console.log('Toggling action menu for dataset:', datasetId);
     setState(prev => ({
       ...prev,
       actionMenuOpen: prev.actionMenuOpen === datasetId ? null : datasetId
@@ -188,7 +193,13 @@ export default function DatasetList({
   };
 
   // Close action menu when clicking outside
-  const closeActionMenu = () => {
+  const closeActionMenu = (e?: React.MouseEvent) => {
+    // Don't close if clicking on action menu button or dropdown
+    if (e && e.target instanceof Element) {
+      if (e.target.closest('[data-action-menu]')) {
+        return;
+      }
+    }
     setState(prev => ({ ...prev, actionMenuOpen: null }));
   };
 
@@ -377,16 +388,21 @@ export default function DatasetList({
                       );
                     })()}
                     
-                    <div className="relative">
+                    <div className="relative" data-action-menu>
                       <button
                         onClick={(e) => toggleActionMenu(dataset.id, e)}
                         className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        data-action-menu
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
                       
                       {state.actionMenuOpen === dataset.id && (
-                        <div className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-lg border z-50">
+                        <div 
+                          className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-lg border z-50"
+                          data-action-menu
+                          style={{ border: '2px solid red' }} // Debug styling
+                        >
                           <div className="py-1">
                             <button
                               onClick={(e) => handleViewDataset(dataset, e)}
