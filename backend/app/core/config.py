@@ -66,13 +66,15 @@ class Settings(BaseSettings):
     BATCH_PROCESSING_SIZE: int = 100
     MAX_CONCURRENT_JOBS: int = 5
     
-    # CORS Configuration
+    # CORS Configuration - Allow all Vercel domains and localhost
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://ai-text-analysis-platform.vercel.app",
-        "https://ai-text-analysis-platform-git-main.vercel.app",
-        "https://wordcloud-six-eta.vercel.app"
+        "https://ai-text-analysis-platform-git-main.vercel.app", 
+        "https://wordcloud-six-eta.vercel.app",
+        # Add wildcard patterns for Vercel preview deployments
+        "*"  # Temporary - allow all origins for debugging
     ]
     
     # Allowed hosts for security
