@@ -107,13 +107,14 @@ class RailwayQuestionService:
                 
                 # Create a questions table if it doesn't exist and insert the question
                 try:
-                    # First, try to create the questions table if it doesn't exist (matching word cloud API expectations)
+                    # First, try to create the questions table if it doesn't exist (matching Railway schema)
                     create_table_sql = text("""
                         CREATE TABLE IF NOT EXISTS questions (
                             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                             dataset_id UUID,
                             original_question TEXT,
                             ai_response TEXT,
+                            csv_row_number INTEGER NOT NULL,
                             created_at TIMESTAMP DEFAULT NOW()
                         )
                     """)
@@ -259,13 +260,14 @@ class RailwayQuestionService:
             
             questions_created = 0
             
-            # First, ensure questions table exists (matching word cloud API expectations)
+            # First, ensure questions table exists (matching Railway schema)
             create_table_sql = text("""
                 CREATE TABLE IF NOT EXISTS questions (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     dataset_id UUID,
                     original_question TEXT,
                     ai_response TEXT,
+                    csv_row_number INTEGER NOT NULL,
                     created_at TIMESTAMP DEFAULT NOW()
                 )
             """)
