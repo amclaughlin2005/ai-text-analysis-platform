@@ -4,6 +4,7 @@ import { useState } from 'react';
 import DatasetList from '@/components/datasets/DatasetList';
 import { Upload, Plus, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { Dataset } from '@/lib/types';
 
 export default function DatasetsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -12,9 +13,9 @@ export default function DatasetsPage() {
     setRefreshKey(prev => prev + 1);
   };
 
-  const handleDatasetSelect = (datasetId: string) => {
+  const handleDatasetSelect = (dataset: Dataset) => {
     // Navigate to dataset view page
-    window.location.href = `/dataset/${datasetId}`;
+    window.location.href = `/dataset/${dataset.id}`;
   };
 
   const handleDatasetDelete = (datasetId: string) => {
