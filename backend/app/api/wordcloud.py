@@ -96,12 +96,16 @@ async def generate_wordcloud(
         # Count word frequencies
         word_counts = Counter(filtered_words)
         
-        # Convert to word cloud format
+        # Convert to word cloud format expected by frontend
         word_cloud_data = [
             {
-                "text": word,
+                "text": word,  # Keep for compatibility
+                "word": word,  # Add frontend expected format
                 "value": count,
-                "weight": count
+                "weight": count,
+                "frequency": count,  # Add frontend expected format
+                "sentiment": "neutral",  # Default sentiment
+                "category": analysis_mode
             }
             for word, count in word_counts.most_common(limit)
         ]
