@@ -5,6 +5,7 @@ Handles CSV upload, dataset CRUD operations, and processing status
 
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List, Optional
 from ..core.database import get_db
 from ..core.logging import get_logger
@@ -165,3 +166,46 @@ async def get_word_frequencies(
         "word_count": len(word_frequencies),
         "words": word_frequencies[:limit]
     }
+
+@router.get("/debug/schema")
+async def debug_questions_schema(db: Session = Depends(get_db)):
+    """Debug endpoint to inspect questions table schema"""
+    try:
+        # Get table structure from PostgreSQL information_schema
+        schema_sql = text("""
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns 
+            WHERE table_name = 'questions'
+            ORDER BY ordinal_position
+        """)
+        
+        result = db.execute(schema_sql).fetchall()
+        
+        columns = []
+        for row in result:
+            columns.append({
+                "column_name": row.column_name,
+                "data_type": row.data_type,
+                "is_nullable": row.is_nullable,
+                "column_default": row.column_default
+            })
+        
+        # Also get constraints
+        constraints_sql = text("""
+            SELECT conname, confrelid::regclass, conkey, confkey
+            FROM pg_constraint 
+            WHERE conrelid = 'questions'::regclass
+        """)
+        
+        constraints_result = db.execute(constraints_sql).fetchall()
+        constraints = [dict(row) for row in constraints_result]
+        
+        return {
+            "table_name": "questions",
+            "columns": columns,
+            "constraints": constraints,
+            "total_columns": len(columns)
+        }
+        
+    except Exception as e:
+        return {"error": str(e), "message": "Failed to get schema info"}
