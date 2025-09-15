@@ -45,11 +45,12 @@ class DatasetService:
     # Required CSV column patterns
     QUESTION_PATTERNS = [
         'question', 'original question', 'user question', 
-        'query', 'user query', 'original_question'
+        'query', 'user query', 'original_question', 'prompt', 'input'
     ]
     RESPONSE_PATTERNS = [
         'response', 'human loop response', 'ai response', 
-        'agent response', 'answer', 'reply', 'human_loop_response'
+        'agent response', 'answer', 'reply', 'human_loop_response',
+        'ai_response', 'output'
     ]
 
     @classmethod
