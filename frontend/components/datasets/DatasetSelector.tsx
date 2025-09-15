@@ -171,7 +171,7 @@ export default function DatasetSelector({
                         {isSelected && <Check className="h-4 w-4 text-primary-600" />}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {dataset.question_count || 0} questions • Uploaded {new Date(dataset.created_at).toLocaleDateString()}
+                        {dataset.questions_count || 0} questions • Uploaded {new Date(dataset.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
