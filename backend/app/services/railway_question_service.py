@@ -87,28 +87,28 @@ class RailwayQuestionService:
                 
                 # Create a questions table if it doesn't exist and insert the question
                 try:
-                    # First, try to create the questions table if it doesn't exist
+                    # First, try to create the questions table if it doesn't exist (matching word cloud API expectations)
                     create_table_sql = text("""
                         CREATE TABLE IF NOT EXISTS questions (
                             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                             dataset_id UUID,
-                            question_text TEXT,
-                            answer_text TEXT,
+                            original_question TEXT,
+                            ai_response TEXT,
                             created_at TIMESTAMP DEFAULT NOW()
                         )
                     """)
                     db.execute(create_table_sql)
                     
-                    # Now insert the question
+                    # Now insert the question (using column names that match word cloud API)
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, question_text, answer_text)
-                        VALUES (:id, :dataset_id, :question_text, :answer_text)
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response)
                     """)
                     db.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
-                        'question_text': question_text[:2000],
-                        'answer_text': response_text[:5000]
+                        'original_question': question_text[:2000],
+                        'ai_response': response_text[:5000]
                     })
                     
                 except Exception as e:
@@ -221,13 +221,13 @@ class RailwayQuestionService:
             
             questions_created = 0
             
-            # First, ensure questions table exists
+            # First, ensure questions table exists (matching word cloud API expectations)
             create_table_sql = text("""
                 CREATE TABLE IF NOT EXISTS questions (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     dataset_id UUID,
-                    question_text TEXT,
-                    answer_text TEXT,
+                    original_question TEXT,
+                    ai_response TEXT,
                     created_at TIMESTAMP DEFAULT NOW()
                 )
             """)
@@ -248,16 +248,16 @@ class RailwayQuestionService:
                     continue
                 
                 try:
-                    # Insert question with autocommit
+                    # Insert question with autocommit (using column names that match word cloud API)
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, question_text, answer_text)
-                        VALUES (:id, :dataset_id, :question_text, :answer_text)
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response)
                     """)
                     connection.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
-                        'question_text': question_text[:2000],
-                        'answer_text': response_text[:5000]
+                        'original_question': question_text[:2000],
+                        'ai_response': response_text[:5000]
                     })
                     
                 except Exception as e:
