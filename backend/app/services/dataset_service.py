@@ -127,15 +127,8 @@ class DatasetService:
                     logger.info(f"✅ Pure SQL dataset insert successful: {dataset_id}")
                     created_dataset_id = dataset_id
                     
-                    # Create questions using Railway-compatible service (fallback to regular session)
-                    from .railway_question_service import RailwayQuestionService
-                    
-                    questions_created = RailwayQuestionService.create_questions_from_csv(
-                        dataset_id=created_dataset_id,
-                        headers=headers,
-                        rows=rows,
-                        db=db
-                    )
+                    # Skip regular session question creation - will use autocommit approach
+                    questions_created = 0
                     
                     # Railway-specific persistence strategy: Use autocommit mode from the start
                     try:
@@ -160,8 +153,15 @@ class DatasetService:
                                 result = conn.execute(sql, insert_data)
                                 logger.info(f"✅ Autocommit insert completed, rowcount: {result.rowcount}")
                                 
-                                # Questions already created with regular session
-                                logger.info(f"✅ Using questions_created from regular session: {questions_created}")
+                                # Create questions with autocommit connection (this approach works for datasets)
+                                from .railway_question_service import RailwayQuestionService
+                                questions_created = RailwayQuestionService.create_questions_with_autocommit(
+                                    dataset_id=created_dataset_id,
+                                    headers=headers,
+                                    rows=rows,
+                                    connection=conn
+                                )
+                                logger.info(f"✅ Autocommit question creation returned: {questions_created} questions")
                                 
                                 # Immediate verification
                                 verify_sql = text("SELECT COUNT(*) FROM datasets WHERE id = :id")

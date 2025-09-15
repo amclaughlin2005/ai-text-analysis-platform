@@ -201,43 +201,58 @@ class RailwayQuestionService:
         Create questions using autocommit connection for Railway persistence
         """
         try:
-            # Find column indices for question and response
+            # Use the same improved pattern matching logic as regular session
             header_lower = [h.lower().strip() for h in headers]
             
-            # Common patterns for question and response columns
-            question_patterns = ['question', 'original_question', 'query', 'prompt', 'input']
-            response_patterns = ['response', 'answer', 'ai_response', 'output', 'reply']
+            # Import patterns from DatasetService to ensure consistency
+            from ..services.dataset_service import DatasetService
+            question_patterns = DatasetService.QUESTION_PATTERNS
+            response_patterns = DatasetService.RESPONSE_PATTERNS
+            
+            logger.info(f"🔍 Autocommit: Looking for question patterns {question_patterns} in headers: {header_lower}")
+            logger.info(f"🔍 Original headers: {headers}")
             
             question_col = None
             response_col = None
             
-            # Find question column
-            logger.info(f"🔍 Autocommit: Looking for question patterns {question_patterns} in headers: {header_lower}")
+            # Use exact matching like DatasetService validation
             for pattern in question_patterns:
-                for i, header in enumerate(header_lower):
-                    if pattern in header:
-                        question_col = i
-                        logger.info(f"✅ Found question pattern '{pattern}' in header '{header}' at index {i}")
-                        break
-                if question_col is not None:
+                if pattern in header_lower:
+                    question_col = header_lower.index(pattern)
+                    logger.info(f"✅ Autocommit: Found question pattern '{pattern}' at index {question_col}")
                     break
             
             # Find response column  
             logger.info(f"🔍 Autocommit: Looking for response patterns {response_patterns} in headers: {header_lower}")
             for pattern in response_patterns:
-                for i, header in enumerate(header_lower):
-                    if pattern in header:
-                        response_col = i
-                        logger.info(f"✅ Found response pattern '{pattern}' in header '{header}' at index {i}")
-                        break
-                if response_col is not None:
+                if pattern in header_lower:
+                    response_col = header_lower.index(pattern)
+                    logger.info(f"✅ Autocommit: Found response pattern '{pattern}' at index {response_col}")
                     break
             
             if question_col is None or response_col is None:
                 logger.error(f"❌ Autocommit: Could not find question/response columns. Question col: {question_col}, Response col: {response_col}")
                 logger.error(f"❌ Headers: {headers}")
-                logger.error(f"❌ Header patterns checked: Q={question_patterns}, R={response_patterns}")
-                return 0
+                logger.error(f"❌ Lower headers: {header_lower}")
+                logger.error(f"❌ Patterns: Q={question_patterns}, R={response_patterns}")
+                
+                # Try fallback with partial matching as a last resort
+                logger.info("🔄 Autocommit: Trying fallback pattern matching...")
+                for i, header in enumerate(header_lower):
+                    if any(word in header for word in ['question', 'query', 'prompt']):
+                        question_col = i
+                        logger.info(f"✅ Autocommit fallback: Found question-like header '{header}' at index {i}")
+                        break
+                
+                for i, header in enumerate(header_lower):
+                    if any(word in header for word in ['response', 'answer', 'reply']):
+                        response_col = i
+                        logger.info(f"✅ Autocommit fallback: Found response-like header '{header}' at index {i}")
+                        break
+                
+                if question_col is None or response_col is None:
+                    logger.error(f"❌ Autocommit: Even fallback failed. Question col: {question_col}, Response col: {response_col}")
+                    return 0
             
             logger.info(f"📝 Found question column at index {question_col}, response at {response_col}")
             
