@@ -224,28 +224,39 @@ async def get_dataset_questions(
         end_idx = start_idx + per_page
         paginated_questions = questions_result[start_idx:end_idx]
         
-        # Format for table view
+        # Format for table view (match frontend interface)
         questions = []
         for i, row in enumerate(paginated_questions):
             questions.append({
-                "id": start_idx + i + 1,
-                "question": str(row[0]) if row[0] else "",
-                "response": str(row[1]) if row[1] else "",
-                "created": None
+                "id": str(start_idx + i + 1),
+                "original_question": str(row[0]) if row[0] else "",
+                "ai_response": str(row[1]) if row[1] else "",
+                "created_at": None
             })
         
         return {
-            "questions": questions,
+            "success": True,
+            "data": questions,
             "total": total,
-            "page": page,
-            "per_page": per_page,
-            "total_pages": (total + per_page - 1) // per_page
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total_count": total,
+                "total_pages": (total + per_page - 1) // per_page
+            }
         }
         
     except Exception as e:
         logger.error(f"Questions API error for dataset {dataset_id}: {e}")
         return {
-            "questions": [],
+            "success": False,
+            "data": [],
             "total": 0,
-            "error": str(e)
+            "error": str(e),
+            "pagination": {
+                "page": 1,
+                "per_page": per_page,
+                "total_count": 0,
+                "total_pages": 0
+            }
         }
