@@ -172,6 +172,8 @@ export default function EnhancedWordCloud({
   const calculateWordPositions = useCallback((wordData: WordCloudData[]): PositionedWord[] => {
     if (!wordData.length) return [];
 
+    // Account for padding when calculating center
+    const padding = 20;
     const centerX = width / 2;
     const centerY = height / 2;
     const maxFreq = Math.max(...wordData.map(w => w.frequency || 1));
@@ -201,12 +203,15 @@ export default function EnhancedWordCloud({
           position = findSpiralPosition(word.word, fontSize, centerX, centerY, existingPositions);
       }
 
-      existingPositions.push({
-        x: position.x,
-        y: position.y,
+      // Since text is center-anchored, adjust the collision box
+      const collisionBox = {
+        x: position.x - wordWidth / 2,
+        y: position.y - wordHeight / 2,
         width: wordWidth,
         height: wordHeight
-      });
+      };
+
+      existingPositions.push(collisionBox);
 
       return {
         ...word,
@@ -229,37 +234,50 @@ export default function EnhancedWordCloud({
     centerY: number,
     existingWords: { x: number; y: number; width: number; height: number }[]
   ): { x: number; y: number } => {
-    const wordWidth = word.length * fontSize * 0.5; // Updated to match new calculation
+    const wordWidth = word.length * fontSize * 0.5;
     const wordHeight = fontSize * 1.1;
     
     // Add padding to keep words away from edges
-    const padding = 20;
-    const maxX = width - wordWidth - padding;
-    const maxY = height - wordHeight - padding;
+    const padding = 30;
+    const minX = padding + wordWidth / 2;
+    const maxX = width - padding - wordWidth / 2;
+    const minY = padding + wordHeight / 2;
+    const maxY = height - padding - wordHeight / 2;
     
-    // Try center first
-    let testX = centerX - wordWidth / 2;
-    let testY = centerY - wordHeight / 2;
-    
-    if (testX >= padding && testX <= maxX && testY >= padding && testY <= maxY &&
-        !checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords)) {
-      return { x: testX, y: testY };
+    // Try center first - return center position for text anchoring
+    if (centerX >= minX && centerX <= maxX && centerY >= minY && centerY <= maxY) {
+      const collisionBox = {
+        x: centerX - wordWidth / 2,
+        y: centerY - wordHeight / 2,
+        width: wordWidth,
+        height: wordHeight
+      };
+      if (!checkCollision(collisionBox, existingWords)) {
+        return { x: centerX, y: centerY };
+      }
     }
 
     // Spiral outward with tighter spiral
-    let radius = 15; // Smaller starting radius
+    let radius = 15;
     let angle = 0;
-    const spiralIncrement = 4; // Tighter spiral
-    const angleIncrement = 0.3; // Finer angle steps
+    const spiralIncrement = 4;
+    const angleIncrement = 0.3;
 
-    for (let i = 0; i < 800; i++) { // More iterations for better placement
-      testX = centerX + radius * Math.cos(angle) - wordWidth / 2;
-      testY = centerY + radius * Math.sin(angle) - wordHeight / 2;
+    for (let i = 0; i < 800; i++) {
+      const testCenterX = centerX + radius * Math.cos(angle);
+      const testCenterY = centerY + radius * Math.sin(angle);
       
-      // Keep within bounds with padding
-      if (testX >= padding && testX <= maxX && testY >= padding && testY <= maxY) {
-        if (!checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords)) {
-          return { x: testX, y: testY };
+      // Keep within bounds
+      if (testCenterX >= minX && testCenterX <= maxX && testCenterY >= minY && testCenterY <= maxY) {
+        const collisionBox = {
+          x: testCenterX - wordWidth / 2,
+          y: testCenterY - wordHeight / 2,
+          width: wordWidth,
+          height: wordHeight
+        };
+        
+        if (!checkCollision(collisionBox, existingWords)) {
+          return { x: testCenterX, y: testCenterY };
         }
       }
       
@@ -267,13 +285,13 @@ export default function EnhancedWordCloud({
       radius += spiralIncrement / (2 * Math.PI);
       
       // If radius gets too large, break to avoid infinite loops
-      if (radius > Math.min(width, height) / 2) break;
+      if (radius > Math.min(width, height) / 3) break;
     }
     
-    // Fallback to constrained random position
+    // Fallback to constrained random center position
     return {
-      x: padding + Math.random() * (maxX - padding),
-      y: padding + Math.random() * (maxY - padding)
+      x: minX + Math.random() * (maxX - minX),
+      y: minY + Math.random() * (maxY - minY)
     };
   }, [width, height, checkCollision]);
 
@@ -530,15 +548,15 @@ export default function EnhancedWordCloud({
             return (
               <motion.text
                 key={`${word.word}-${index}`}
-                x={word.x}
-                y={word.y + word.fontSize * 0.75}
+                x={word.x} // Use center position directly
+                y={word.y} // Use center position directly
                 fontSize={word.fontSize}
                 fill={word.color}
                 fontWeight={isSelected ? 'bold' : word.frequency && word.frequency > 10 ? '600' : '400'}
-                textAnchor="start"
-                dominantBaseline="alphabetic"
+                textAnchor="middle" // Center text horizontally
+                dominantBaseline="central" // Center text vertically
                 className="cursor-pointer select-none"
-                transform={`rotate(${word.rotation} ${word.x + word.word.length * word.fontSize * 0.3} ${word.y + word.fontSize * 0.5})`}
+                transform={`rotate(${word.rotation} ${word.x} ${word.y})`}
                 initial={{ 
                   opacity: 0, 
                   scale: 0.3,
