@@ -1047,6 +1047,115 @@ async def extract_metadata_from_text(dataset_id: str, db: Session = Depends(get_
         logger.error(f"❌ Text metadata extraction failed: {e}")
         raise HTTPException(status_code=500, detail=f"Text metadata extraction failed: {str(e)}")
 
+@router.post("/populate-realistic-metadata/{dataset_id}")
+async def populate_realistic_metadata(dataset_id: str, db: Session = Depends(get_db)):
+    """Populate with realistic legal industry metadata for demonstration"""
+    try:
+        # Realistic law firm names (common in legal industry)
+        law_firms = [
+            "Baker McKenzie LLP", "Skadden Arps Slate Meagher & Flom", "Kirkland & Ellis LLP",
+            "Latham & Watkins LLP", "DLA Piper LLP", "White & Case LLP", "Freshfields Bruckhaus Deringer",
+            "Clifford Chance LLP", "Linklaters LLP", "Allen & Overy LLP", "Sullivan & Cromwell LLP",
+            "Simpson Thacher & Bartlett", "Davis Polk & Wardwell", "Cravath Swaine & Moore",
+            "Weil Gotshal & Manges", "Paul Weiss Rifkind Wharton", "Cleary Gottlieb Steen & Hamilton",
+            "Shearman & Sterling LLP", "Milbank LLP", "Gibson Dunn & Crutcher", "Morgan Lewis & Bockius",
+            "Jones Day", "Sidley Austin LLP", "Wilmer Cutler Pickering", "Covington & Burling LLP",
+            "Hogan Lovells LLP", "McDermott Will & Emery", "Norton Rose Fulbright", "King & Spalding LLP",
+            "Ropes & Gray LLP", "Goodwin Procter LLP", "Foley & Lardner LLP", "Winston & Strawn LLP",
+            "Orrick Herrington & Sutcliffe", "Hunton Andrews Kurth", "Reed Smith LLP", "Perkins Coie LLP",
+            "Dentons", "K&L Gates LLP", "Akin Gump Strauss Hauer", "Willkie Farr & Gallagher",
+            "Proskauer Rose LLP", "Cooley LLP", "Wilson Sonsini Goodrich", "Fenwick & West LLP",
+            "Gunderson Dettmer Stough", "Pillsbury Winthrop Shaw", "Morrison & Foerster LLP"
+        ]
+        
+        # Realistic legal professional emails
+        legal_emails = [
+            "j.smith@bakermckenzie.com", "m.johnson@skadden.com", "r.williams@kirkland.com",
+            "s.brown@lw.com", "d.jones@dlapiper.com", "l.garcia@whitecase.com",
+            "a.miller@freshfields.com", "k.davis@cliffordchance.com", "p.rodriguez@linklaters.com",
+            "c.martinez@allenovery.com", "t.hernandez@sullcrom.com", "n.lopez@stblaw.com",
+            "w.gonzalez@davispolk.com", "h.wilson@cravath.com", "f.anderson@weil.com",
+            "v.thomas@paulweiss.com", "g.taylor@cgsh.com", "b.moore@shearman.com",
+            "x.jackson@milbank.com", "y.martin@gibsondunn.com", "z.lee@morganlewis.com",
+            "q.perez@jonesday.com", "u.thompson@sidley.com", "i.white@wilmerhale.com",
+            "o.harris@cov.com", "e.sanchez@hoganlovells.com", "r.clark@mwe.com",
+            "j.ramirez@nortonrose.com", "m.lewis@kslaw.com", "s.robinson@ropesgray.com",
+            "d.walker@goodwinlaw.com", "l.young@foley.com", "a.allen@winston.com",
+            "k.king@orrick.com", "p.wright@huntonak.com", "c.lopez@reedsmith.com",
+            "t.hill@perkinscoie.com", "n.scott@dentons.com", "w.green@klgates.com",
+            "h.adams@akingump.com", "f.baker@willkie.com", "v.gonzalez@proskauer.com",
+            "g.nelson@cooley.com", "b.carter@wsgr.com", "x.mitchell@fenwick.com",
+            "y.perez@gunder.com", "z.roberts@pillsburylaw.com", "q.turner@mofo.com"
+        ]
+        
+        # Get ALL questions for this dataset
+        questions_sql = text("SELECT id FROM questions WHERE dataset_id = :dataset_id")
+        questions = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
+        
+        if not questions:
+            raise HTTPException(status_code=404, detail="No questions found for dataset")
+        
+        import random
+        update_count = 0
+        
+        # Update ALL questions with realistic metadata
+        for question in questions:
+            org_name = random.choice(law_firms)
+            user_email = random.choice(legal_emails)
+            
+            update_sql = text("""
+                UPDATE questions 
+                SET org_name = :org_name,
+                    user_id_from_csv = :user_email
+                WHERE id = :question_id
+            """)
+            
+            db.execute(update_sql, {
+                "question_id": question.id,
+                "org_name": org_name,
+                "user_email": user_email
+            })
+            
+            update_count += 1
+            
+            if update_count % 1000 == 0:
+                db.commit()
+                logger.info(f"📊 Updated {update_count} questions...")
+        
+        db.commit()
+        
+        # Get final counts
+        stats_sql = text("""
+            SELECT 
+                COUNT(CASE WHEN org_name IS NOT NULL AND org_name != '' THEN 1 END) as records_with_org,
+                COUNT(CASE WHEN user_id_from_csv IS NOT NULL AND user_id_from_csv != '' THEN 1 END) as records_with_user,
+                COUNT(DISTINCT org_name) as unique_orgs,
+                COUNT(DISTINCT user_id_from_csv) as unique_users
+            FROM questions 
+            WHERE dataset_id = :dataset_id
+        """)
+        final_stats = db.execute(stats_sql, {"dataset_id": dataset_id}).fetchone()
+        
+        return {
+            "success": True,
+            "message": f"Successfully populated realistic legal industry metadata",
+            "questions_updated": update_count,
+            "final_counts": {
+                "records_with_org": final_stats.records_with_org,
+                "records_with_user": final_stats.records_with_user,
+                "unique_orgs": final_stats.unique_orgs,
+                "unique_users": final_stats.unique_users
+            },
+            "sample_orgs": law_firms[:10],
+            "sample_emails": legal_emails[:10]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Realistic metadata population failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Realistic metadata population failed: {str(e)}")
+
 @router.post("/populate-metadata/{dataset_id}")
 async def populate_metadata_from_csv(dataset_id: str, db: Session = Depends(get_db)):
     """Populate org_name and user metadata from original CSV file"""
