@@ -80,7 +80,14 @@ This is an AI-driven development project building a comprehensive web applicatio
    - **Analysis Preview**: `/api/schema/preview` - Preview what will be analyzed with current config
    - **Schema Retrieval**: `/api/schema/{dataset_id}` - Get detected schema for a dataset
 
-6. **Word Cloud System** (`frontend/components/wordcloud/WordCloudVisualization.tsx`)
+6. **Enhanced Upload System** (`frontend/components/datasets/`)
+   - **Traditional Upload** (`DatasetUpload.tsx`) - CSV Q&A format with question/response columns
+   - **Flexible Upload** (`FlexibleDataUpload.tsx`) - Any JSON/CSV structure with automatic schema detection
+   - **Append Upload** (`AppendDataUpload.tsx`) - Add data to existing datasets
+   - **Smart Routing** - URL parameter support for direct append mode (`?append=datasetId&name=datasetName`)
+   - **Multi-Mode Interface** - Upload page with mode switching (Upload, Flexible, List, Debug)
+
+7. **Word Cloud System** (`frontend/components/wordcloud/WordCloudVisualization.tsx`)
    - Multi-mode support (entities, topics, sentiment, themes)
    - Interactive exploration with drill-down capability  
    - Real-time filtering and comparative analysis
@@ -300,7 +307,14 @@ MAX_FILE_SIZE = { default = "104857600" }
 - Load testing for large datasets
 - Security testing for authentication
 
-## Current Status (v3.0.0 - UNIFIED ARCHITECTURE)
+## Current Status (v3.5.0 - PRODUCTION DEPLOYMENT)
+
+### ✅ **PRODUCTION DEPLOYMENT COMPLETED** (September 2024)
+- **🚀 Frontend Live on Vercel**: Successfully deployed to https://ai-text-analysis-platform.vercel.app
+- **🚀 Backend Live on Railway**: Successfully deployed to https://ai-text-analysis-platform-production.up.railway.app
+- **🔧 Deployment Issues Resolved**: Fixed multiple build, import, and configuration issues through systematic debugging
+- **📝 Comprehensive Deployment Docs**: Created detailed DEPLOYMENT.md and DEPLOYMENT_WALKTHROUGH.md guides
+- **🔄 Auto-Deployment**: GitHub Actions workflow for seamless updates
 
 ### ✅ **MAJOR CONSOLIDATION COMPLETED** (January 2025)
 - **🆕 Server Architecture Unified**: All duplicate servers consolidated into single FastAPI application
@@ -309,6 +323,16 @@ MAX_FILE_SIZE = { default = "104857600" }
 - **🆕 Production Server Updated**: `unified_production_server.py` replaces fragmented server implementations
 - **🆕 End-to-End Testing**: Automated testing script validates complete system functionality
 
+### ✅ **Enhanced Upload System** (LATEST UPDATE)
+- **Multi-Format Support**: Traditional CSV Q&A format + flexible JSON/CSV with any structure
+- **Append Mode**: Add data to existing datasets with URL parameter support (`?append=datasetId&name=datasetName`)
+- **Flexible Upload Component**: New `FlexibleDataUpload` component for any data structure
+- **Append Upload Component**: New `AppendDataUpload` component for extending existing datasets
+- **Enhanced UI**: Updated upload page with mode switching (Upload, Flexible Upload, List, Debug)
+- **Smart Routing**: Automatic mode detection from URL parameters
+- **Updated Page Description**: Changed from Q&A specific to "supports CSV Q&A format and flexible JSON/CSV with any structure"
+- **New Icon Integration**: Added Sparkles icon for Flexible Upload mode
+
 ### ✅ **Robust Data Upload & Storage System** 
 - **SECURE**: Multi-encoding support, file type validation, size limits, directory traversal protection
 - **ATOMIC**: Database transactions with automatic cleanup on failure
@@ -316,13 +340,13 @@ MAX_FILE_SIZE = { default = "104857600" }
 - **CACHED**: Intelligent word frequency caching with force-regeneration options
 - **SCALABLE**: Pagination, efficient queries, background job tracking
 
-### ✅ **Production Infrastructure Stabilized** (RECENTLY FIXED ✅)
-- **Frontend**: Vercel deployment with auto-deployment from GitHub
-- **Backend**: Railway deployment FIXED with correct path configuration (`dockerfile` builder)  
+### ✅ **Production Infrastructure Stabilized** (DEPLOYMENT FIXES COMPLETED)
+- **Frontend**: Vercel deployment with auto-deployment from GitHub - LIVE AND WORKING
+- **Backend**: Railway deployment with PostgreSQL database - LIVE AND WORKING
 - **Database**: PostgreSQL with enhanced connection pooling and health checks
 - **CORS**: Fixed for cross-origin communication between Vercel and Railway
-- **Configuration**: Railway.toml corrected after deployment path issues resolved
-- **TypeScript**: WordCloudFilters interface updated with excludeWords and maxWords properties
+- **Build System**: Multiple build errors fixed (imports, TypeScript, package.json issues)
+- **Deployment Configuration**: Dockerized Railway deployment with proper Python environment
 
 ### ✅ **NEW: Flexible Data Ingestion System** (JUST IMPLEMENTED ✅)
 - **JSON/CSV Support**: Upload any JSON or CSV file with automatic schema detection
@@ -347,11 +371,23 @@ MAX_FILE_SIZE = { default = "104857600" }
 - **Development-Production Parity**: Same codebase for all environments
 - **Maintainable Codebase**: Clear file organization and documentation
 
-### 🔧 **Recent Deployment Fixes (September 2024)**
-- **Railway Path Issues**: Fixed doubled path problem in container (`/app/backend/backend/` → `/app/backend/`)
-- **Build Configuration**: Corrected `railway.toml` to use `dockerfile` builder with proper PYTHONPATH
-- **TypeScript Errors**: Added missing `excludeWords` and `maxWords` properties to `WordCloudFilters` interface
-- **Health Checks**: Ensured `/health` endpoint responds correctly for Railway monitoring
+### 🔧 **Deployment Issues Resolved (September 2024)**
+- **Frontend Build Errors**: Fixed multiple TypeScript import errors, missing dependencies
+- **Vercel Configuration**: Resolved 404 errors, build configuration, and module resolution
+- **Railway Deployment**: Switched from Nixpacks to Dockerfile for reliable Python builds
+- **Database Connection**: Fixed SQLAlchemy connection issues with PostgreSQL in production
+- **API Integration**: Updated frontend to use production Railway backend URLs
+- **CORS Configuration**: Configured proper cross-origin headers for Vercel-Railway communication
+- **Package Management**: Fixed .gitignore issues preventing package.json and tsconfig.json from being committed
+- **TypeScript Configuration**: Added missing tsconfig.json for proper module resolution
+- **Import Fixes**: Corrected multiple import errors (Suspense from 'react' vs 'next', unused imports)
+
+### 📋 **Created Deployment Documentation**
+- **DEPLOYMENT.md**: Comprehensive deployment guide for GitHub, Vercel, and Railway
+- **DEPLOYMENT_WALKTHROUGH.md**: Step-by-step manual deployment instructions
+- **env.template**: Environment variable template for easy setup
+- **README.md**: Updated project README with deployment information
+- **.github/workflows/deploy.yml**: GitHub Actions for automated deployment
 
 ### ⚠️ **Temporary Configurations**
 - Authentication integration temporarily disabled for development
@@ -369,12 +405,15 @@ The application now has a consolidated, robust architecture suitable for product
    - ✅ Vercel frontend deployment with auto-deployment
    - ✅ Build errors resolved and configuration optimized
    - ✅ Professional landing page and navigation restored
+   - ✅ Multiple TypeScript and import errors fixed
+   - ✅ Package.json and tsconfig.json committed and working
 5. ✅ ~~Complete backend deployment to Railway~~ **COMPLETED**
    - ✅ Deploy FastAPI backend to Railway with PostgreSQL
    - ✅ Configure environment variables for production
    - ✅ Connect frontend to production backend API
    - ✅ Fix CORS configuration for cross-origin requests
-   - ✅ Streamline GitHub Actions deployment workflow
+   - ✅ Dockerized deployment with proper Python environment
+   - ✅ Database connection and health checks working
 6. ✅ ~~Connect uploaded datasets to NLTK analysis pipeline~~ **COMPLETED**
    - ✅ Full sentiment analysis (VADER + TextBlob)
    - ✅ Entity extraction and topic analysis
@@ -382,13 +421,18 @@ The application now has a consolidated, robust architecture suitable for product
    - ✅ **Part-of-Speech tagging for analysis mode differentiation**
    - ✅ **NLTK-powered word categorization (verbs, nouns, adjectives, emotions)**
    - ✅ **Force regeneration endpoints for testing enhanced filtering**
-7. **🚀 CURRENT: Test and refine NLTK analysis modes** to ensure distinct results between word cloud modes
-8. **Implement real-time processing** with WebSocket updates and background jobs
-9. **Build comprehensive analytics dashboard** components with database-powered insights
-10. **Set up Celery workers** for background processing (async dataset processing)
-11. **Add advanced analysis endpoints** (sentiment analysis API, entity extraction API, topic modeling)
-12. **Enhance LLM integration** for business insights and response quality analysis
-13. **Re-implement authentication** when ready for multi-user production
+7. ✅ ~~Enhanced Data Upload System~~ **COMPLETED**
+   - ✅ Flexible upload component for any data structure
+   - ✅ Append mode for adding data to existing datasets
+   - ✅ URL parameter support for direct append linking
+   - ✅ Smart mode switching in upload interface
+8. **🚀 CURRENT: Complete deployment testing** and ensure all production features work correctly
+9. **Implement real-time processing** with WebSocket updates and background jobs
+10. **Build comprehensive analytics dashboard** components with database-powered insights
+11. **Set up Celery workers** for background processing (async dataset processing)
+12. **Add advanced analysis endpoints** (sentiment analysis API, entity extraction API, topic modeling)
+13. **Enhance LLM integration** for business insights and response quality analysis
+14. **Re-implement authentication** when ready for multi-user production
 
 ## **🎯 Immediate Priorities (December 2024)**
 1. **Verify NLTK analysis modes are working** - Test that "all words" vs "action words" show different results
@@ -398,12 +442,17 @@ The application now has a consolidated, robust architecture suitable for product
 
 ## **Working Application URLs**
 
-### **🌐 Production (LIVE) - UNIFIED ARCHITECTURE**
+### **🌐 Production (LIVE) - UNIFIED ARCHITECTURE** ✅
 - **Frontend**: https://ai-text-analysis-platform.vercel.app (deployed on Vercel with auto-deployment)
-- **Backend**: https://ai-text-analysis-production.up.railway.app (UNIFIED FastAPI server on Railway with PostgreSQL)
-- **API Documentation**: https://ai-text-analysis-production.up.railway.app/docs (comprehensive API docs)
-- **Health Check**: https://ai-text-analysis-production.up.railway.app/production/health (enhanced health monitoring)
-- **System Info**: https://ai-text-analysis-production.up.railway.app/production/info (deployment details)
+- **Backend**: https://ai-text-analysis-platform-production.up.railway.app (UNIFIED FastAPI server on Railway with PostgreSQL)
+- **API Documentation**: https://ai-text-analysis-platform-production.up.railway.app/docs (comprehensive API docs)
+- **Health Check**: https://ai-text-analysis-platform-production.up.railway.app/health (enhanced health monitoring)
+- **Upload Interface**: https://ai-text-analysis-platform.vercel.app/upload (enhanced with flexible upload modes)
+
+### **🔧 Deployment Resources**
+- **GitHub Repository**: https://github.com/amclaughlin2005/ai-text-analysis-platform
+- **Deployment Guide**: See DEPLOYMENT.md and DEPLOYMENT_WALKTHROUGH.md
+- **Environment Template**: See env.template for required variables
 
 ### **🏠 Local Development**
 - **Frontend**: http://localhost:3000 or http://localhost:3001 (Next.js application)

@@ -20,11 +20,16 @@ This is an **AI-Powered Text Analysis Platform** designed to analyze user querie
 **Purpose**: User interface for data upload, visualization, and analysis
 - `/components/dashboard/` - Analytics and metrics visualization components
 - `/components/wordcloud/` - Interactive word cloud visualization system
-- `/components/datasets/` - Data upload and management interface
+- `/components/datasets/` - **ENHANCED**: Data upload and management with flexible upload modes
+  - `DatasetUpload.tsx` - Traditional CSV Q&A format upload
+  - `FlexibleDataUpload.tsx` - **NEW**: Upload any JSON/CSV structure
+  - `AppendDataUpload.tsx` - **NEW**: Add data to existing datasets
+  - `DatasetList.tsx` - Browse and manage uploaded datasets
 - `/components/auth/` - Authentication components (Clerk integration)
 - `/components/common/` - Shared UI components and utilities
 - `/lib/` - API clients, utilities, WebSocket connections
-- `/pages/` - Next.js routing and page components
+- `/app/` - **UPDATED**: Next.js 13+ app directory routing
+  - `/upload/` - **ENHANCED**: Multi-mode upload interface with append support
 - `/styles/` - Tailwind CSS styling and themes
 
 ### `/backend/` - FastAPI Python Application
@@ -237,36 +242,60 @@ How this connects to other parts of the system
 
 **Remember**: This is an AI-driven development project. Every AI working on this codebase should be able to understand the complete system architecture and current implementation status from these documentation files.
 
-## 🚀 **Current System Status (December 2024)**
+## 🚀 **Current System Status (September 2024)**
 
-### **✅ Production Ready Components** (RECENTLY FIXED ✅)
-- **Frontend**: Deployed on Vercel with auto-deployment from GitHub + TypeScript fixes
-- **Backend**: Deployed on Railway with PostgreSQL database (Railway paths FIXED)  
-- **CORS**: Fixed for cross-origin communication between Vercel and Railway
-- **Word Cloud Generation**: Enhanced with NLTK Part-of-Speech tagging
-- **Database**: PostgreSQL with full data persistence working
-- **Types**: WordCloudFilters interface updated with excludeWords and maxWords
+### **✅ PRODUCTION DEPLOYMENT COMPLETED** ✅
+- **Frontend**: Successfully deployed to Vercel at https://ai-text-analysis-platform.vercel.app
+- **Backend**: Successfully deployed to Railway at https://ai-text-analysis-platform-production.up.railway.app
+- **Database**: PostgreSQL production database with full persistence
+- **Auto-Deployment**: GitHub Actions workflow for seamless updates
+- **CORS**: Cross-origin communication working between Vercel and Railway
+- **Build System**: All TypeScript, import, and configuration issues resolved
 
-### **🆕 Latest Enhancements (v2.5.0)**
-- **NLTK Analysis Modes**: True differentiation between analysis modes:
-  - `all`: Meaningful words (nouns, verbs, adjectives, adverbs)
-  - `verbs/action`: Action words only using POS tag filtering
-  - `nouns`: Noun phrases only
-  - `adjectives`: Descriptive words only
-  - `emotions`: Emotion-related words with enhanced keyword detection
+### **✅ ENHANCED UPLOAD SYSTEM** (LATEST)
+- **Multi-Mode Interface**: Traditional upload, flexible upload, and append modes
+- **Flexible Data Support**: Upload any JSON/CSV structure with automatic processing
+- **Append Functionality**: Add data to existing datasets via URL parameters
+- **Smart Mode Detection**: Automatic interface switching based on URL parameters
+- **Enhanced UX**: Improved upload page with clear mode separation
+
+### **🆕 Latest Enhancements (v3.5.0)**
+- **Production Deployment**: Complete end-to-end deployment with comprehensive documentation
+- **Enhanced Upload System**: Multiple upload modes for different data structures
+- **Append Mode**: URL parameter support for adding data to existing datasets (`?append=datasetId&name=datasetName`)
+- **Deployment Documentation**: Created DEPLOYMENT.md and DEPLOYMENT_WALKTHROUGH.md guides
+- **Build System**: Dockerized Railway deployment with proper Python environment
+- **Error Resolution**: Fixed multiple TypeScript, import, and configuration issues
+
+### **✅ Previous Enhancements (v2.5.0) - MAINTAINED**
+- **NLTK Analysis Modes**: True differentiation between analysis modes
 - **Enhanced Filtering**: NLTK stopwords + comprehensive user exclusions
 - **Debug Logging**: Analysis mode processing verification in production
 - **Force Regeneration**: API endpoints to clear cached word frequencies
 
-### **🔧 Infrastructure Status** (RECENTLY STABILIZED ✅)
-- **GitHub Actions**: Streamlined deployment workflow for both platforms
-- **Environment Variables**: Production configuration verified  
-- **Railway Config**: Fixed path issues (`dockerfile` builder + correct PYTHONPATH)
-- **API Documentation**: Live Swagger docs at production URL
-- **Database Tables**: Verified creation and data persistence
-- **Health Checks**: Railway monitoring working correctly
+### **🔧 Infrastructure Status** (DEPLOYMENT COMPLETED ✅)
+- **GitHub Repository**: Connected to both Vercel and Railway for auto-deployment
+- **Vercel Configuration**: Fixed build settings, module resolution, and TypeScript issues
+- **Railway Configuration**: Dockerized deployment with PostgreSQL database
+- **Environment Variables**: Production configuration working across both platforms
+- **API Documentation**: Live Swagger docs available at production backend URL
+- **Database Schema**: PostgreSQL tables created and data persistence verified
+- **Health Monitoring**: Railway health checks and monitoring active
+- **CORS Headers**: Proper cross-origin configuration for frontend-backend communication
 
-### **🎯 Ready for Testing**
-The application is now production-ready with enhanced NLTK processing. Users should see distinct differences between word cloud analysis modes.
+### **🎯 PRODUCTION READY**
+The application is fully deployed and operational with:
+- ✅ Live frontend at Vercel with auto-deployment
+- ✅ Live backend at Railway with PostgreSQL database
+- ✅ Enhanced upload system with multiple data format support
+- ✅ Comprehensive deployment documentation
+- ✅ All build and configuration issues resolved
 
-*Last Updated: December 2024 - NLTK Analysis Enhancement*
+### **📋 Deployment Documentation Created**
+- `DEPLOYMENT.md` - Complete deployment guide for GitHub, Vercel, and Railway
+- `DEPLOYMENT_WALKTHROUGH.md` - Step-by-step manual deployment instructions
+- `env.template` - Environment variable template
+- `README.md` - Updated project documentation
+- `.github/workflows/deploy.yml` - GitHub Actions workflow
+
+*Last Updated: September 2024 - Production Deployment Completed*
