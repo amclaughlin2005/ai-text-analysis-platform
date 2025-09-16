@@ -206,26 +206,6 @@ export default function WordCloud() {
           </motion.div>
         )}
 
-        {/* Compact Features Section - At Bottom */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-            Platform Features
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="text-center">
-              <h4 className="font-medium text-gray-900 mb-2">Analysis Modes</h4>
-              <p className="text-gray-600">6 different analysis perspectives including emotions, entities, and themes</p>
-            </div>
-            <div className="text-center">
-              <h4 className="font-medium text-gray-900 mb-2">Smart Filtering</h4>
-              <p className="text-gray-600">Automatic noise removal and intelligent column selection</p>
-            </div>
-            <div className="text-center">
-              <h4 className="font-medium text-gray-900 mb-2">Multi-Dataset</h4>
-              <p className="text-gray-600">Combine multiple datasets for comprehensive analysis</p>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>

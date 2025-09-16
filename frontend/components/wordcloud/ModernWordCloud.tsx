@@ -344,17 +344,18 @@ export default function ModernWordCloud({
       
       {/* Theme Selector */}
       {showThemeSelector && (
-        <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-4 left-4 z-30">
           <button
             onClick={() => setShowThemePanel(!showThemePanel)}
-            className="p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border hover:bg-white transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-md border hover:bg-white hover:shadow-lg transition-all"
             title="Change Theme"
           >
-            <Palette className="h-4 w-4 text-gray-600" />
+            <Palette className="h-4 w-4 text-primary-600" />
+            <span className="text-xs font-medium text-gray-700">Theme</span>
           </button>
           
           {showThemePanel && (
-            <div className="absolute top-12 left-0 w-64 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border p-4 z-20">
+            <div className="absolute top-12 left-0 w-64 bg-white/98 backdrop-blur-sm rounded-lg shadow-xl border p-4 z-40">
               <h3 className="text-sm font-medium text-gray-900 mb-3">Color Theme</h3>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.keys(THEMES) as Array<keyof typeof THEMES>).map((themeKey) => (
