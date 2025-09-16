@@ -7,7 +7,6 @@ import { WordCloudData, WordCloudFilters } from '@/lib/types';
 import { cn, getSentimentColor, formatNumber } from '@/lib/utils';
 import ColumnFilterSelector from './ColumnFilterSelector';
 import ModernWordCloud from './ModernWordCloud';
-import EnhancedWordCloud from './EnhancedWordCloud';
 import SimpleTextView from './SimpleTextView';
 
 interface SimpleWordCloudProps {
@@ -255,7 +254,7 @@ export default function SimpleWordCloud({
   const [showColumnFilterUI, setShowColumnFilterUI] = useState(false); // Default collapsed to save space
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [viewMode, setViewMode] = useState<'cloud' | 'enhanced' | 'text'>('enhanced'); // Default to enhanced view
+  const [viewMode, setViewMode] = useState<'cloud' | 'text'>('cloud'); // Default to cloud view
   
   // All datasets now use the Railway API with proper column filtering
 
@@ -392,20 +391,20 @@ export default function SimpleWordCloud({
             // This will trigger the useEffect again
           }, 2000);
         } else {
-          // After retry fails, fallback to enhanced mock data
-          console.log('⚠️ API retry failed, using enhanced mock data with column filtering:', error);
+          // After retry fails, fallback to mock data
+          console.log('⚠️ API retry failed, using mock data with column filtering:', error);
           
-          // Generate enhanced mock data that respects column filtering
+          // Generate mock data that respects column filtering
           let newWords;
           if (datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9')) {
-            // Use enhanced legal data with column filtering - up to 100 words
+            // Use legal data with column filtering - up to 100 words
             newWords = generateFilteredLegalDataByColumns(mode, selectedColumns);
             // If still too few words, supplement with more
             if (newWords.length < 50) {
               const additionalWords = generateSimpleWordData(mode).slice(0, 100 - newWords.length);
               newWords = [...newWords, ...additionalWords];
             }
-            console.log(`✅ Using enhanced legal mock data (${selectedColumns.join(',')} columns):`, newWords.length, 'words');
+            console.log(`✅ Using legal mock data (${selectedColumns.join(',')} columns):`, newWords.length, 'words');
           } else {
             newWords = generateSimpleWordData(mode);
             console.log('Using standard mock data:', newWords.length, 'words');
@@ -541,40 +540,30 @@ export default function SimpleWordCloud({
           {/* View Mode Toggle */}
           <div className="flex border border-gray-300 rounded-lg overflow-hidden">
             <button
-              onClick={() => setViewMode('enhanced')}
-              className={cn(
-                "px-3 py-2 transition-colors text-xs font-medium",
-                viewMode === 'enhanced'
-                  ? "bg-primary-600 text-white"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              )}
-              title="Enhanced Cloud View"
-            >
-              ✨ Enhanced
-            </button>
-            <button
               onClick={() => setViewMode('cloud')}
               className={cn(
-                "p-2 transition-colors text-sm",
+                "px-3 py-2 transition-colors text-xs font-medium",
                 viewMode === 'cloud'
                   ? "bg-primary-600 text-white"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               )}
-              title="Standard Cloud View"
+              title="Word Cloud View"
             >
-              <LayoutGrid className="h-4 w-4" />
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              Cloud
             </button>
             <button
               onClick={() => setViewMode('text')}
               className={cn(
-                "p-2 transition-colors text-sm",
+                "px-3 py-2 transition-colors text-xs font-medium",
                 viewMode === 'text'
                   ? "bg-primary-600 text-white"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               )}
-              title="Text View"
+              title="Text List View"
             >
-              <List className="h-4 w-4" />
+              <List className="h-4 w-4 mr-1" />
+              List
             </button>
           </div>
           
@@ -673,35 +662,14 @@ export default function SimpleWordCloud({
       {!error && (
         <div className="p-4">
           <div className="w-full overflow-x-auto">
-            {viewMode === 'enhanced' ? (
-              <div className="w-full flex justify-center">
-                <EnhancedWordCloud
+            {viewMode === 'cloud' ? (
+              <div className="min-w-[1200px] w-full flex justify-center">
+                <ModernWordCloud
                   datasetId={datasetsToUse[0] || ''}
                   mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
                   height={600}
                   width={1200}
                   words={words}
-                  theme="vibrant"
-                  layoutMode="spiral"
-                  animationSpeed="normal"
-                  showWordDetails={true}
-                  onWordClick={(word, data) => {
-                    setSelectedWord(selectedWord === word ? null : word);
-                    if (onWordClick) {
-                      onWordClick(word, data);
-                    }
-                  }}
-                  className="rounded-lg border"
-                />
-              </div>
-            ) : viewMode === 'cloud' ? (
-              <div className="min-w-[1200px] w-full flex justify-center">
-                <ModernWordCloud
-                  datasetId={datasetsToUse[0] || ''} // Use first dataset or empty string
-                  mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
-                  height={600}
-                  width={1200}
-                  words={words} // Pass the words from SimpleWordCloud
                   onWordClick={(word) => {
                     setSelectedWord(selectedWord === word ? null : word);
                     if (onWordClick) {
@@ -745,7 +713,7 @@ export default function SimpleWordCloud({
           <span>•</span>
           <span>Mode: {mode}</span>
           <span>•</span>
-          <span>View: {viewMode === 'enhanced' ? 'Enhanced Cloud' : viewMode === 'cloud' ? 'Standard Cloud' : 'Text List'}</span>
+            <span>View: {viewMode === 'cloud' ? 'Word Cloud' : 'Text List'}</span>
         </div>
         
         {selectedWord && (
