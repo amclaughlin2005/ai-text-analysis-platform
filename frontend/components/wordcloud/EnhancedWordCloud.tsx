@@ -142,14 +142,14 @@ export default function EnhancedWordCloud({
     }
   }, [currentTheme]);
 
-  // 📏 Dynamic font sizing with better distribution
+  // 📏 Dynamic font sizing with better distribution (matching ModernWordCloud)
   const getFontSize = useCallback((frequency: number, maxFreq: number): number => {
-    const minSize = 10;
-    const maxSize = 48; // Reduced from 64 to prevent oversized words
+    const minSize = 14;
+    const maxSize = 48;
     const normalized = frequency / maxFreq;
     
-    // Use power curve for better size distribution
-    return Math.max(minSize, maxSize * Math.pow(normalized, 0.7)); // Adjusted curve
+    // Use same proven scaling as ModernWordCloud
+    return Math.max(minSize, maxSize * Math.pow(normalized, 0.7));
   }, []);
 
   // 🎯 Advanced collision detection
@@ -168,50 +168,49 @@ export default function EnhancedWordCloud({
     });
   }, []);
 
-  // 🌀 Multiple layout algorithms
+  // 🌀 Multiple layout algorithms (based on proven ModernWordCloud approach)
   const calculateWordPositions = useCallback((wordData: WordCloudData[]): PositionedWord[] => {
     if (!wordData.length) return [];
 
-    // Account for padding when calculating center
-    const padding = 20;
     const centerX = width / 2;
     const centerY = height / 2;
     const maxFreq = Math.max(...wordData.map(w => w.frequency || 1));
-    const existingPositions: { x: number; y: number; width: number; height: number }[] = [];
+    const occupiedAreas: { x: number; y: number; width: number; height: number }[] = [];
+    
+    // Sort by frequency for better placement (like ModernWordCloud)
+    const sortedWords = [...wordData].sort((a, b) => (b.frequency || 0) - (a.frequency || 0));
 
-    return wordData.map((word, index) => {
+    return sortedWords.map((word, index) => {
       const fontSize = getFontSize(word.frequency || 1, maxFreq);
-      const wordWidth = word.word.length * fontSize * 0.5; // Reduced multiplier for better fit
-      const wordHeight = fontSize * 1.1; // Slightly reduced height
+      const wordWidth = word.word.length * fontSize * 0.6; // Use ModernWordCloud sizing
+      const wordHeight = fontSize * 1.2;
       
       let position = { x: 0, y: 0 };
       
       switch (currentLayout) {
         case 'spiral':
-          position = findSpiralPosition(word.word, fontSize, centerX, centerY, existingPositions);
+          position = findSpiralPosition(word.word, fontSize, centerX, centerY, occupiedAreas);
           break;
         case 'random':
-          position = findRandomPosition(wordWidth, wordHeight, existingPositions);
+          position = findRandomPosition(wordWidth, wordHeight, occupiedAreas);
           break;
         case 'cluster':
-          position = findClusterPosition(word, fontSize, centerX, centerY, existingPositions, index);
+          position = findClusterPosition(word, fontSize, centerX, centerY, occupiedAreas, index);
           break;
         case 'force':
           position = findForcePosition(word, fontSize, centerX, centerY, index, wordData.length);
           break;
         default:
-          position = findSpiralPosition(word.word, fontSize, centerX, centerY, existingPositions);
+          position = findSpiralPosition(word.word, fontSize, centerX, centerY, occupiedAreas);
       }
 
-      // Since text is center-anchored, adjust the collision box
-      const collisionBox = {
-        x: position.x - wordWidth / 2,
-        y: position.y - wordHeight / 2,
+      // Use ModernWordCloud approach: top-left positioning with proper collision
+      occupiedAreas.push({
+        x: position.x,
+        y: position.y,
         width: wordWidth,
         height: wordHeight
-      };
-
-      existingPositions.push(collisionBox);
+      });
 
       return {
         ...word,
@@ -219,14 +218,14 @@ export default function EnhancedWordCloud({
         y: position.y,
         fontSize,
         color: getWordColor(word, index),
-        rotation: Math.random() * 20 - 10, // Reduced rotation between -10 and 10 degrees
+        rotation: Math.random() > 0.8 ? (Math.random() - 0.5) * 30 : 0, // Match ModernWordCloud rotation
         opacity: 0.9,
         scale: 1
       };
     });
-  }, [width, height, currentLayout, getFontSize, getWordColor, checkCollision]);
+  }, [width, height, currentLayout, getFontSize, getWordColor]);
 
-  // 🌀 Spiral layout algorithm
+  // 🌀 Spiral layout algorithm (using proven ModernWordCloud approach)
   const findSpiralPosition = useCallback((
     word: string,
     fontSize: number,
@@ -234,64 +233,47 @@ export default function EnhancedWordCloud({
     centerY: number,
     existingWords: { x: number; y: number; width: number; height: number }[]
   ): { x: number; y: number } => {
-    const wordWidth = word.length * fontSize * 0.5;
-    const wordHeight = fontSize * 1.1;
+    const wordWidth = word.length * fontSize * 0.6; // Match ModernWordCloud
+    const wordHeight = fontSize * 1.2;
     
-    // Add padding to keep words away from edges
-    const padding = 30;
-    const minX = padding + wordWidth / 2;
-    const maxX = width - padding - wordWidth / 2;
-    const minY = padding + wordHeight / 2;
-    const maxY = height - padding - wordHeight / 2;
+    // Try center first
+    let testX = centerX - wordWidth / 2;
+    let testY = centerY - wordHeight / 2;
     
-    // Try center first - return center position for text anchoring
-    if (centerX >= minX && centerX <= maxX && centerY >= minY && centerY <= maxY) {
-      const collisionBox = {
-        x: centerX - wordWidth / 2,
-        y: centerY - wordHeight / 2,
-        width: wordWidth,
-        height: wordHeight
-      };
-      if (!checkCollision(collisionBox, existingWords)) {
-        return { x: centerX, y: centerY };
-      }
+    if (!checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords, 0)) {
+      return { x: testX, y: testY };
     }
-
-    // Spiral outward with tighter spiral
-    let radius = 15;
+    
+    // Spiral outward (matching ModernWordCloud parameters)
+    let radius = 30;
     let angle = 0;
-    const spiralIncrement = 4;
-    const angleIncrement = 0.3;
-
-    for (let i = 0; i < 800; i++) {
-      const testCenterX = centerX + radius * Math.cos(angle);
-      const testCenterY = centerY + radius * Math.sin(angle);
+    const radiusIncrement = 15;
+    const angleIncrement = 0.5;
+    
+    while (radius < Math.min(width, height) / 2) {
+      testX = centerX + radius * Math.cos(angle) - wordWidth / 2;
+      testY = centerY + radius * Math.sin(angle) - wordHeight / 2;
       
-      // Keep within bounds
-      if (testCenterX >= minX && testCenterX <= maxX && testCenterY >= minY && testCenterY <= maxY) {
-        const collisionBox = {
-          x: testCenterX - wordWidth / 2,
-          y: testCenterY - wordHeight / 2,
-          width: wordWidth,
-          height: wordHeight
-        };
+      // Check bounds (matching ModernWordCloud)
+      if (testX >= 10 && testX + wordWidth <= width - 10 && 
+          testY >= 10 && testY + wordHeight <= height - 10) {
         
-        if (!checkCollision(collisionBox, existingWords)) {
-          return { x: testCenterX, y: testCenterY };
+        if (!checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords, 0)) {
+          return { x: testX, y: testY };
         }
       }
       
       angle += angleIncrement;
-      radius += spiralIncrement / (2 * Math.PI);
-      
-      // If radius gets too large, break to avoid infinite loops
-      if (radius > Math.min(width, height) / 3) break;
+      if (angle > 2 * Math.PI) {
+        angle = 0;
+        radius += radiusIncrement;
+      }
     }
     
-    // Fallback to constrained random center position
+    // Fallback to random position (matching ModernWordCloud)
     return {
-      x: minX + Math.random() * (maxX - minX),
-      y: minY + Math.random() * (maxY - minY)
+      x: Math.random() * (width - wordWidth - 20) + 10,
+      y: Math.random() * (height - wordHeight - 20) + 10
     };
   }, [width, height, checkCollision]);
 
@@ -548,15 +530,15 @@ export default function EnhancedWordCloud({
             return (
               <motion.text
                 key={`${word.word}-${index}`}
-                x={word.x} // Use center position directly
-                y={word.y} // Use center position directly
+                x={word.x}
+                y={word.y + word.fontSize * 0.75} // Match ModernWordCloud positioning
                 fontSize={word.fontSize}
                 fill={word.color}
                 fontWeight={isSelected ? 'bold' : word.frequency && word.frequency > 10 ? '600' : '400'}
-                textAnchor="middle" // Center text horizontally
-                dominantBaseline="central" // Center text vertically
+                textAnchor="start" // Match ModernWordCloud anchoring
+                dominantBaseline="alphabetic"
                 className="cursor-pointer select-none"
-                transform={`rotate(${word.rotation} ${word.x} ${word.y})`}
+                transform={`rotate(${word.rotation} ${word.x + word.word.length * word.fontSize * 0.3} ${word.y + word.fontSize * 0.5})`}
                 initial={{ 
                   opacity: 0, 
                   scale: 0.3,
