@@ -305,7 +305,7 @@ export default function SimpleWordCloud({
             max_words: filters?.maxWords || 100,
             filters: filters
           };
-          endpoint = `${API_BASE_URL}/api/wordcloud/generate-multi`;
+          endpoint = `${API_BASE_URL}/api/wordcloud/generate-multi-fast`;
         } else {
           // Use single dataset endpoint
           console.log('🚀 Using single dataset API');
@@ -317,7 +317,7 @@ export default function SimpleWordCloud({
             max_words: filters?.maxWords || 100,
             filters: filters
           };
-          endpoint = `${API_BASE_URL}/api/wordcloud/generate`;
+          endpoint = `${API_BASE_URL}/api/wordcloud/generate-fast`;
         }
         
         console.log('📤 API Payload:', apiPayload);

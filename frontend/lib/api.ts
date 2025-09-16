@@ -208,7 +208,7 @@ export class AnalysisService {
 export class WordCloudService {
   static async generate(datasetId: string, mode: string, filters: any, token: string): Promise<WordFrequency[]> {
     const client = createApiClient(token);
-    const response = await client.post<ApiResponse<WordFrequency[]>>('/api/wordcloud/generate', {
+    const response = await client.post<ApiResponse<WordFrequency[]>>('/api/wordcloud/generate-fast', {
       dataset_id: datasetId,
       mode,
       filters

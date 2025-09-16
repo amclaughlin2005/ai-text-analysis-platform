@@ -183,7 +183,7 @@ export default function ModernWordCloud({
     
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
-      const response = await fetch(`${API_BASE_URL}/api/wordcloud/generate`, {
+      const response = await fetch(`${API_BASE_URL}/api/wordcloud/generate-fast`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

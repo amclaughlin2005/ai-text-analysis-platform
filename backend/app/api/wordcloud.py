@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from ..core.database import get_db
 from ..core.logging import get_logger
 from ..services.text_validation_service import TextValidationService
+from ..services.wordcloud_service import OptimizedWordCloudService
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -36,6 +37,42 @@ class MultiWordCloudRequest(BaseModel):
     filters: Optional[dict] = None
 
 # Word cloud generation endpoints
+@router.post("/generate-fast")
+async def generate_wordcloud_optimized(
+    request: WordCloudRequest,
+    db: Session = Depends(get_db)
+):
+    """Generate word cloud data using optimized service for better performance"""
+    try:
+        # Extract parameters from request
+        dataset_id = request.dataset_id
+        analysis_mode = request.analysis_mode or request.mode
+        limit = request.limit or request.max_words
+        exclude_words = request.exclude_words or []
+        selected_columns = request.selected_columns
+        
+        # Use optimized service
+        result = await OptimizedWordCloudService.generate_word_cloud(
+            db=db,
+            dataset_id=dataset_id,
+            analysis_mode=analysis_mode,
+            limit=limit,
+            exclude_words=exclude_words,
+            selected_columns=selected_columns,
+            use_cache=True
+        )
+        
+        return result
+        
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"❌ Optimized word cloud generation failed for dataset {request.dataset_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Word cloud generation failed: {str(e)}"
+        )
+
 @router.post("/generate")
 async def generate_wordcloud(
     request: WordCloudRequest,
@@ -445,3 +482,104 @@ async def export_wordcloud(db: Session = Depends(get_db)):
 async def get_wordcloud_modes():
     """Get available word cloud analysis modes"""
     return {"modes": ["all", "verbs", "themes", "emotions", "entities", "topics"]}
+
+@router.post("/invalidate-cache")
+async def invalidate_cache(dataset_id: Optional[str] = None):
+    """Invalidate word cloud cache for a dataset or all datasets"""
+    try:
+        OptimizedWordCloudService.invalidate_cache(dataset_id)
+        if dataset_id:
+            return {"message": f"Cache invalidated for dataset {dataset_id}", "success": True}
+        else:
+            return {"message": "All cache entries invalidated", "success": True}
+    except Exception as e:
+        logger.error(f"❌ Cache invalidation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Cache invalidation failed: {str(e)}"
+        )
+
+@router.post("/generate-multi-fast")
+async def generate_multi_wordcloud_optimized(
+    request: MultiWordCloudRequest,
+    db: Session = Depends(get_db)
+):
+    """Generate multi-dataset word cloud using optimized service"""
+    try:
+        # Extract parameters from request
+        dataset_ids = request.dataset_ids
+        analysis_mode = request.analysis_mode or request.mode
+        limit = request.limit or request.max_words
+        exclude_words = request.exclude_words or []
+        
+        if not dataset_ids:
+            raise HTTPException(status_code=400, detail="No dataset IDs provided")
+        
+        logger.info(f"🎨 Generating optimized multi-dataset word cloud for {len(dataset_ids)} datasets")
+        
+        # Process each dataset and combine results
+        all_word_counts = Counter()
+        total_questions = 0
+        valid_datasets = []
+        
+        for dataset_id in dataset_ids:
+            try:
+                result = await OptimizedWordCloudService.generate_word_cloud(
+                    db=db,
+                    dataset_id=dataset_id,
+                    analysis_mode=analysis_mode,
+                    limit=1000,  # Get more words for combining
+                    exclude_words=exclude_words,
+                    use_cache=True
+                )
+                
+                if result['success'] and result['words']:
+                    valid_datasets.append(dataset_id)
+                    total_questions += result.get('total_questions', 0)
+                    
+                    # Combine word counts
+                    for word_data in result['words']:
+                        word = word_data['word']
+                        frequency = word_data['frequency']
+                        all_word_counts[word] += frequency
+                        
+            except Exception as e:
+                logger.warning(f"Failed to process dataset {dataset_id}: {e}")
+                continue
+        
+        if not valid_datasets:
+            raise HTTPException(status_code=404, detail="No valid datasets found")
+        
+        # Generate final combined word cloud data
+        word_cloud_data = []
+        for word, count in all_word_counts.most_common(limit):
+            sentiment = OptimizedWordCloudService._get_word_sentiment(word, analysis_mode)
+            
+            word_cloud_data.append({
+                "text": word,
+                "word": word,
+                "value": count,
+                "weight": count,
+                "frequency": count,
+                "sentiment": sentiment,
+                "category": analysis_mode
+            })
+        
+        return {
+            "dataset_ids": valid_datasets,
+            "analysis_mode": analysis_mode,
+            "words": word_cloud_data,
+            "word_count": len(word_cloud_data),
+            "total_questions": total_questions,
+            "datasets_processed": len(valid_datasets),
+            "success": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Optimized multi-dataset word cloud generation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Multi-dataset word cloud generation failed: {str(e)}"
+        )
