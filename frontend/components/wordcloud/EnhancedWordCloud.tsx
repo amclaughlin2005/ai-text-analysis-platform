@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { WordCloudData } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import WordCloudExportPanel from './WordCloudExportPanel';
 
 interface EnhancedWordCloudProps {
   datasetId: string;
@@ -474,6 +475,17 @@ export default function EnhancedWordCloud({
         >
           <Sparkles className="h-4 w-4 text-gray-600" />
         </button>
+
+        {/* Export Panel */}
+        <WordCloudExportPanel
+          words={words}
+          currentTheme={currentTheme}
+          currentLayout={currentLayout}
+          onExport={(options) => {
+            console.log('Exporting with options:', options);
+            // TODO: Implement actual export functionality
+          }}
+        />
       </div>
 
       {/* 🎨 Word Cloud SVG */}
