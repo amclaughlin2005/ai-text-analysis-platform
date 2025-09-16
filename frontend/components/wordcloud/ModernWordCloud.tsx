@@ -645,7 +645,7 @@ export default function ModernWordCloud({
                     word: word.word,
                     frequency: word.frequency || 0,
                     sentiment: word.sentiment || 'neutral',
-                    category: word.category,
+                    category: word.category || undefined,
                     x: word.x,
                     y: word.y
                   });
