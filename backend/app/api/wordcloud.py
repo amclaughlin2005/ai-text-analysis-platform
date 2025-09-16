@@ -5,6 +5,7 @@ Provides multi-mode word cloud generation and interactive features
 
 from fastapi import APIRouter, HTTPException, Depends, Form
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List, Optional
 from pydantic import BaseModel
 from ..core.database import get_db
@@ -596,7 +597,6 @@ async def populate_metadata_from_csv(dataset_id: str, db: Session = Depends(get_
         from datetime import datetime
         
         # Get dataset info to find the CSV file
-        from sqlalchemy import text
         dataset_sql = text("SELECT name, file_path FROM datasets WHERE id = :dataset_id")
         dataset_result = db.execute(dataset_sql, {"dataset_id": dataset_id}).fetchone()
         
