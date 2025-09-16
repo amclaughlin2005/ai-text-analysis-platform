@@ -144,12 +144,12 @@ export default function EnhancedWordCloud({
 
   // 📏 Dynamic font sizing with better distribution
   const getFontSize = useCallback((frequency: number, maxFreq: number): number => {
-    const minSize = 12;
-    const maxSize = 64;
+    const minSize = 10;
+    const maxSize = 48; // Reduced from 64 to prevent oversized words
     const normalized = frequency / maxFreq;
     
     // Use power curve for better size distribution
-    return Math.max(minSize, maxSize * Math.pow(normalized, 0.6));
+    return Math.max(minSize, maxSize * Math.pow(normalized, 0.7)); // Adjusted curve
   }, []);
 
   // 🎯 Advanced collision detection
@@ -179,8 +179,8 @@ export default function EnhancedWordCloud({
 
     return wordData.map((word, index) => {
       const fontSize = getFontSize(word.frequency || 1, maxFreq);
-      const wordWidth = word.word.length * fontSize * 0.6;
-      const wordHeight = fontSize * 1.2;
+      const wordWidth = word.word.length * fontSize * 0.5; // Reduced multiplier for better fit
+      const wordHeight = fontSize * 1.1; // Slightly reduced height
       
       let position = { x: 0, y: 0 };
       
@@ -214,7 +214,7 @@ export default function EnhancedWordCloud({
         y: position.y,
         fontSize,
         color: getWordColor(word, index),
-        rotation: Math.random() * 60 - 30, // Random rotation between -30 and 30 degrees
+        rotation: Math.random() * 20 - 10, // Reduced rotation between -10 and 10 degrees
         opacity: 0.9,
         scale: 1
       };
@@ -229,43 +229,51 @@ export default function EnhancedWordCloud({
     centerY: number,
     existingWords: { x: number; y: number; width: number; height: number }[]
   ): { x: number; y: number } => {
-    const wordWidth = word.length * fontSize * 0.6;
-    const wordHeight = fontSize * 1.2;
+    const wordWidth = word.length * fontSize * 0.5; // Updated to match new calculation
+    const wordHeight = fontSize * 1.1;
+    
+    // Add padding to keep words away from edges
+    const padding = 20;
+    const maxX = width - wordWidth - padding;
+    const maxY = height - wordHeight - padding;
     
     // Try center first
     let testX = centerX - wordWidth / 2;
     let testY = centerY - wordHeight / 2;
     
-    if (!checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords)) {
+    if (testX >= padding && testX <= maxX && testY >= padding && testY <= maxY &&
+        !checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords)) {
       return { x: testX, y: testY };
     }
 
-    // Spiral outward
-    let radius = 20;
+    // Spiral outward with tighter spiral
+    let radius = 15; // Smaller starting radius
     let angle = 0;
-    const spiralIncrement = 8;
-    const angleIncrement = 0.5;
+    const spiralIncrement = 4; // Tighter spiral
+    const angleIncrement = 0.3; // Finer angle steps
 
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 800; i++) { // More iterations for better placement
       testX = centerX + radius * Math.cos(angle) - wordWidth / 2;
       testY = centerY + radius * Math.sin(angle) - wordHeight / 2;
       
-      // Keep within bounds
-      testX = Math.max(0, Math.min(width - wordWidth, testX));
-      testY = Math.max(0, Math.min(height - wordHeight, testY));
-      
-      if (!checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords)) {
-        return { x: testX, y: testY };
+      // Keep within bounds with padding
+      if (testX >= padding && testX <= maxX && testY >= padding && testY <= maxY) {
+        if (!checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords)) {
+          return { x: testX, y: testY };
+        }
       }
       
       angle += angleIncrement;
       radius += spiralIncrement / (2 * Math.PI);
+      
+      // If radius gets too large, break to avoid infinite loops
+      if (radius > Math.min(width, height) / 2) break;
     }
     
-    // Fallback to random position
+    // Fallback to constrained random position
     return {
-      x: Math.random() * (width - wordWidth),
-      y: Math.random() * (height - wordHeight)
+      x: padding + Math.random() * (maxX - padding),
+      y: padding + Math.random() * (maxY - padding)
     };
   }, [width, height, checkCollision]);
 
@@ -275,9 +283,13 @@ export default function EnhancedWordCloud({
     wordHeight: number,
     existingWords: { x: number; y: number; width: number; height: number }[]
   ): { x: number; y: number } => {
+    const padding = 20;
+    const maxX = width - wordWidth - padding;
+    const maxY = height - wordHeight - padding;
+    
     for (let i = 0; i < 100; i++) {
-      const testX = Math.random() * (width - wordWidth);
-      const testY = Math.random() * (height - wordHeight);
+      const testX = padding + Math.random() * (maxX - padding);
+      const testY = padding + Math.random() * (maxY - padding);
       
       if (!checkCollision({ x: testX, y: testY, width: wordWidth, height: wordHeight }, existingWords)) {
         return { x: testX, y: testY };
@@ -285,8 +297,8 @@ export default function EnhancedWordCloud({
     }
     
     return {
-      x: Math.random() * (width - wordWidth),
-      y: Math.random() * (height - wordHeight)
+      x: padding + Math.random() * (maxX - padding),
+      y: padding + Math.random() * (maxY - padding)
     };
   }, [width, height, checkCollision]);
 
