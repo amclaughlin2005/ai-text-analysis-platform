@@ -395,37 +395,37 @@ class OptimizedWordCloudService:
             where_conditions = ["dataset_id = :dataset_id"]
             query_params = {"dataset_id": dataset_id}
             
-            # Date filtering
+            # Date filtering - using correct field name
             if date_filter:
                 if date_filter.exact_date:
-                    where_conditions.append("DATE(timestamp) = :exact_date")
+                    where_conditions.append("DATE(timestamp_from_csv) = :exact_date")
                     query_params["exact_date"] = date_filter.exact_date
                 else:
                     if date_filter.start_date:
-                        where_conditions.append("DATE(timestamp) >= :start_date")
+                        where_conditions.append("DATE(timestamp_from_csv) >= :start_date")
                         query_params["start_date"] = date_filter.start_date
                     if date_filter.end_date:
-                        where_conditions.append("DATE(timestamp) <= :end_date")
+                        where_conditions.append("DATE(timestamp_from_csv) <= :end_date")
                         query_params["end_date"] = date_filter.end_date
             
-            # Organization filtering
+            # Organization filtering - using correct field name
             if org_names:
                 org_placeholders = ','.join([f':org_{i}' for i in range(len(org_names))])
-                where_conditions.append(f"(LOWER(org_name) IN ({org_placeholders}) OR LOWER(tenant_name) IN ({org_placeholders}))")
+                where_conditions.append(f"LOWER(org_name) IN ({org_placeholders})")
                 for i, org in enumerate(org_names):
                     query_params[f'org_{i}'] = org.lower()
             
-            # Tenant filtering
+            # Tenant filtering - Note: tenant info may be in org_name or need different approach
             if tenant_names:
                 tenant_placeholders = ','.join([f':tenant_{i}' for i in range(len(tenant_names))])
-                where_conditions.append(f"LOWER(tenant_name) IN ({tenant_placeholders})")
+                where_conditions.append(f"LOWER(org_name) IN ({tenant_placeholders})")  # Using org_name as fallback
                 for i, tenant in enumerate(tenant_names):
                     query_params[f'tenant_{i}'] = tenant.lower()
             
-            # User email filtering
+            # User email filtering - Note: no user_email field in schema, using user_id_from_csv
             if user_emails:
                 email_placeholders = ','.join([f':email_{i}' for i in range(len(user_emails))])
-                where_conditions.append(f"LOWER(user_email) IN ({email_placeholders})")
+                where_conditions.append(f"LOWER(user_id_from_csv) IN ({email_placeholders})")
                 for i, email in enumerate(user_emails):
                     query_params[f'email_{i}'] = email.lower()
             
@@ -433,8 +433,15 @@ class OptimizedWordCloudService:
             count_sql = text("SELECT COUNT(*) FROM questions WHERE " + " AND ".join(where_conditions))
             total_questions = db.execute(count_sql, query_params).scalar() or 0
             
+            # Debug: Check if dataset has any questions at all
+            debug_count_sql = text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id")
+            debug_total = db.execute(debug_count_sql, {"dataset_id": dataset_id}).scalar() or 0
+            logger.info(f"🔍 Debug: Dataset {dataset_id} has {debug_total} total questions, {total_questions} matching filters")
+            logger.info(f"🔍 Debug: Filter conditions: {where_conditions}")
+            logger.info(f"🔍 Debug: Query params: {query_params}")
+            
             if total_questions == 0:
-                return "", {}, 0, 0
+                return "", {}, debug_total, 0
             
             logger.info(f"📊 Processing {total_questions} filtered questions from dataset {dataset_id}")
             
@@ -448,8 +455,11 @@ class OptimizedWordCloudService:
             if not column_selection:
                 column_selection = ["original_question", "ai_response"]  # Default to both
             
-            # Build the main query
-            select_columns = ", ".join(column_selection + ["org_name", "tenant_name", "user_email"])
+            logger.info(f"🔍 Debug: Selected columns filter: {selected_columns}")
+            logger.info(f"🔍 Debug: Column selection: {column_selection}")
+            
+            # Build the main query - using correct field names
+            select_columns = ", ".join(column_selection + ["org_name", "user_id_from_csv"])
             questions_sql = text(f"""
                 SELECT {select_columns}
                 FROM questions 
@@ -468,9 +478,8 @@ class OptimizedWordCloudService:
                 # Extract tenant info from first row
                 if not tenant_info:
                     tenant_info = {
-                        'tenant_name': getattr(row, 'tenant_name', None),
                         'org_name': getattr(row, 'org_name', None),
-                        'user_email': getattr(row, 'user_email', None)
+                        'user_id_from_csv': getattr(row, 'user_id_from_csv', None)
                     }
                 
                 # Add text based on selected columns
