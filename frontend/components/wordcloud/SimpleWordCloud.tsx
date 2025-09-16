@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Download, Settings, Filter, LayoutGrid, List } from 'lucide-react';
+import { RefreshCw, Download, Settings, Filter, LayoutGrid, List, ChevronDown, ChevronUp } from 'lucide-react';
 import { WordCloudData, WordCloudFilters } from '@/lib/types';
 import { cn, getSentimentColor, formatNumber } from '@/lib/utils';
 import ColumnFilterSelector from './ColumnFilterSelector';
@@ -251,9 +251,7 @@ export default function SimpleWordCloud({
   const [words, setWords] = useState<WordCloudData[]>(() => generateSimpleWordData(mode));
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showColumnFilterUI, setShowColumnFilterUI] = useState(
-    datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9') // Default open for legal dataset
-  );
+  const [showColumnFilterUI, setShowColumnFilterUI] = useState(false); // Default collapsed to save space
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [viewMode, setViewMode] = useState<'cloud' | 'text'>('cloud');
@@ -517,21 +515,25 @@ export default function SimpleWordCloud({
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Column Filter Toggle (only for legal dataset) */}
+          {/* Collapsible Column Filter Toggle (only for legal dataset) */}
           {datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9') && (
             <button
               onClick={() => setShowColumnFilterUI(!showColumnFilterUI)}
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium",
+                "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium border",
                 showColumnFilterUI 
-                  ? "bg-primary-600 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-blue-100 text-blue-700 border-blue-200 shadow-sm" 
+                  : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
               )}
-              title="Filter by columns"
+              title={showColumnFilterUI ? "Hide column filters" : "Show column filters"}
             >
               <Filter className="h-4 w-4" />
-              <span>Column Filters</span>
-              {showColumnFilterUI && <span className="text-xs opacity-75">(Open)</span>}
+              <span>Filters ({selectedColumns.length})</span>
+              {showColumnFilterUI ? (
+                <ChevronUp className="h-3 w-3 ml-1" />
+              ) : (
+                <ChevronDown className="h-3 w-3 ml-1" />
+              )}
             </button>
           )}
           
@@ -580,21 +582,28 @@ export default function SimpleWordCloud({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="border-b"
+            transition={{ duration: 0.2 }}
+            className="border-b border-blue-200 shadow-sm"
           >
-            <div className="p-4 bg-blue-50 border-b border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Filter className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">Column Filtering</span>
-              </div>
-              <p className="text-xs text-blue-700">
-                Control which parts of your dataset contribute to the word cloud:
-              </p>
-              <div className="text-xs text-blue-600 mt-1 font-medium">
-                • Column 1: Questions only • Column 2: AI responses only • Both: Combined analysis
+            <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-blue-900">Column Filters</span>
+                  <span className="text-xs bg-blue-200 text-blue-700 px-2 py-1 rounded-full">
+                    {selectedColumns.length} selected
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowColumnFilterUI(false)}
+                  className="p-1 text-blue-600 hover:bg-blue-200 rounded-lg transition-colors"
+                  title="Collapse filters"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </button>
               </div>
               <p className="text-xs text-blue-700 mt-1">
-                Currently analyzing: {selectedColumns.map(col => 
+                Analyzing: {selectedColumns.map(col => 
                   col === 1 ? 'Questions' : col === 2 ? 'Responses' : `Column ${col}`
                 ).join(' + ')}
               </p>
