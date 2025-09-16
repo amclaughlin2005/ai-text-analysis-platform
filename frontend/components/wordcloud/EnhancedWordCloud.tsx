@@ -384,7 +384,7 @@ export default function EnhancedWordCloud({
         word: word.word,
         frequency: word.frequency || 0,
         sentiment: word.sentiment || 'neutral',
-        category: word.category,
+        category: word.category || undefined,
         x: word.x + word.fontSize * 0.5,
         y: word.y - 10
       });
