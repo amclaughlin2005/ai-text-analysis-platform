@@ -1,0 +1,62 @@
+[
+  {
+    "SHARD_NAME": "us-east-1a-deuterman",
+    "TenantID": "924630-40-1a",
+    "TENANT_NAME": "Deuterman Law",
+    "ORGNAME": "Deuterman L.",
+    "UserId": "92966",
+    "USER_EMAIL": "colin@philips.co",
+    "OrgIds": "9038",
+    "timestamp": "45:37.6",
+    "OriginalQuestion": "Please summarize the key points regarding Zack Stetler v. Legends of Southern Pines LLC & iSurify (IC File # 25-009796); primary attorney Thomas Lamm; average weekly wage $750; compensation rate $500 (See Case Summary)",
+    "HumanLoopPrimaryQuestion": "https://deutermanlaw.clientportal.app.com/135332762"
+  },
+  {
+    "SHARD_NAME": "us-west-2b-smithlaw",
+    "TenantID": "847392-25-2b",
+    "TENANT_NAME": "Smith & Associates",
+    "ORGNAME": "Smith Legal",
+    "UserId": "84729",
+    "USER_EMAIL": "sarah@smithlaw.com",
+    "OrgIds": "7482",
+    "timestamp": "52:14.8",
+    "OriginalQuestion": "Can you provide an analysis of the Johnson vs. Metro Insurance claim? Worker injured on 03/15/2024, medical treatment ongoing, temporary disability benefits approved.",
+    "HumanLoopPrimaryQuestion": "https://smithlaw.portal.com/claim-Johnson-Metro-2024"
+  },
+  {
+    "SHARD_NAME": "us-central-1c-brownfirm",
+    "TenantID": "592847-33-1c",
+    "TENANT_NAME": "Brown Legal Firm",
+    "ORGNAME": "Brown & Partners",
+    "UserId": "59284",
+    "USER_EMAIL": "mike@brownfirm.net",
+    "OrgIds": "3947",
+    "timestamp": "38:29.2",
+    "OriginalQuestion": "Review needed for workers compensation case: Martinez vs. Construction Plus LLC. Date of injury: 02/08/2024. Current status: maximum medical improvement reached, seeking permanent disability rating.",
+    "HumanLoopPrimaryQuestion": "https://brownfirm.clientaccess.com/case/martinez-construction-2024"
+  },
+  {
+    "SHARD_NAME": "us-east-2a-wilsonlaw",
+    "TenantID": "738592-18-2a",
+    "TENANT_NAME": "Wilson Legal Services",
+    "ORGNAME": "Wilson Law",
+    "UserId": "73859",
+    "USER_EMAIL": "jennifer@wilsonlaw.org",
+    "OrgIds": "6183",
+    "timestamp": "44:51.7",
+    "OriginalQuestion": "Please analyze the Robinson claim for potential settlement options. Injured worker has been receiving temporary total disability benefits for 8 months following workplace accident.",
+    "HumanLoopPrimaryQuestion": "https://wilsonlaw.casemanager.com/robinson-settlement-analysis"
+  },
+  {
+    "SHARD_NAME": "us-west-1d-garciafirm",
+    "TenantID": "395847-42-1d",
+    "TENANT_NAME": "Garcia Legal Group",
+    "ORGNAME": "Garcia & Co",
+    "UserId": "39584",
+    "USER_EMAIL": "carlos@garciafirm.com",
+    "OrgIds": "8372",
+    "timestamp": "41:33.9",
+    "OriginalQuestion": "Workers comp case update needed: Thompson vs. Retail Solutions Inc. Employee suffered back injury, currently in physical therapy, dispute over extent of injury with insurance carrier.",
+    "HumanLoopPrimaryQuestion": "https://garciafirm.portal.net/thompson-retail-dispute"
+  }
+]

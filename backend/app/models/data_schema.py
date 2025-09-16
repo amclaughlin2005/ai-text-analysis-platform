@@ -31,8 +31,11 @@ class FieldRole(str, enum.Enum):
     SECONDARY_TEXT = "secondary_text"    # Supporting text (like response/context)
     CATEGORY = "category"                # Categorical data for grouping
     METADATA = "metadata"                # Additional information
-    IDENTIFIER = "identifier"            # Unique identifiers
+    IDENTIFIER = "identifier"            # Unique identifiers (IDs, keys)
     TIMESTAMP = "timestamp"              # Time information
+    TENANT_INFO = "tenant_info"          # Tenant/organization/shard information
+    USER_INFO = "user_info"              # User-related information (emails, names)
+    REFERENCE = "reference"              # Reference numbers, tickets, case numbers
     IGNORE = "ignore"                    # Skip this field
     
 class DataSchema(Base):

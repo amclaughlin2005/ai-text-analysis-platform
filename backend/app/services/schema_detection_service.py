@@ -37,24 +37,41 @@ class SchemaDetectionService:
         FieldRole.PRIMARY_TEXT: [
             r'.*question.*', r'.*query.*', r'.*title.*', r'.*subject.*', 
             r'.*content.*', r'.*text.*', r'.*message.*', r'.*description.*',
-            r'.*comment.*', r'.*review.*', r'.*feedback.*'
+            r'.*comment.*', r'.*review.*', r'.*feedback.*', r'^originalQuestion$',
+            r'primaryQuestion.*', r'.*issue.*', r'.*problem.*'
         ],
         FieldRole.SECONDARY_TEXT: [
             r'.*response.*', r'.*answer.*', r'.*reply.*', r'.*solution.*',
-            r'.*context.*', r'.*details.*', r'.*explanation.*', r'.*body.*'
+            r'.*context.*', r'.*details.*', r'.*explanation.*', r'.*body.*',
+            r'^humanLoopPrimaryQuestion$', r'.*additional.*', r'.*supplemental.*'
         ],
         FieldRole.CATEGORY: [
             r'.*category.*', r'.*type.*', r'.*status.*', r'.*priority.*',
             r'.*department.*', r'.*tag.*', r'.*label.*', r'.*class.*',
-            r'.*group.*', r'.*org.*', r'.*organization.*'
+            r'.*group.*', r'.*classification.*'
+        ],
+        FieldRole.TENANT_INFO: [
+            r'^shard_name$', r'^tenantid$', r'^tenant_name$', r'^orgname$',
+            r'.*tenant.*', r'.*shard.*', r'.*organization.*', r'.*orgname.*',
+            r'.*org_name.*', r'.*company.*', r'.*client.*', r'.*account.*',
+            r'^orgids$', r'.*org_id.*', r'.*client_id.*'
+        ],
+        FieldRole.USER_INFO: [
+            r'^userid$', r'^user_email$', r'.*user.*', r'.*email.*', 
+            r'.*username.*', r'.*user_name.*', r'.*author.*', r'.*creator.*', 
+            r'.*reporter.*', r'.*assignee.*'
+        ],
+        FieldRole.REFERENCE: [
+            r'.*reference.*', r'.*ticket.*', r'.*number.*', r'.*ref.*',
+            r'.*case_number.*', r'.*file_number.*', r'.*docket_number.*',
+            r'.*matter.*', r'.*claim.*'
         ],
         FieldRole.IDENTIFIER: [
-            r'.*id$', r'.*_id$', r'^id.*', r'.*uuid.*', r'.*key.*',
-            r'.*reference.*', r'.*ticket.*', r'.*number.*'
+            r'.*id$', r'.*_id$', r'^id.*', r'.*uuid.*', r'.*key.*'
         ],
         FieldRole.TIMESTAMP: [
             r'.*date.*', r'.*time.*', r'.*timestamp.*', r'.*created.*',
-            r'.*updated.*', r'.*modified.*', r'.*when.*'
+            r'.*updated.*', r'.*modified.*', r'.*when.*', r'.*filed.*'
         ]
     }
     
