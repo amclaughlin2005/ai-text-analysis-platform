@@ -45,12 +45,12 @@ class DatasetService:
     # Required CSV column patterns
     QUESTION_PATTERNS = [
         'question', 'original question', 'user question', 
-        'query', 'user query', 'original_question', 'prompt', 'input'
+        'query', 'user query', 'original_question', 'originalquestion', 'prompt', 'input'
     ]
     RESPONSE_PATTERNS = [
         'response', 'human loop response', 'ai response', 
         'agent response', 'answer', 'reply', 'human_loop_response',
-        'ai_response', 'output'
+        'humanloopresponse', 'ai_response', 'output'
     ]
 
     @classmethod
@@ -484,6 +484,11 @@ class DatasetService:
             
             if not headers:
                 raise HTTPException(status_code=400, detail="CSV file appears to be empty")
+            
+            # Strip BOM from first header if present
+            if headers and headers[0].startswith('\ufeff'):
+                headers[0] = headers[0][1:]
+                logger.info("🔧 Stripped BOM from first header")
             
             logger.info(f"📊 CSV parsed: {len(headers)} columns, {len(rows)} rows")
             return headers, rows
