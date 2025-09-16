@@ -531,6 +531,61 @@ async def get_wordcloud_modes():
     """Get available word cloud analysis modes"""
     return {"modes": ["all", "verbs", "themes", "emotions", "entities", "topics"]}
 
+@router.post("/fix-schema")
+async def fix_database_schema():
+    """Emergency endpoint to add missing columns to database"""
+    try:
+        import os
+        from sqlalchemy import create_engine, text, inspect
+        
+        # Get database URL
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise HTTPException(status_code=500, detail="No database URL found")
+        
+        engine = create_engine(database_url)
+        
+        # Critical columns we need for filtering
+        critical_columns = [
+            ("questions", "org_name", "VARCHAR(255)"),
+            ("questions", "user_id_from_csv", "VARCHAR(255)"),
+            ("questions", "timestamp_from_csv", "TIMESTAMP"),
+        ]
+        
+        added_columns = []
+        with engine.connect() as conn:
+            # Check what columns exist
+            inspector = inspect(engine)
+            existing_columns = [col['name'] for col in inspector.get_columns('questions')]
+            
+            for table_name, column_name, column_type in critical_columns:
+                if column_name not in existing_columns:
+                    try:
+                        sql = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+                        conn.execute(text(sql))
+                        added_columns.append(f"{table_name}.{column_name}")
+                        logger.info(f"✅ Added column: {table_name}.{column_name}")
+                    except Exception as e:
+                        logger.error(f"❌ Failed to add {table_name}.{column_name}: {e}")
+                        raise HTTPException(status_code=500, detail=f"Failed to add column {column_name}: {str(e)}")
+                else:
+                    logger.info(f"Column {table_name}.{column_name} already exists")
+            
+            conn.commit()
+        
+        return {
+            "success": True,
+            "message": f"Schema fix completed",
+            "added_columns": added_columns,
+            "existing_columns": existing_columns
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Schema fix failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Schema fix failed: {str(e)}")
+
 @router.post("/invalidate-cache")
 async def invalidate_cache(dataset_id: Optional[str] = None):
     """Invalidate word cloud cache for a dataset or all datasets"""
