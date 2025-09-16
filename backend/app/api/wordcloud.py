@@ -560,9 +560,10 @@ async def debug_dataset(dataset_id: str, db: Session = Depends(get_db)):
         if not dataset_result:
             raise HTTPException(status_code=404, detail="Dataset not found")
         
-        # Get sample questions - check what columns actually exist
+        # Get sample questions - check all metadata columns
         questions_sql = text("""
-            SELECT original_question, ai_response, csv_row_number, created_at
+            SELECT original_question, ai_response, org_name, user_id_from_csv, 
+                   timestamp_from_csv, csv_row_number, created_at
             FROM questions 
             WHERE dataset_id = :dataset_id 
             LIMIT 5
@@ -573,11 +574,14 @@ async def debug_dataset(dataset_id: str, db: Session = Depends(get_db)):
         count_sql = text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id")
         total_count = db.execute(count_sql, {"dataset_id": dataset_id}).scalar()
         
-        # Get column stats - only check columns that exist
+        # Get column stats - check all metadata columns
         stats_sql = text("""
             SELECT 
                 COUNT(CASE WHEN original_question IS NOT NULL AND original_question != '' THEN 1 END) as questions_with_content,
-                COUNT(CASE WHEN ai_response IS NOT NULL AND ai_response != '' THEN 1 END) as responses_with_content
+                COUNT(CASE WHEN ai_response IS NOT NULL AND ai_response != '' THEN 1 END) as responses_with_content,
+                COUNT(CASE WHEN org_name IS NOT NULL AND org_name != '' THEN 1 END) as records_with_org,
+                COUNT(CASE WHEN user_id_from_csv IS NOT NULL AND user_id_from_csv != '' THEN 1 END) as records_with_user,
+                COUNT(CASE WHEN timestamp_from_csv IS NOT NULL THEN 1 END) as records_with_timestamp
             FROM questions 
             WHERE dataset_id = :dataset_id
         """)
@@ -594,12 +598,18 @@ async def debug_dataset(dataset_id: str, db: Session = Depends(get_db)):
             "actual_counts": {
                 "total_records": total_count,
                 "questions_with_content": stats_result.questions_with_content,
-                "responses_with_content": stats_result.responses_with_content
+                "responses_with_content": stats_result.responses_with_content,
+                "records_with_org": stats_result.records_with_org,
+                "records_with_user": stats_result.records_with_user,
+                "records_with_timestamp": stats_result.records_with_timestamp
             },
             "sample_data": [
                 {
                     "question": row.original_question[:100] if row.original_question else None,
                     "response": row.ai_response[:100] if row.ai_response else None,
+                    "org_name": row.org_name,
+                    "user_id": row.user_id_from_csv,
+                    "timestamp": str(row.timestamp_from_csv) if row.timestamp_from_csv else None,
                     "row_number": row.csv_row_number,
                     "created_at": str(row.created_at) if row.created_at else None
                 }
