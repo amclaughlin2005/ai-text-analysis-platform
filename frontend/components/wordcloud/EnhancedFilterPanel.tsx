@@ -43,6 +43,7 @@ interface EnhancedFilterPanelProps {
   availableOrgs?: string[];
   availableEmails?: string[];
   availableTenants?: string[];
+  datasetIds?: string[]; // Add dataset IDs to fetch filter options
   className?: string;
 }
 
@@ -86,12 +87,58 @@ export default function EnhancedFilterPanel({
   availableOrgs = [],
   availableEmails = [],
   availableTenants = [],
+  datasetIds = [],
   className
 }: EnhancedFilterPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [newWord, setNewWord] = useState('');
   const [newExcludeWord, setNewExcludeWord] = useState('');
+  
+  // State for dynamic filter options
+  const [dynamicOrgs, setDynamicOrgs] = useState<string[]>([]);
+  const [dynamicEmails, setDynamicEmails] = useState<string[]>([]);
+  const [orgSearchTerm, setOrgSearchTerm] = useState('');
+  const [emailSearchTerm, setEmailSearchTerm] = useState('');
+  const [loadingFilterOptions, setLoadingFilterOptions] = useState(false);
+
+  // Fetch filter options from API
+  const fetchFilterOptions = useCallback(async () => {
+    if (datasetIds.length === 0) return;
+    
+    setLoadingFilterOptions(true);
+    try {
+      // For now, use the first dataset ID
+      const datasetId = datasetIds[0];
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
+      
+      const response = await fetch(`${API_BASE_URL}/api/wordcloud/filter-options/${datasetId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setDynamicOrgs(data.organizations || []);
+        setDynamicEmails(data.user_emails || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch filter options:', error);
+    } finally {
+      setLoadingFilterOptions(false);
+    }
+  }, [datasetIds]);
+
+  // Fetch filter options when dataset IDs change
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [fetchFilterOptions]);
+
+  // Filter organizations based on search term
+  const filteredOrgs = dynamicOrgs.filter(org => 
+    org.toLowerCase().includes(orgSearchTerm.toLowerCase())
+  );
+
+  // Filter emails based on search term  
+  const filteredEmails = dynamicEmails.filter(email =>
+    email.toLowerCase().includes(emailSearchTerm.toLowerCase())
+  );
 
   // Count active filters
   const activeFilterCount = Object.values(filters).filter(value => {
@@ -283,61 +330,163 @@ export default function EnhancedFilterPanel({
                 </div>
               </div>
 
-              {/* Organization Filter */}
+              {/* Organization Filter - Searchable */}
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
                   <Building className="h-4 w-4" />
                   Organizations
+                  {loadingFilterOptions && <span className="text-xs text-gray-500">(Loading...)</span>}
                 </h4>
-                <div className="space-y-2">
-                  {['Singleton Schreiber', 'Cades Schutte', 'Thompson & Knight', 'Baker McKenzie'].map((org) => (
-                    <label key={org} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={filters.org_names?.includes(org) || false}
-                        onChange={(e) => {
-                          const newOrgNames = e.target.checked
-                            ? [...(filters.org_names || []), org]
-                            : (filters.org_names || []).filter(o => o !== org);
+                
+                {/* Search box */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search organizations..."
+                    value={orgSearchTerm}
+                    onChange={(e) => setOrgSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Selected organizations */}
+                {filters.org_names && filters.org_names.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-xs text-gray-500 mb-1">Selected ({filters.org_names.length}):</div>
+                    <div className="flex flex-wrap gap-1">
+                      {filters.org_names.map((org) => (
+                        <span
+                          key={org}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full"
+                        >
+                          {org}
+                          <button
+                            onClick={() => {
+                              const newOrgNames = filters.org_names!.filter(o => o !== org);
+                              onFiltersChange({
+                                ...filters,
+                                org_names: newOrgNames.length > 0 ? newOrgNames : undefined
+                              });
+                            }}
+                            className="ml-1 hover:text-primary-900"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Available organizations list */}
+                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md">
+                  {filteredOrgs.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500 text-center">
+                      {orgSearchTerm ? 'No matching organizations' : 'No organizations available'}
+                    </div>
+                  ) : (
+                    filteredOrgs.slice(0, 10).map((org) => (
+                      <button
+                        key={org}
+                        onClick={() => {
+                          const isSelected = filters.org_names?.includes(org);
+                          const newOrgNames = isSelected
+                            ? (filters.org_names || []).filter(o => o !== org)
+                            : [...(filters.org_names || []), org];
                           onFiltersChange({
                             ...filters,
                             org_names: newOrgNames.length > 0 ? newOrgNames : undefined
                           });
                         }}
-                        className="rounded border-gray-300"
-                      />
-                      <span className="text-gray-700">{org}</span>
-                    </label>
-                  ))}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
+                          filters.org_names?.includes(org) ? 'bg-primary-50 text-primary-900' : 'text-gray-700'
+                        }`}
+                      >
+                        {org}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
 
-              {/* User Email Filter */}
+              {/* User Email Filter - Searchable */}
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
                   <Mail className="h-4 w-4" />
                   User Emails
+                  {loadingFilterOptions && <span className="text-xs text-gray-500">(Loading...)</span>}
                 </h4>
-                <div className="space-y-2">
-                  {['john.doe@law.com', 'jane.smith@legal.net', 'bob.jones@attorney.org'].map((email) => (
-                    <label key={email} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={filters.user_emails?.includes(email) || false}
-                        onChange={(e) => {
-                          const newUserEmails = e.target.checked
-                            ? [...(filters.user_emails || []), email]
-                            : (filters.user_emails || []).filter(u => u !== email);
+                
+                {/* Search box */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search user emails..."
+                    value={emailSearchTerm}
+                    onChange={(e) => setEmailSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Selected emails */}
+                {filters.user_emails && filters.user_emails.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-xs text-gray-500 mb-1">Selected ({filters.user_emails.length}):</div>
+                    <div className="flex flex-wrap gap-1">
+                      {filters.user_emails.map((email) => (
+                        <span
+                          key={email}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full"
+                        >
+                          {email}
+                          <button
+                            onClick={() => {
+                              const newUserEmails = filters.user_emails!.filter(e => e !== email);
+                              onFiltersChange({
+                                ...filters,
+                                user_emails: newUserEmails.length > 0 ? newUserEmails : undefined
+                              });
+                            }}
+                            className="ml-1 hover:text-primary-900"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Available emails list */}
+                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md">
+                  {filteredEmails.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500 text-center">
+                      {emailSearchTerm ? 'No matching emails' : 'No emails available'}
+                    </div>
+                  ) : (
+                    filteredEmails.slice(0, 10).map((email) => (
+                      <button
+                        key={email}
+                        onClick={() => {
+                          const isSelected = filters.user_emails?.includes(email);
+                          const newUserEmails = isSelected
+                            ? (filters.user_emails || []).filter(e => e !== email)
+                            : [...(filters.user_emails || []), email];
                           onFiltersChange({
                             ...filters,
                             user_emails: newUserEmails.length > 0 ? newUserEmails : undefined
                           });
                         }}
-                        className="rounded border-gray-300"
-                      />
-                      <span className="text-gray-700">{email}</span>
-                    </label>
-                  ))}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
+                          filters.user_emails?.includes(email) ? 'bg-primary-50 text-primary-900' : 'text-gray-700'
+                        }`}
+                      >
+                        {email}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
 

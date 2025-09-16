@@ -658,6 +658,53 @@ async def populate_test_metadata(dataset_id: str, db: Session = Depends(get_db))
         logger.error(f"❌ Test metadata population failed: {e}")
         raise HTTPException(status_code=500, detail=f"Test metadata population failed: {str(e)}")
 
+@router.get("/filter-options/{dataset_id}")
+async def get_filter_options(dataset_id: str, db: Session = Depends(get_db)):
+    """Get unique values for organization and user email filters"""
+    try:
+        # Get unique organizations
+        org_sql = text("""
+            SELECT DISTINCT org_name 
+            FROM questions 
+            WHERE dataset_id = :dataset_id 
+            AND org_name IS NOT NULL 
+            AND org_name != ''
+            ORDER BY org_name
+        """)
+        org_results = db.execute(org_sql, {"dataset_id": dataset_id}).fetchall()
+        organizations = [row.org_name for row in org_results]
+        
+        # Get unique user emails
+        email_sql = text("""
+            SELECT DISTINCT user_id_from_csv 
+            FROM questions 
+            WHERE dataset_id = :dataset_id 
+            AND user_id_from_csv IS NOT NULL 
+            AND user_id_from_csv != ''
+            ORDER BY user_id_from_csv
+        """)
+        email_results = db.execute(email_sql, {"dataset_id": dataset_id}).fetchall()
+        user_emails = [row.user_id_from_csv for row in email_results]
+        
+        # Get dataset info for context
+        dataset_sql = text("SELECT name FROM datasets WHERE id = :dataset_id")
+        dataset_result = db.execute(dataset_sql, {"dataset_id": dataset_id}).fetchone()
+        
+        return {
+            "dataset_id": dataset_id,
+            "dataset_name": dataset_result.name if dataset_result else "Unknown",
+            "organizations": organizations,
+            "user_emails": user_emails,
+            "counts": {
+                "organizations": len(organizations),
+                "user_emails": len(user_emails)
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to get filter options: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get filter options: {str(e)}")
+
 @router.post("/populate-metadata/{dataset_id}")
 async def populate_metadata_from_csv(dataset_id: str, db: Session = Depends(get_db)):
     """Populate org_name and user metadata from original CSV file"""

@@ -77,14 +77,15 @@ export default function WordCloud() {
     <div className="bg-gray-50 min-h-full">
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        {/* Enhanced Filter Panel */}
-        <EnhancedFilterPanel
-          filters={filters}
-          onFiltersChange={setFilters}
-          availableOrgs={[]} // TODO: Fetch from API
-          availableEmails={[]} // TODO: Fetch from API
-          availableTenants={[]} // TODO: Fetch from API
-        />
+            {/* Enhanced Filter Panel */}
+            <EnhancedFilterPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              datasetIds={selectedDatasets} // Pass selected datasets for dynamic filtering
+              availableOrgs={[]}
+              availableEmails={[]}
+              availableTenants={[]}
+            />
 
         {/* Compact Controls Row */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
