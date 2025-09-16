@@ -9,6 +9,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from ..core.database import get_db
 from ..core.logging import get_logger
+from ..services.text_validation_service import TextValidationService
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -77,30 +78,36 @@ async def generate_wordcloud(
         
         # Extract text from questions and answers
         all_text = ""
+        tenant_info = {}
+        
         for row in questions_result:
+            # Extract tenant information for filtering (if available)
+            # Note: This would need to be adapted based on your actual schema
+            # For now, we'll extract it from the first record if available
+            if not tenant_info and hasattr(row, 'tenant_name'):
+                tenant_info = {
+                    'tenant_name': getattr(row, 'tenant_name', None),
+                    'org_name': getattr(row, 'org_name', None),
+                    'organization': getattr(row, 'organization', None)
+                }
+            
             if row.original_question:
                 all_text += " " + str(row.original_question)
             if row.ai_response:
                 all_text += " " + str(row.ai_response)
         
+        # Clean the text using validation service
+        all_text = TextValidationService.clean_text_for_analysis(
+            all_text, 
+            tenant_info=tenant_info,
+            additional_blacklist=exclude_words
+        )
+        
         # Different analysis modes
         if analysis_mode == "all":
-            # Basic text processing for all words
-            excluded_words = {
-                'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
-                'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had',
-                'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can',
-                'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they',
-                'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'our', 'their',
-                'details', 'page', 'https', 'filevineapp', 'docviewer', 'view', 'source', 'embedding'
-            }
-            
-            if exclude_words:
-                excluded_words.update(word.lower() for word in exclude_words)
-            
+            # Basic text processing for all words (text already cleaned by TextValidationService)
             words = re.findall(r'\b[a-zA-Z]{3,}\b', all_text.lower())
-            filtered_words = [word for word in words if word not in excluded_words and len(word) >= 3]
-            word_counts = Counter(filtered_words)
+            word_counts = Counter(words)
             
         elif analysis_mode == "action" or analysis_mode == "verbs":
             # Action words - focus on verbs and action-oriented language
@@ -214,6 +221,13 @@ async def generate_wordcloud(
                 "category": analysis_mode
             })
         
+        # Final validation of word list to remove any remaining noise
+        word_cloud_data = TextValidationService.validate_word_list(
+            word_cloud_data,
+            tenant_info=tenant_info,
+            additional_blacklist=exclude_words
+        )
+        
         logger.info(f"✅ Generated word cloud with {len(word_cloud_data)} words for dataset {dataset_id}")
         
         return {
@@ -289,11 +303,28 @@ async def generate_multi_wordcloud(
         
         # Extract text from all questions and answers
         all_text = ""
+        tenant_info = {}
+        
         for row in all_questions:
+            # Extract tenant information for filtering (if available)
+            if not tenant_info and hasattr(row, 'tenant_name'):
+                tenant_info = {
+                    'tenant_name': getattr(row, 'tenant_name', None),
+                    'org_name': getattr(row, 'org_name', None),
+                    'organization': getattr(row, 'organization', None)
+                }
+            
             if row.original_question:
                 all_text += " " + str(row.original_question)
             if row.ai_response:
                 all_text += " " + str(row.ai_response)
+        
+        # Clean the text using validation service
+        all_text = TextValidationService.clean_text_for_analysis(
+            all_text, 
+            tenant_info=tenant_info,
+            additional_blacklist=exclude_words
+        )
         
         # Use the same word analysis logic as single dataset
         # Different analysis modes
@@ -371,6 +402,13 @@ async def generate_multi_wordcloud(
                 "sentiment": sentiment,
                 "category": analysis_mode
             })
+        
+        # Final validation of word list to remove any remaining noise
+        word_cloud_data = TextValidationService.validate_word_list(
+            word_cloud_data,
+            tenant_info=tenant_info,
+            additional_blacklist=exclude_words
+        )
         
         logger.info(f"✅ Generated multi-dataset word cloud with {len(word_cloud_data)} words from {len(valid_datasets)} datasets")
         
