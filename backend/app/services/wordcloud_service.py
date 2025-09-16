@@ -399,27 +399,101 @@ class OptimizedWordCloudService:
             return Counter(words)
             
         elif analysis_mode == "emotions":
-            # Optimized emotion word detection
-            emotion_pattern = re.compile(r'\b(?:happy|sad|angry|excited|frustrated|pleased|disappointed|worried|confident|nervous|proud|ashamed|grateful|jealous|hopeful|fearful|surprised|shocked|calm|stressed|relaxed|anxious|joyful|depressed|elated|furious|content|miserable|ecstatic|livid|serene|panicked|love|hate|like|dislike|enjoy|despise|adore|loathe|appreciate|detest|cherish|abhor|positive|negative|good|bad|excellent|terrible|amazing|awful|great|poor|best|worst|better|worse|success|failure|win|lose|triumph|defeat|victory|loss)\b')
+            # Enhanced emotion detection for legal/customer service context
+            emotion_pattern = re.compile(r'\b(?:' +
+                # Positive emotions
+                'happy|pleased|satisfied|excited|confident|relieved|grateful|appreciative|hopeful|optimistic|comfortable|reassured|impressed|delighted|thrilled|content|calm|peaceful|secure|trusting|encouraged|motivated|empowered|' +
+                # Negative emotions  
+                'angry|frustrated|upset|disappointed|worried|concerned|anxious|stressed|confused|overwhelmed|irritated|annoyed|furious|outraged|devastated|heartbroken|discouraged|hopeless|desperate|betrayed|violated|helpless|powerless|abandoned|ignored|dismissed|' +
+                # Neutral/descriptive emotions
+                'surprised|shocked|amazed|curious|interested|cautious|uncertain|skeptical|doubtful|hesitant|conflicted|ambivalent|' +
+                # Intensity words
+                'extremely|very|quite|somewhat|slightly|incredibly|absolutely|completely|totally|utterly|deeply|profoundly|' +
+                # Legal emotional context
+                'traumatic|devastating|life-changing|overwhelming|unbearable|intolerable|unacceptable|fair|unfair|just|unjust|reasonable|unreasonable|' +
+                # Satisfaction levels
+                'excellent|outstanding|exceptional|good|average|poor|terrible|awful|horrible|wonderful|fantastic|amazing|disappointing|unsatisfactory' +
+                r')\b', re.IGNORECASE)
             words = emotion_pattern.findall(text.lower())
             return Counter(words)
             
         elif analysis_mode == "themes":
-            # Optimized theme detection
-            theme_pattern = re.compile(r'\b(?:business|technology|education|health|finance|legal|marketing|management|development|research|analysis|strategy|innovation|communication|leadership|quality|performance|customer|service|support|solution|problem|success|growth|security|compliance|process|system|project|work|team|data|information|experience|training|professional)\b')
+            # Enhanced theme detection for legal/business context
+            theme_pattern = re.compile(r'\b(?:' +
+                # Legal themes
+                'litigation|settlement|negotiation|mediation|arbitration|discovery|deposition|testimony|evidence|witness|expert|trial|court|hearing|motion|appeal|verdict|judgment|damages|liability|negligence|malpractice|contract|agreement|breach|violation|compliance|regulation|statute|law|legal|judicial|attorney|lawyer|counsel|' +
+                # Business/Corporate themes
+                'business|corporate|company|organization|management|leadership|strategy|operations|finance|accounting|budget|revenue|profit|investment|merger|acquisition|partnership|collaboration|venture|startup|enterprise|' +
+                # Technology themes
+                'technology|software|hardware|system|platform|application|database|network|security|cybersecurity|data|analytics|artificial|intelligence|machine|learning|automation|digital|cloud|internet|website|mobile|' +
+                # Process themes
+                'process|procedure|protocol|methodology|framework|workflow|implementation|deployment|development|testing|quality|performance|efficiency|optimization|improvement|innovation|solution|troubleshooting|maintenance|support|' +
+                # Communication themes
+                'communication|correspondence|meeting|conference|presentation|report|documentation|training|education|consultation|advice|guidance|instruction|explanation|clarification|notification|announcement|' +
+                # Service themes
+                'service|support|assistance|help|customer|client|user|experience|satisfaction|feedback|complaint|issue|problem|resolution|response|delivery|performance|quality|standard|requirement|expectation|' +
+                # Healthcare/Insurance themes
+                'medical|health|healthcare|treatment|diagnosis|therapy|rehabilitation|recovery|injury|accident|insurance|claim|coverage|benefits|compensation|disability|workers|employment|workplace|safety' +
+                r')\b', re.IGNORECASE)
             words = theme_pattern.findall(text.lower())
             return Counter(words)
             
         elif analysis_mode == "topics":
-            # Optimized topic detection
-            topic_pattern = re.compile(r'\b(?:artificial|intelligence|machine|learning|technology|software|development|research|analysis|data|business|strategy|security|automation|innovation|design|testing|deployment|monitoring|support|training|performance|quality|management|framework|methodology)\b')
+            # Enhanced topic detection for advanced legal/business analysis
+            topic_pattern = re.compile(r'\b(?:' +
+                # Legal topics
+                'constitutional|statutory|regulatory|procedural|substantive|criminal|civil|administrative|contract|tort|property|intellectual|employment|environmental|healthcare|immigration|family|estate|bankruptcy|securities|antitrust|' +
+                # Technology topics
+                'artificial|intelligence|machine|learning|neural|network|algorithm|blockchain|cryptocurrency|cybersecurity|cloud|computing|database|analytics|automation|robotics|digitization|transformation|innovation|' +
+                # Business topics
+                'strategic|operational|financial|marketing|sales|procurement|supply|chain|logistics|distribution|manufacturing|production|quality|assurance|risk|management|compliance|governance|audit|' +
+                # Research/Analysis topics
+                'research|analysis|methodology|statistical|quantitative|qualitative|empirical|theoretical|experimental|observational|longitudinal|cross-sectional|meta-analysis|systematic|review|' +
+                # Communication topics
+                'interpersonal|organizational|mass|digital|social|media|public|relations|marketing|advertising|branding|messaging|storytelling|narrative|discourse|rhetoric|' +
+                # Process improvement topics
+                'optimization|efficiency|productivity|streamlining|standardization|automation|lean|agile|six-sigma|continuous|improvement|best-practices|benchmarking|performance|measurement|' +
+                # Industry-specific topics
+                'automotive|aerospace|pharmaceutical|biotechnology|telecommunications|energy|utilities|construction|real-estate|hospitality|retail|e-commerce|education|healthcare|finance|insurance' +
+                r')\b', re.IGNORECASE)
             words = topic_pattern.findall(text.lower())
             return Counter(words)
             
         elif analysis_mode == "entities":
-            # Simple entity detection (capitalized words)
-            words = re.findall(r'\b[A-Z][a-z]+\b', text)
-            return Counter(word.lower() for word in words)
+            # Enhanced entity detection for legal/business context
+            entity_words = []
+            
+            # Capitalized words (potential proper nouns)
+            capitalized = re.findall(r'\b[A-Z][a-z]{2,}\b', text)
+            entity_words.extend([word.lower() for word in capitalized])
+            
+            # Legal entity patterns
+            legal_entity_pattern = re.compile(r'\b(?:' +
+                # Common names and titles
+                'judge|justice|attorney|counsel|plaintiff|defendant|witness|expert|doctor|professor|manager|director|president|ceo|cfo|cto|' +
+                # Organizations and institutions
+                'court|tribunal|commission|agency|department|bureau|office|authority|board|committee|council|association|corporation|company|firm|partnership|llc|inc|ltd|' +
+                # Legal document types
+                'contract|agreement|motion|brief|complaint|petition|subpoena|warrant|order|judgment|verdict|settlement|transcript|deposition|affidavit|' +
+                # Geographic entities
+                'county|state|province|district|jurisdiction|federal|national|international|local|municipal|regional|' +
+                # Time-related entities
+                'monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december|' +
+                # Legal concepts as entities
+                'negligence|malpractice|liability|damages|compensation|insurance|coverage|benefits|disability|injury|accident|incident|violation|breach|' +
+                # Technology entities
+                'software|system|platform|application|database|server|network|website|portal|interface|algorithm|protocol|standard|framework|' +
+                # Business entities
+                'customer|client|vendor|supplier|partner|stakeholder|shareholder|employee|contractor|consultant|representative|agent|' +
+                # Medical/Health entities
+                'patient|provider|physician|specialist|therapist|treatment|procedure|diagnosis|condition|symptoms|recovery|rehabilitation' +
+                r')\b', re.IGNORECASE)
+            
+            legal_entities = legal_entity_pattern.findall(text.lower())
+            entity_words.extend(legal_entities)
+            
+            # Remove duplicates and return
+            return Counter(entity_words)
             
         else:
             # Default to all words
@@ -449,22 +523,87 @@ class OptimizedWordCloudService:
     
     @staticmethod
     def _get_word_sentiment(word: str, analysis_mode: str) -> str:
-        """Fast sentiment assignment based on analysis mode"""
+        """Enhanced sentiment assignment based on analysis mode and word content"""
         if analysis_mode == "emotions":
-            if word in {'happy', 'pleased', 'satisfied', 'excited', 'positive', 'good', 'excellent', 'amazing', 'great', 'best', 'better', 'success'}:
+            # Positive emotions
+            positive_emotions = {
+                'happy', 'pleased', 'satisfied', 'excited', 'confident', 'relieved', 'grateful', 
+                'appreciative', 'hopeful', 'optimistic', 'comfortable', 'reassured', 'impressed', 
+                'delighted', 'thrilled', 'content', 'calm', 'peaceful', 'secure', 'trusting', 
+                'encouraged', 'motivated', 'empowered', 'excellent', 'outstanding', 'exceptional', 
+                'good', 'wonderful', 'fantastic', 'amazing'
+            }
+            
+            # Negative emotions
+            negative_emotions = {
+                'angry', 'frustrated', 'upset', 'disappointed', 'worried', 'concerned', 'anxious', 
+                'stressed', 'confused', 'overwhelmed', 'irritated', 'annoyed', 'furious', 'outraged', 
+                'devastated', 'heartbroken', 'discouraged', 'hopeless', 'desperate', 'betrayed', 
+                'violated', 'helpless', 'powerless', 'abandoned', 'ignored', 'dismissed', 'traumatic', 
+                'devastating', 'unbearable', 'intolerable', 'unacceptable', 'unfair', 'unjust', 
+                'unreasonable', 'terrible', 'awful', 'horrible', 'poor', 'disappointing', 'unsatisfactory'
+            }
+            
+            if word in positive_emotions:
                 return "positive"
-            elif word in {'angry', 'sad', 'frustrated', 'worried', 'disappointed', 'shocked', 'negative', 'bad', 'terrible', 'awful', 'poor', 'worst', 'worse', 'problem', 'failure', 'mistake', 'error'}:
+            elif word in negative_emotions:
                 return "negative"
             else:
                 return "neutral"
-        elif analysis_mode in ("action", "verbs"):
-            return "action"
-        elif analysis_mode == "entities":
-            return "entity"
+                
         elif analysis_mode == "themes":
-            return "theme"
+            # Theme-based sentiment for legal/business context
+            positive_themes = {
+                'success', 'solution', 'improvement', 'innovation', 'optimization', 'efficiency', 
+                'quality', 'excellence', 'satisfaction', 'resolution', 'agreement', 'settlement', 
+                'collaboration', 'partnership', 'support', 'assistance', 'guidance', 'training', 
+                'development', 'growth', 'recovery', 'rehabilitation', 'benefits', 'coverage', 
+                'compensation', 'compliance', 'security', 'safety'
+            }
+            
+            negative_themes = {
+                'problem', 'issue', 'violation', 'breach', 'negligence', 'malpractice', 'liability', 
+                'damages', 'injury', 'accident', 'complaint', 'dispute', 'conflict', 'litigation', 
+                'failure', 'error', 'mistake', 'defect', 'risk', 'threat', 'crisis', 'emergency'
+            }
+            
+            if word in positive_themes:
+                return "positive"
+            elif word in negative_themes:
+                return "negative"
+            else:
+                return "theme"
+                
         elif analysis_mode == "topics":
+            # Neutral sentiment for topics - they're analytical
             return "topic"
+            
+        elif analysis_mode == "entities":
+            # Entities are generally neutral
+            return "entity"
+            
+        elif analysis_mode in ("action", "verbs"):
+            # Action words can have implied sentiment
+            positive_actions = {
+                'help', 'support', 'assist', 'improve', 'resolve', 'fix', 'solve', 'create', 
+                'build', 'develop', 'enhance', 'optimize', 'succeed', 'achieve', 'accomplish', 
+                'complete', 'deliver', 'provide', 'offer', 'give', 'share', 'collaborate', 
+                'cooperate', 'agree', 'settle', 'recover', 'heal', 'restore'
+            }
+            
+            negative_actions = {
+                'fail', 'break', 'damage', 'harm', 'hurt', 'injure', 'violate', 'breach', 
+                'dispute', 'conflict', 'argue', 'fight', 'oppose', 'reject', 'deny', 'refuse', 
+                'cancel', 'terminate', 'abandon', 'neglect', 'ignore', 'dismiss', 'worsen', 
+                'deteriorate', 'complain', 'criticize'
+            }
+            
+            if word in positive_actions:
+                return "positive"
+            elif word in negative_actions:
+                return "negative"
+            else:
+                return "action"
         else:
             return "neutral"
     
