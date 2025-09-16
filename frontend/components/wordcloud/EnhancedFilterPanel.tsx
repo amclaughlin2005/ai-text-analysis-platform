@@ -238,11 +238,11 @@ export default function EnhancedFilterPanel({
                 </div>
               </div>
 
-              {/* Date Filter */}
-              <div>
+              {/* Date Filter - Temporarily disabled */}
+              <div className="opacity-50 pointer-events-none">
                 <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Date Range
+                  Date Range (Coming Soon)
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -283,12 +283,12 @@ export default function EnhancedFilterPanel({
                 </div>
               </div>
 
-              {/* Organization Filter */}
+              {/* Organization Filter - Temporarily disabled */}
               {availableOrgs.length > 0 && (
-                <div>
+                <div className="opacity-50 pointer-events-none">
                   <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <Building className="h-4 w-4" />
-                    Organizations
+                    Organizations (Coming Soon)
                   </h4>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {availableOrgs.map((org) => (
@@ -306,12 +306,12 @@ export default function EnhancedFilterPanel({
                 </div>
               )}
 
-              {/* Email Filter */}
+              {/* Email Filter - Temporarily disabled */}
               {availableEmails.length > 0 && (
-                <div>
+                <div className="opacity-50 pointer-events-none">
                   <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <Mail className="h-4 w-4" />
-                    User Emails
+                    User Emails (Coming Soon)
                   </h4>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {availableEmails.slice(0, 10).map((email) => (
