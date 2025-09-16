@@ -587,6 +587,77 @@ async def fix_database_schema():
         logger.error(f"❌ Schema fix failed: {e}")
         raise HTTPException(status_code=500, detail=f"Schema fix failed: {str(e)}")
 
+@router.post("/populate-test-metadata/{dataset_id}")
+async def populate_test_metadata(dataset_id: str, db: Session = Depends(get_db)):
+    """Populate test metadata for demonstration"""
+    try:
+        # Sample organizations and users
+        test_orgs = ["Singleton Schreiber", "Cades Schutte", "Thompson & Knight", "Baker McKenzie"]
+        test_users = ["john.doe@law.com", "jane.smith@legal.net", "bob.jones@attorney.org"]
+        
+        # Get all questions for this dataset
+        questions_sql = text("SELECT id FROM questions WHERE dataset_id = :dataset_id LIMIT 1000")
+        questions = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
+        
+        if not questions:
+            raise HTTPException(status_code=404, detail="No questions found for dataset")
+        
+        update_count = 0
+        import random
+        
+        # Update first 1000 questions with test metadata
+        for i, q in enumerate(questions):
+            org_name = random.choice(test_orgs)
+            user_email = random.choice(test_users)
+            
+            update_sql = text("""
+                UPDATE questions 
+                SET org_name = :org_name,
+                    user_id_from_csv = :user_email
+                WHERE id = :question_id
+            """)
+            
+            db.execute(update_sql, {
+                "question_id": q.id,
+                "org_name": org_name,
+                "user_email": user_email
+            })
+            
+            update_count += 1
+            
+            if update_count % 100 == 0:
+                db.commit()
+        
+        db.commit()
+        
+        # Get final counts
+        stats_sql = text("""
+            SELECT 
+                COUNT(CASE WHEN org_name IS NOT NULL AND org_name != '' THEN 1 END) as records_with_org,
+                COUNT(CASE WHEN user_id_from_csv IS NOT NULL AND user_id_from_csv != '' THEN 1 END) as records_with_user
+            FROM questions 
+            WHERE dataset_id = :dataset_id
+        """)
+        final_stats = db.execute(stats_sql, {"dataset_id": dataset_id}).fetchone()
+        
+        return {
+            "success": True,
+            "message": f"Successfully populated test metadata",
+            "updated_questions": update_count,
+            "final_counts": {
+                "records_with_org": final_stats.records_with_org,
+                "records_with_user": final_stats.records_with_user
+            },
+            "test_orgs": test_orgs,
+            "test_users": test_users
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Test metadata population failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Test metadata population failed: {str(e)}")
+
 @router.post("/populate-metadata/{dataset_id}")
 async def populate_metadata_from_csv(dataset_id: str, db: Session = Depends(get_db)):
     """Populate org_name and user metadata from original CSV file"""
