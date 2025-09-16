@@ -586,6 +586,176 @@ async def fix_database_schema():
         logger.error(f"❌ Schema fix failed: {e}")
         raise HTTPException(status_code=500, detail=f"Schema fix failed: {str(e)}")
 
+@router.post("/populate-metadata/{dataset_id}")
+async def populate_metadata_from_csv(dataset_id: str, db: Session = Depends(get_db)):
+    """Populate org_name and user metadata from original CSV file"""
+    try:
+        import csv
+        import io
+        import os
+        from datetime import datetime
+        
+        # Get dataset info to find the CSV file
+        dataset_sql = text("SELECT name, file_path FROM datasets WHERE id = :dataset_id")
+        dataset_result = db.execute(dataset_sql, {"dataset_id": dataset_id}).fetchone()
+        
+        if not dataset_result:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        
+        # Find the CSV file
+        csv_file_path = f"uploads/{dataset_id}_CWYC-71k-155k.csv"
+        if not os.path.exists(csv_file_path):
+            csv_file_path = f"uploads/{dataset_id}_" + dataset_result.name.replace(" ", "_") + ".csv"
+        
+        if not os.path.exists(csv_file_path):
+            raise HTTPException(status_code=404, detail=f"CSV file not found: {csv_file_path}")
+        
+        logger.info(f"📄 Reading CSV file: {csv_file_path}")
+        
+        # Read CSV and extract metadata
+        with open(csv_file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+            csv_reader = csv.reader(io.StringIO(content))
+            headers = next(csv_reader, [])
+            
+            # Strip BOM from first header if present
+            if headers and headers[0].startswith('\ufeff'):
+                headers[0] = headers[0][1:]
+            
+            logger.info(f"📋 CSV Headers: {headers}")
+            
+            # Find column indices
+            org_name_idx = None
+            user_email_idx = None
+            timestamp_idx = None
+            
+            for i, header in enumerate(headers):
+                header_upper = header.upper()
+                if header_upper in ['ORGNAME', 'ORG_NAME']:
+                    org_name_idx = i
+                elif header_upper in ['USER_EMAIL', 'USEREMAIL']:
+                    user_email_idx = i
+                elif header_upper in ['TIMESTAMP']:
+                    timestamp_idx = i
+            
+            logger.info(f"🔍 Found columns - org_name: {org_name_idx}, user_email: {user_email_idx}, timestamp: {timestamp_idx}")
+            
+            if org_name_idx is None and user_email_idx is None:
+                return {"success": False, "message": "No metadata columns found in CSV", "headers": headers}
+            
+            # Get existing questions
+            questions_sql = text("""
+                SELECT id, csv_row_number 
+                FROM questions 
+                WHERE dataset_id = :dataset_id 
+                ORDER BY csv_row_number
+            """)
+            questions = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
+            
+            # Create mapping from row number to question ID
+            row_to_question = {q.csv_row_number: q.id for q in questions if q.csv_row_number}
+            
+            logger.info(f"📊 Found {len(questions)} questions, {len(row_to_question)} with row numbers")
+            
+            # Reset CSV reader and process rows
+            csv_reader = csv.reader(io.StringIO(content))
+            next(csv_reader)  # Skip headers
+            
+            update_count = 0
+            for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 because header is row 1
+                if row_num in row_to_question:
+                    question_id = row_to_question[row_num]
+                    
+                    # Extract metadata
+                    org_name = row[org_name_idx] if org_name_idx is not None and len(row) > org_name_idx else None
+                    user_email = row[user_email_idx] if user_email_idx is not None and len(row) > user_email_idx else None
+                    timestamp_str = row[timestamp_idx] if timestamp_idx is not None and len(row) > timestamp_idx else None
+                    
+                    # Clean up data
+                    if org_name and org_name.strip():
+                        org_name = org_name.strip()
+                    else:
+                        org_name = None
+                        
+                    if user_email and user_email.strip():
+                        user_email = user_email.strip()
+                    else:
+                        user_email = None
+                    
+                    # Parse timestamp
+                    timestamp_parsed = None
+                    if timestamp_str and timestamp_str.strip():
+                        try:
+                            # Try common timestamp formats
+                            for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%m/%d/%Y', '%m/%d/%Y %H:%M:%S']:
+                                try:
+                                    timestamp_parsed = datetime.strptime(timestamp_str.strip(), fmt)
+                                    break
+                                except ValueError:
+                                    continue
+                        except:
+                            pass
+                    
+                    # Update the question if we have any metadata
+                    if org_name or user_email or timestamp_parsed:
+                        update_sql = text("""
+                            UPDATE questions 
+                            SET org_name = :org_name,
+                                user_id_from_csv = :user_email,
+                                timestamp_from_csv = :timestamp
+                            WHERE id = :question_id
+                        """)
+                        
+                        db.execute(update_sql, {
+                            "question_id": question_id,
+                            "org_name": org_name,
+                            "user_email": user_email,
+                            "timestamp": timestamp_parsed
+                        })
+                        
+                        update_count += 1
+                        
+                        if update_count % 1000 == 0:
+                            db.commit()  # Commit in batches
+                            logger.info(f"📊 Updated {update_count} questions...")
+            
+            db.commit()
+            logger.info(f"✅ Successfully updated {update_count} questions with metadata")
+            
+            # Get final counts
+            stats_sql = text("""
+                SELECT 
+                    COUNT(CASE WHEN org_name IS NOT NULL AND org_name != '' THEN 1 END) as records_with_org,
+                    COUNT(CASE WHEN user_id_from_csv IS NOT NULL AND user_id_from_csv != '' THEN 1 END) as records_with_user,
+                    COUNT(CASE WHEN timestamp_from_csv IS NOT NULL THEN 1 END) as records_with_timestamp
+                FROM questions 
+                WHERE dataset_id = :dataset_id
+            """)
+            final_stats = db.execute(stats_sql, {"dataset_id": dataset_id}).fetchone()
+            
+            return {
+                "success": True,
+                "message": f"Successfully populated metadata",
+                "updated_questions": update_count,
+                "final_counts": {
+                    "records_with_org": final_stats.records_with_org,
+                    "records_with_user": final_stats.records_with_user,
+                    "records_with_timestamp": final_stats.records_with_timestamp
+                },
+                "headers_found": headers,
+                "columns_mapped": {
+                    "org_name_idx": org_name_idx,
+                    "user_email_idx": user_email_idx,
+                    "timestamp_idx": timestamp_idx
+                }
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Metadata population failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Metadata population failed: {str(e)}")
+
 @router.post("/invalidate-cache")
 async def invalidate_cache(dataset_id: Optional[str] = None):
     """Invalidate word cloud cache for a dataset or all datasets"""
