@@ -705,6 +705,208 @@ async def get_filter_options(dataset_id: str, db: Session = Depends(get_db)):
         logger.error(f"❌ Failed to get filter options: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get filter options: {str(e)}")
 
+@router.post("/populate-all-metadata/{dataset_id}")
+async def populate_all_metadata_from_csv(dataset_id: str, db: Session = Depends(get_db)):
+    """Populate ALL metadata from CSV - overwrites existing data"""
+    try:
+        import csv
+        import io
+        import os
+        from datetime import datetime
+        
+        # Get dataset info
+        dataset_sql = text("SELECT name, file_path FROM datasets WHERE id = :dataset_id")
+        dataset_result = db.execute(dataset_sql, {"dataset_id": dataset_id}).fetchone()
+        
+        if not dataset_result:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        
+        # Try different CSV file paths
+        possible_paths = [
+            f"uploads/{dataset_id}_CWYC-71k-155k.csv",
+            f"uploads/{dataset_id}_{dataset_result.name.replace(' ', '_')}.csv",
+            f"uploads/{dataset_id}_{dataset_result.name.replace(' ', '-')}.csv",
+            dataset_result.file_path if dataset_result.file_path else None
+        ]
+        
+        csv_file_path = None
+        for path in possible_paths:
+            if path and os.path.exists(path):
+                csv_file_path = path
+                break
+        
+        if not csv_file_path:
+            # Return available files for debugging
+            upload_files = []
+            if os.path.exists("uploads"):
+                upload_files = os.listdir("uploads")
+            raise HTTPException(
+                status_code=404, 
+                detail=f"CSV file not found. Tried: {possible_paths}. Available files: {upload_files}"
+            )
+        
+        logger.info(f"📄 Reading CSV file: {csv_file_path}")
+        
+        # Read CSV and extract ALL metadata
+        with open(csv_file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+            csv_reader = csv.reader(io.StringIO(content))
+            headers = next(csv_reader, [])
+            
+            # Strip BOM from first header if present
+            if headers and headers[0].startswith('\ufeff'):
+                headers[0] = headers[0][1:]
+            
+            logger.info(f"📋 CSV Headers: {headers}")
+            
+            # Find column indices - case insensitive
+            org_name_idx = None
+            user_email_idx = None
+            timestamp_idx = None
+            
+            for i, header in enumerate(headers):
+                header_upper = header.upper().strip()
+                if header_upper in ['ORGNAME', 'ORG_NAME']:
+                    org_name_idx = i
+                elif header_upper in ['USER_EMAIL', 'USEREMAIL']:
+                    user_email_idx = i
+                elif header_upper in ['TIMESTAMP']:
+                    timestamp_idx = i
+            
+            logger.info(f"🔍 Found columns - org_name: {org_name_idx}, user_email: {user_email_idx}, timestamp: {timestamp_idx}")
+            
+            if org_name_idx is None and user_email_idx is None:
+                return {"success": False, "message": "No ORGNAME or USER_EMAIL columns found in CSV", "headers": headers}
+            
+            # Get ALL questions for this dataset (not just first 1000)
+            questions_sql = text("""
+                SELECT id, csv_row_number 
+                FROM questions 
+                WHERE dataset_id = :dataset_id 
+                ORDER BY csv_row_number
+            """)
+            questions = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
+            
+            # Create mapping from row number to question ID
+            row_to_question = {q.csv_row_number: q.id for q in questions if q.csv_row_number}
+            
+            logger.info(f"📊 Found {len(questions)} questions, {len(row_to_question)} with row numbers")
+            
+            # Reset CSV reader and process ALL rows
+            csv_reader = csv.reader(io.StringIO(content))
+            next(csv_reader)  # Skip headers
+            
+            update_count = 0
+            csv_row_count = 0
+            
+            for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 because header is row 1
+                csv_row_count += 1
+                
+                if row_num in row_to_question:
+                    question_id = row_to_question[row_num]
+                    
+                    # Extract metadata from CSV
+                    org_name = None
+                    user_email = None
+                    timestamp_parsed = None
+                    
+                    # Get organization name
+                    if org_name_idx is not None and len(row) > org_name_idx:
+                        org_raw = row[org_name_idx]
+                        if org_raw and org_raw.strip():
+                            org_name = org_raw.strip()
+                    
+                    # Get user email
+                    if user_email_idx is not None and len(row) > user_email_idx:
+                        email_raw = row[user_email_idx]
+                        if email_raw and email_raw.strip():
+                            user_email = email_raw.strip()
+                    
+                    # Get timestamp
+                    if timestamp_idx is not None and len(row) > timestamp_idx:
+                        timestamp_str = row[timestamp_idx]
+                        if timestamp_str and timestamp_str.strip():
+                            try:
+                                # Try common timestamp formats
+                                for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%m/%d/%Y', '%m/%d/%Y %H:%M:%S', '%Y-%m-%dT%H:%M:%S']:
+                                    try:
+                                        timestamp_parsed = datetime.strptime(timestamp_str.strip(), fmt)
+                                        break
+                                    except ValueError:
+                                        continue
+                            except Exception:
+                                pass
+                    
+                    # Update the question with real CSV data
+                    if org_name or user_email or timestamp_parsed:
+                        update_sql = text("""
+                            UPDATE questions 
+                            SET org_name = :org_name,
+                                user_id_from_csv = :user_email,
+                                timestamp_from_csv = :timestamp
+                            WHERE id = :question_id
+                        """)
+                        
+                        db.execute(update_sql, {
+                            "question_id": question_id,
+                            "org_name": org_name,
+                            "user_email": user_email,
+                            "timestamp": timestamp_parsed
+                        })
+                        
+                        update_count += 1
+                        
+                        if update_count % 5000 == 0:
+                            db.commit()  # Commit in larger batches for performance
+                            logger.info(f"📊 Updated {update_count} questions...")
+                
+                # Progress logging for large datasets
+                if csv_row_count % 10000 == 0:
+                    logger.info(f"📄 Processed {csv_row_count} CSV rows...")
+            
+            db.commit()
+            logger.info(f"✅ Processed {csv_row_count} CSV rows, updated {update_count} questions with real metadata")
+            
+            # Get final counts
+            stats_sql = text("""
+                SELECT 
+                    COUNT(CASE WHEN org_name IS NOT NULL AND org_name != '' THEN 1 END) as records_with_org,
+                    COUNT(CASE WHEN user_id_from_csv IS NOT NULL AND user_id_from_csv != '' THEN 1 END) as records_with_user,
+                    COUNT(CASE WHEN timestamp_from_csv IS NOT NULL THEN 1 END) as records_with_timestamp,
+                    COUNT(DISTINCT org_name) as unique_orgs,
+                    COUNT(DISTINCT user_id_from_csv) as unique_users
+                FROM questions 
+                WHERE dataset_id = :dataset_id
+            """)
+            final_stats = db.execute(stats_sql, {"dataset_id": dataset_id}).fetchone()
+            
+            return {
+                "success": True,
+                "message": f"Successfully populated real metadata from CSV",
+                "csv_file_used": csv_file_path,
+                "csv_rows_processed": csv_row_count,
+                "questions_updated": update_count,
+                "final_counts": {
+                    "records_with_org": final_stats.records_with_org,
+                    "records_with_user": final_stats.records_with_user,
+                    "records_with_timestamp": final_stats.records_with_timestamp,
+                    "unique_orgs": final_stats.unique_orgs,
+                    "unique_users": final_stats.unique_users
+                },
+                "headers_found": headers,
+                "columns_mapped": {
+                    "org_name_idx": org_name_idx,
+                    "user_email_idx": user_email_idx,
+                    "timestamp_idx": timestamp_idx
+                }
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Real metadata population failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Real metadata population failed: {str(e)}")
+
 @router.post("/populate-metadata/{dataset_id}")
 async def populate_metadata_from_csv(dataset_id: str, db: Session = Depends(get_db)):
     """Populate org_name and user metadata from original CSV file"""
