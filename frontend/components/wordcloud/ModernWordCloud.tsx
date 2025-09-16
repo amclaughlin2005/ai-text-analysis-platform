@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { WordCloudData } from '@/lib/types';
+import { Palette } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ModernWordCloudProps {
   datasetId: string;
@@ -12,6 +14,8 @@ interface ModernWordCloudProps {
   width?: number;
   onWordClick?: (word: string) => void;
   words?: WordCloudData[]; // Optional: if provided, skip API call
+  theme?: 'vibrant' | 'light' | 'dark' | 'minimal' | 'ocean' | 'sunset';
+  showThemeSelector?: boolean;
 }
 
 interface PositionedWord extends WordCloudData {
@@ -22,6 +26,52 @@ interface PositionedWord extends WordCloudData {
   rotation: number;
 }
 
+// Theme color definitions
+const THEMES = {
+  vibrant: {
+    name: 'Vibrant',
+    background: 'from-blue-50 via-purple-50 to-pink-50',
+    positive: ['#10B981', '#059669', '#047857', '#065F46'],
+    negative: ['#F59E0B', '#D97706', '#B45309', '#92400E'],
+    neutral: ['#8B5CF6', '#7C3AED', '#6D28D9', '#5B21B6', '#EC4899', '#DB2777', '#BE185D', '#9D174D', '#06B6D4', '#0891B2']
+  },
+  light: {
+    name: 'Light',
+    background: 'from-gray-50 to-white',
+    positive: ['#3B82F6', '#1D4ED8', '#2563EB', '#1E40AF'],
+    negative: ['#EF4444', '#DC2626', '#B91C1C', '#991B1B'],
+    neutral: ['#6366F1', '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#14B8A6', '#F97316']
+  },
+  dark: {
+    name: 'Dark',
+    background: 'from-gray-900 via-blue-900 to-purple-900',
+    positive: ['#34D399', '#10B981', '#059669', '#047857'],
+    negative: ['#F87171', '#EF4444', '#DC2626', '#B91C1C'],
+    neutral: ['#A78BFA', '#8B5CF6', '#7C3AED', '#6D28D9', '#F472B6', '#EC4899', '#60A5FA', '#3B82F6']
+  },
+  minimal: {
+    name: 'Minimal',
+    background: 'from-gray-50 to-gray-100',
+    positive: ['#374151', '#4B5563', '#6B7280', '#9CA3AF'],
+    negative: ['#374151', '#4B5563', '#6B7280', '#9CA3AF'],
+    neutral: ['#374151', '#4B5563', '#6B7280', '#9CA3AF', '#6B7280', '#4B5563', '#374151', '#9CA3AF']
+  },
+  ocean: {
+    name: 'Ocean',
+    background: 'from-blue-50 via-cyan-50 to-teal-50',
+    positive: ['#0891B2', '#0E7490', '#155E75', '#164E63'],
+    negative: ['#0369A1', '#075985', '#0C4A6E', '#082F49'],
+    neutral: ['#06B6D4', '#0891B2', '#0E7490', '#155E75', '#14B8A6', '#0D9488', '#0F766E', '#115E59']
+  },
+  sunset: {
+    name: 'Sunset',
+    background: 'from-orange-50 via-red-50 to-pink-50',
+    positive: ['#F97316', '#EA580C', '#DC2626', '#B91C1C'],
+    negative: ['#EF4444', '#DC2626', '#B91C1C', '#991B1B'],
+    neutral: ['#F59E0B', '#D97706', '#B45309', '#92400E', '#EC4899', '#DB2777', '#BE185D', '#9D174D']
+  }
+};
+
 export default function ModernWordCloud({
   datasetId,
   mode = 'all',
@@ -29,36 +79,29 @@ export default function ModernWordCloud({
   height = 500,
   width = 800,
   onWordClick,
-  words: propWords
+  words: propWords,
+  theme = 'vibrant',
+  showThemeSelector = true
 }: ModernWordCloudProps) {
   const [words, setWords] = useState<PositionedWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentTheme, setCurrentTheme] = useState<'vibrant' | 'light' | 'dark' | 'minimal' | 'ocean' | 'sunset'>(theme);
+  const [showThemePanel, setShowThemePanel] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Color schemes for different word types/sentiments
-  const getWordColor = (word: WordCloudData, index: number): string => {
+  // Theme-aware color schemes for different word types/sentiments
+  const getWordColor = useCallback((word: WordCloudData, index: number): string => {
+    const themeColors = THEMES[currentTheme];
+    
     if (word.sentiment === 'positive') {
-      return ['#3B82F6', '#1D4ED8', '#2563EB', '#1E40AF'][index % 4]; // Blues
+      return themeColors.positive[index % themeColors.positive.length];
     } else if (word.sentiment === 'negative') {
-      return ['#EF4444', '#DC2626', '#B91C1C', '#991B1B'][index % 4]; // Reds
+      return themeColors.negative[index % themeColors.negative.length];
     } else {
-      // Neutral words - varied colors like your example
-      const colors = [
-        '#6366F1', // Indigo
-        '#8B5CF6', // Purple  
-        '#06B6D4', // Cyan
-        '#10B981', // Emerald
-        '#F59E0B', // Amber
-        '#EF4444', // Red
-        '#3B82F6', // Blue
-        '#8B5CF6', // Purple
-        '#14B8A6', // Teal
-        '#F97316'  // Orange
-      ];
-      return colors[index % colors.length];
+      return themeColors.neutral[index % themeColors.neutral.length];
     }
-  };
+  }, [currentTheme]);
 
   // Calculate font size based on frequency
   const getFontSize = (frequency: number, maxFreq: number, minSize = 14, maxSize = 48): number => {
@@ -255,7 +298,7 @@ export default function ModernWordCloud({
       // Fallback to API fetch
       fetchWordCloudData();
     }
-  }, [datasetId, mode, propWords]);
+  }, [datasetId, mode, propWords, currentTheme]);
 
   if (loading) {
     return (
@@ -296,8 +339,51 @@ export default function ModernWordCloud({
   }
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br from-gray-50 to-white ${className}`} 
+    <div className={`relative overflow-hidden bg-gradient-to-br ${THEMES[currentTheme].background} ${className}`} 
          style={{ height, width }}>
+      
+      {/* Theme Selector */}
+      {showThemeSelector && (
+        <div className="absolute top-4 left-4 z-10">
+          <button
+            onClick={() => setShowThemePanel(!showThemePanel)}
+            className="p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border hover:bg-white transition-colors"
+            title="Change Theme"
+          >
+            <Palette className="h-4 w-4 text-gray-600" />
+          </button>
+          
+          {showThemePanel && (
+            <div className="absolute top-12 left-0 w-64 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border p-4 z-20">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Color Theme</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(THEMES) as Array<keyof typeof THEMES>).map((themeKey) => (
+                  <button
+                    key={themeKey}
+                    onClick={() => {
+                      setCurrentTheme(themeKey);
+                      setShowThemePanel(false);
+                    }}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 text-xs rounded-lg border transition-all",
+                      currentTheme === themeKey
+                        ? "bg-primary-100 border-primary-500 text-primary-800"
+                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                    )}
+                  >
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: THEMES[themeKey].neutral[0] }}
+                    />
+                    {THEMES[themeKey].name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <svg 
         ref={svgRef}
         width={width} 
@@ -339,14 +425,21 @@ export default function ModernWordCloud({
         ))}
       </svg>
       
-      {/* Mode indicator */}
+      {/* Mode and Theme indicator */}
       <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-1 text-sm text-gray-700 border">
-        {mode === 'all' ? 'All Words' : 
-         mode === 'verbs' ? 'Action Words' :
-         mode === 'nouns' ? 'Nouns' :
-         mode === 'adjectives' ? 'Adjectives' :
-         mode === 'emotions' ? 'Emotions' : 
-         mode.charAt(0).toUpperCase() + mode.slice(1)}
+        <div className="flex items-center gap-2">
+          <span>
+            {mode === 'all' ? 'All Words' : 
+             mode === 'verbs' ? 'Action Words' :
+             mode === 'nouns' ? 'Nouns' :
+             mode === 'adjectives' ? 'Adjectives' :
+             mode === 'emotions' ? 'Emotions' : 
+             mode.charAt(0).toUpperCase() + mode.slice(1)}
+          </span>
+          <span className="text-xs text-gray-500">
+            | {THEMES[currentTheme].name}
+          </span>
+        </div>
       </div>
     </div>
   );

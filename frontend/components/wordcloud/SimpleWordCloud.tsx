@@ -670,6 +670,8 @@ export default function SimpleWordCloud({
                   height={600}
                   width={1200}
                   words={words}
+                  theme="vibrant"
+                  showThemeSelector={true}
                   onWordClick={(word) => {
                     setSelectedWord(selectedWord === word ? null : word);
                     if (onWordClick) {
