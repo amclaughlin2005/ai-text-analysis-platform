@@ -283,8 +283,66 @@ export default function EnhancedFilterPanel({
                 </div>
               </div>
 
-              {/* Organization Filter - Temporarily disabled */}
-              {availableOrgs.length > 0 && (
+              {/* Organization Filter */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <Building className="h-4 w-4" />
+                  Organizations
+                </h4>
+                <div className="space-y-2">
+                  {['Singleton Schreiber', 'Cades Schutte', 'Thompson & Knight', 'Baker McKenzie'].map((org) => (
+                    <label key={org} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={filters.org_names?.includes(org) || false}
+                        onChange={(e) => {
+                          const newOrgNames = e.target.checked
+                            ? [...(filters.org_names || []), org]
+                            : (filters.org_names || []).filter(o => o !== org);
+                          onFiltersChange({
+                            ...filters,
+                            org_names: newOrgNames.length > 0 ? newOrgNames : undefined
+                          });
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-gray-700">{org}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* User Email Filter */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  User Emails
+                </h4>
+                <div className="space-y-2">
+                  {['john.doe@law.com', 'jane.smith@legal.net', 'bob.jones@attorney.org'].map((email) => (
+                    <label key={email} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={filters.user_emails?.includes(email) || false}
+                        onChange={(e) => {
+                          const newUserEmails = e.target.checked
+                            ? [...(filters.user_emails || []), email]
+                            : (filters.user_emails || []).filter(u => u !== email);
+                          onFiltersChange({
+                            ...filters,
+                            user_emails: newUserEmails.length > 0 ? newUserEmails : undefined
+                          });
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-gray-700">{email}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Remove the old conditionally rendered org filter */}
+              {false && availableOrgs.length > 0 && (
                 <div className="opacity-50 pointer-events-none">
                   <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <Building className="h-4 w-4" />

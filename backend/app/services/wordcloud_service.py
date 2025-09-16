@@ -395,20 +395,30 @@ class OptimizedWordCloudService:
             where_conditions = ["dataset_id = :dataset_id"]
             query_params = {"dataset_id": dataset_id}
             
-            # Skip advanced filtering for now - these fields don't exist in Railway schema
-            # Focus on column filtering which is the core issue
-            
-            if date_filter:
-                logger.warning(f"🚧 Date filtering not supported - timestamp fields don't exist in current schema")
-            
+            # Organization filtering
             if org_names:
-                logger.warning(f"🚧 Organization filtering not supported - org_name column doesn't exist in current schema")
+                org_placeholders = ','.join([f':org_{i}' for i in range(len(org_names))])
+                where_conditions.append(f"LOWER(org_name) IN ({org_placeholders})")
+                for i, org in enumerate(org_names):
+                    query_params[f'org_{i}'] = org.lower()
             
-            if tenant_names:
-                logger.warning(f"🚧 Tenant filtering not supported - tenant fields don't exist in current schema")
-            
+            # User email filtering  
             if user_emails:
-                logger.warning(f"🚧 User email filtering not supported - user fields don't exist in current schema")
+                email_placeholders = ','.join([f':email_{i}' for i in range(len(user_emails))])
+                where_conditions.append(f"LOWER(user_id_from_csv) IN ({email_placeholders})")
+                for i, email in enumerate(user_emails):
+                    query_params[f'email_{i}'] = email.lower()
+            
+            # Date filtering - temporarily disabled (no timestamp data yet)
+            if date_filter:
+                logger.warning(f"🚧 Date filtering not supported - timestamp data not populated yet")
+            
+            # Tenant filtering - using org_name as fallback
+            if tenant_names:
+                tenant_placeholders = ','.join([f':tenant_{i}' for i in range(len(tenant_names))])
+                where_conditions.append(f"LOWER(org_name) IN ({tenant_placeholders})")
+                for i, tenant in enumerate(tenant_names):
+                    query_params[f'tenant_{i}'] = tenant.lower()
             
             # Get total count first
             count_sql = text("SELECT COUNT(*) FROM questions WHERE " + " AND ".join(where_conditions))
@@ -439,8 +449,8 @@ class OptimizedWordCloudService:
             logger.info(f"🔍 Debug: Selected columns filter: {selected_columns}")
             logger.info(f"🔍 Debug: Column selection: {column_selection}")
             
-            # Build the main query - only use columns that exist in Railway schema
-            select_columns = ", ".join(column_selection)  # Only select text columns
+            # Build the main query - include org_name for metadata
+            select_columns = ", ".join(column_selection + ["org_name", "user_id_from_csv"])
             questions_sql = text(f"""
                 SELECT {select_columns}
                 FROM questions 
@@ -453,9 +463,15 @@ class OptimizedWordCloudService:
             
             # Build text efficiently
             text_parts = []
-            tenant_info = {}  # Empty for now since metadata columns don't exist
+            tenant_info = {}
             
             for row in questions_result:
+                # Extract tenant info from first row
+                if not tenant_info:
+                    tenant_info = {
+                        'org_name': getattr(row, 'org_name', None),
+                        'user_id_from_csv': getattr(row, 'user_id_from_csv', None)
+                    }
                 
                 # Add text based on selected columns
                 if not selected_columns or 1 in selected_columns:
