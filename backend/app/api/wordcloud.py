@@ -1302,6 +1302,135 @@ async def populate_from_dataset_specific_csv(dataset_id: str, db: Session = Depe
         logger.error(f"❌ Dataset-specific metadata population failed: {e}")
         raise HTTPException(status_code=500, detail=f"Dataset-specific metadata population failed: {str(e)}")
 
+@router.post("/populate-existing-dataset/{dataset_id}")
+async def populate_existing_dataset_from_csv(
+    dataset_id: str,
+    file: UploadFile = File(..., description="Original CSV file to extract org data from"),
+    db: Session = Depends(get_db)
+):
+    """Populate an existing dataset with organization and user email data from the original CSV"""
+    try:
+        # Read the uploaded CSV file
+        content = await file.read()
+        content_str = content.decode('utf-8')
+        
+        import csv
+        import io
+        from collections import Counter
+        
+        # Parse the CSV
+        csv_reader = csv.reader(io.StringIO(content_str))
+        headers = next(csv_reader, [])
+        
+        # Strip BOM from first header if present
+        if headers and headers[0].startswith('\ufeff'):
+            headers[0] = headers[0][1:]
+        
+        logger.info(f"📋 Headers from uploaded CSV: {headers}")
+        
+        # Find the ORGNAME and USER_EMAIL column indices
+        header_lower = [h.lower().strip() for h in headers]
+        org_name_idx = None
+        user_email_idx = None
+        
+        # Look for organization name column
+        org_patterns = ['orgname', 'org_name', 'organization', 'tenant_name', 'client_name']
+        for pattern in org_patterns:
+            if pattern in header_lower:
+                org_name_idx = header_lower.index(pattern)
+                logger.info(f"✅ Found org name pattern '{pattern}' at index {org_name_idx}")
+                break
+        
+        # Look for user email column  
+        email_patterns = ['user_email', 'email', 'user_id', 'user', 'userid']
+        for pattern in email_patterns:
+            if pattern in header_lower:
+                user_email_idx = header_lower.index(pattern)
+                logger.info(f"✅ Found user email pattern '{pattern}' at index {user_email_idx}")
+                break
+        
+        if org_name_idx is None and user_email_idx is None:
+            return {
+                "success": False,
+                "message": f"No organization or user email columns found. Headers: {headers}",
+                "headers_found": headers
+            }
+        
+        # Extract organization and email data from CSV
+        orgs_found = []
+        emails_found = []
+        row_metadata = {}  # Map row number to metadata
+        
+        csv_reader = csv.reader(io.StringIO(content_str))
+        next(csv_reader)  # Skip headers again
+        
+        for row_num, row in enumerate(csv_reader, start=1):
+            if len(row) > max(org_name_idx or 0, user_email_idx or 0):
+                org_name = None
+                user_email = None
+                
+                if org_name_idx is not None and len(row) > org_name_idx and row[org_name_idx]:
+                    org_name = str(row[org_name_idx]).strip()
+                    if org_name and org_name not in orgs_found:
+                        orgs_found.append(org_name)
+                
+                if user_email_idx is not None and len(row) > user_email_idx and row[user_email_idx]:
+                    user_email = str(row[user_email_idx]).strip()
+                    if user_email and user_email not in emails_found:
+                        emails_found.append(user_email)
+                
+                # Store metadata for this row
+                if org_name or user_email:
+                    row_metadata[row_num] = {
+                        'org_name': org_name,
+                        'user_email': user_email
+                    }
+        
+        logger.info(f"🔍 Found {len(orgs_found)} organizations and {len(emails_found)} user emails")
+        
+        # Update existing questions with metadata (match by csv_row_number)
+        updated_count = 0
+        for row_num, metadata in row_metadata.items():
+            try:
+                update_sql = text("""
+                    UPDATE questions 
+                    SET org_name = :org_name, user_id_from_csv = :user_email
+                    WHERE dataset_id = :dataset_id AND csv_row_number = :row_num
+                """)
+                
+                result = db.execute(update_sql, {
+                    'org_name': metadata['org_name'],
+                    'user_email': metadata['user_email'],
+                    'dataset_id': dataset_id,
+                    'row_num': row_num
+                })
+                
+                if result.rowcount > 0:
+                    updated_count += 1
+                    
+            except Exception as e:
+                logger.error(f"❌ Failed to update row {row_num}: {e}")
+                continue
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Successfully populated {updated_count} questions with metadata",
+            "dataset_id": dataset_id,
+            "statistics": {
+                "organizations_found": len(orgs_found),
+                "user_emails_found": len(emails_found),
+                "questions_updated": updated_count,
+                "unique_organizations": orgs_found[:10],  # First 10 for preview
+                "unique_emails": emails_found[:10]  # First 10 for preview
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to populate existing dataset: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to populate dataset: {str(e)}")
+
 @router.post("/upload-and-populate-metadata/{dataset_id}")
 async def upload_and_populate_metadata(dataset_id: str, csv_content: str = Form(...), db: Session = Depends(get_db)):
     """Upload CSV content and populate metadata from real ORGNAME and USER_EMAIL columns"""

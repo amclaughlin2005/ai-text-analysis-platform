@@ -39,6 +39,24 @@ class RailwayQuestionService:
             
             question_col = None
             response_col = None
+            org_name_col = None
+            user_email_col = None
+            
+            # Look for organization name column
+            org_patterns = ['orgname', 'org_name', 'organization', 'tenant_name', 'client_name']
+            for pattern in org_patterns:
+                if pattern in header_lower:
+                    org_name_col = header_lower.index(pattern)
+                    logger.info(f"✅ Found org name pattern '{pattern}' at index {org_name_col}")
+                    break
+            
+            # Look for user email column  
+            email_patterns = ['user_email', 'email', 'user_id', 'user', 'userid']
+            for pattern in email_patterns:
+                if pattern in header_lower:
+                    user_email_col = header_lower.index(pattern)
+                    logger.info(f"✅ Found user email pattern '{pattern}' at index {user_email_col}")
+                    break
             
             # Use exact matching like DatasetService validation
             for pattern in question_patterns:
@@ -105,6 +123,20 @@ class RailwayQuestionService:
                 
                 logger.debug(f"🔄 Row {row_num}: Processing Q='{question_text[:50]}...' R='{response_text[:50]}...'")
                 
+                # Extract organization and user email data if available
+                org_name = None
+                user_email = None
+                
+                if org_name_col is not None and len(row) > org_name_col and row[org_name_col]:
+                    org_name = str(row[org_name_col]).strip()
+                    if org_name:
+                        logger.debug(f"🏢 Row {row_num}: Found org_name: {org_name}")
+                        
+                if user_email_col is not None and len(row) > user_email_col and row[user_email_col]:
+                    user_email = str(row[user_email_col]).strip()
+                    if user_email:
+                        logger.debug(f"👤 Row {row_num}: Found user_email: {user_email}")
+                
                 # Create a questions table if it doesn't exist and insert the question
                 try:
                     # First, try to create the questions table if it doesn't exist (matching Railway schema)
@@ -114,22 +146,26 @@ class RailwayQuestionService:
                             dataset_id UUID,
                             original_question TEXT,
                             ai_response TEXT,
+                            org_name VARCHAR(255),
+                            user_id_from_csv VARCHAR(255),
                             csv_row_number INTEGER NOT NULL,
                             created_at TIMESTAMP DEFAULT NOW()
                         )
                     """)
                     db.execute(create_table_sql)
                     
-                    # Now insert the question (including ALL required NOT NULL fields)
+                    # Now insert the question (including ALL required NOT NULL fields + org data)
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, original_question, ai_response, csv_row_number, is_valid, created_at, updated_at)
-                        VALUES (:id, :dataset_id, :original_question, :ai_response, :csv_row_number, :is_valid, NOW(), NOW())
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response, org_name, user_id_from_csv, csv_row_number, is_valid, created_at, updated_at)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response, :org_name, :user_id_from_csv, :csv_row_number, :is_valid, NOW(), NOW())
                     """)
                     db.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
                         'original_question': question_text[:2000],
                         'ai_response': response_text[:5000],
+                        'org_name': org_name[:255] if org_name else None,
+                        'user_id_from_csv': user_email[:255] if user_email else None,
                         'csv_row_number': row_num,
                         'is_valid': True
                     })
@@ -207,6 +243,26 @@ class RailwayQuestionService:
             # Use the same improved pattern matching logic as regular session
             header_lower = [h.lower().strip() for h in headers]
             
+            # Look for organization and email columns
+            org_name_col = None
+            user_email_col = None
+            
+            # Look for organization name column
+            org_patterns = ['orgname', 'org_name', 'organization', 'tenant_name', 'client_name']
+            for pattern in org_patterns:
+                if pattern in header_lower:
+                    org_name_col = header_lower.index(pattern)
+                    logger.info(f"✅ Autocommit: Found org name pattern '{pattern}' at index {org_name_col}")
+                    break
+            
+            # Look for user email column  
+            email_patterns = ['user_email', 'email', 'user_id', 'user', 'userid']
+            for pattern in email_patterns:
+                if pattern in header_lower:
+                    user_email_col = header_lower.index(pattern)
+                    logger.info(f"✅ Autocommit: Found user email pattern '{pattern}' at index {user_email_col}")
+                    break
+            
             # Import patterns from DatasetService to ensure consistency
             from ..services.dataset_service import DatasetService
             question_patterns = DatasetService.QUESTION_PATTERNS
@@ -261,13 +317,15 @@ class RailwayQuestionService:
             
             questions_created = 0
             
-            # First, ensure questions table exists (matching Railway schema)
+            # First, ensure questions table exists (matching Railway schema with org data)
             create_table_sql = text("""
                 CREATE TABLE IF NOT EXISTS questions (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     dataset_id UUID,
                     original_question TEXT,
                     ai_response TEXT,
+                    org_name VARCHAR(255),
+                    user_id_from_csv VARCHAR(255),
                     csv_row_number INTEGER NOT NULL,
                     created_at TIMESTAMP DEFAULT NOW()
                 )
@@ -288,17 +346,29 @@ class RailwayQuestionService:
                 if not question_text or not response_text:
                     continue
                 
+                # Extract organization and user email data if available
+                org_name = None
+                user_email = None
+                
+                if org_name_col is not None and len(row) > org_name_col and row[org_name_col]:
+                    org_name = str(row[org_name_col]).strip()
+                        
+                if user_email_col is not None and len(row) > user_email_col and row[user_email_col]:
+                    user_email = str(row[user_email_col]).strip()
+                
                 try:
-                    # Insert question with autocommit (including ALL required NOT NULL fields)
+                    # Insert question with autocommit (including ALL required NOT NULL fields + org data)
                     sql = text("""
-                        INSERT INTO questions (id, dataset_id, original_question, ai_response, csv_row_number, is_valid, created_at, updated_at)
-                        VALUES (:id, :dataset_id, :original_question, :ai_response, :csv_row_number, :is_valid, NOW(), NOW())
+                        INSERT INTO questions (id, dataset_id, original_question, ai_response, org_name, user_id_from_csv, csv_row_number, is_valid, created_at, updated_at)
+                        VALUES (:id, :dataset_id, :original_question, :ai_response, :org_name, :user_id_from_csv, :csv_row_number, :is_valid, NOW(), NOW())
                     """)
                     connection.execute(sql, {
                         'id': str(uuid.uuid4()),
                         'dataset_id': str(dataset_id),
                         'original_question': question_text[:2000],
                         'ai_response': response_text[:5000],
+                        'org_name': org_name[:255] if org_name else None,
+                        'user_id_from_csv': user_email[:255] if user_email else None,
                         'csv_row_number': row_num,
                         'is_valid': True
                     })

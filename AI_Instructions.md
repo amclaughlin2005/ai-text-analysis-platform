@@ -80,6 +80,15 @@ This is an AI-driven development project building a comprehensive web applicatio
    - **Analysis Preview**: `/api/schema/preview` - Preview what will be analyzed with current config
    - **Schema Retrieval**: `/api/schema/{dataset_id}` - Get detected schema for a dataset
 
+6. **Enhanced Word Cloud API Endpoints** (`backend/app/api/wordcloud.py`)
+   - **Optimized Generation**: `/api/wordcloud/generate-fast` - High-performance word cloud with filters
+   - **Multi-Dataset Fast**: `/api/wordcloud/generate-multi-fast` - Combine multiple datasets with filters
+   - **Filter Options**: `/api/wordcloud/filter-options/{dataset_id}` - Get unique org names and user emails
+   - **Cache Management**: `/api/wordcloud/invalidate-cache` - Clear word cloud cache
+   - **Schema Fix**: `/api/wordcloud/fix-schema` - Add missing columns to questions table
+   - **Metadata Population**: `/api/wordcloud/upload-and-populate-metadata/{dataset_id}` - Upload CSV and extract metadata
+   - **Debug Info**: `/api/wordcloud/debug/{dataset_id}` - Dataset debugging and statistics
+
 6. **Enhanced Upload System** (`frontend/components/datasets/`)
    - **Traditional Upload** (`DatasetUpload.tsx`) - CSV Q&A format with question/response columns
    - **Flexible Upload** (`FlexibleDataUpload.tsx`) - Any JSON/CSV structure with automatic schema detection
@@ -87,11 +96,21 @@ This is an AI-driven development project building a comprehensive web applicatio
    - **Smart Routing** - URL parameter support for direct append mode (`?append=datasetId&name=datasetName`)
    - **Multi-Mode Interface** - Upload page with mode switching (Upload, Flexible, List, Debug)
 
-7. **Word Cloud System** (`frontend/components/wordcloud/WordCloudVisualization.tsx`)
+7. **Word Cloud System** (`frontend/components/wordcloud/`)
    - Multi-mode support (entities, topics, sentiment, themes)
    - Interactive exploration with drill-down capability  
    - Real-time filtering and comparative analysis
    - Export functionality (PNG, SVG, PDF)
+   - **Enhanced Filter Panel** (`EnhancedFilterPanel.tsx`) - Dynamic searchable filters for org names and user emails
+   - **Modern Word Cloud** (`ModernWordCloud.tsx`) - Optimized rendering with filter integration
+   - **Simple Word Cloud** (`SimpleWordCloud.tsx`) - Main word cloud component with filter support
+
+8. **Enhanced Filtering Infrastructure** (`backend/app/services/wordcloud_service.py`)
+   - **OptimizedWordCloudService**: High-performance word cloud generation with caching
+   - **Dynamic SQL Filtering**: Build queries based on org names, user emails, date ranges
+   - **Text Validation Service**: Clean industry terms and law firm names from word clouds
+   - **Filter Options API**: Fetch unique organizations and user emails from dataset
+   - **CSV Metadata Population**: Extract and populate org/user data from uploaded CSV files
 
 4. **Dataset Table View** (`frontend/components/datasets/DatasetTableView.tsx`)
    - AG Grid React integration for high-performance data tables
@@ -123,6 +142,9 @@ This is an AI-driven development project building a comprehensive web applicatio
 - **users**: Clerk integration for user management
 - **datasets**: Enhanced with processing status and metrics
 - **questions**: Query-response pairs with NLTK analysis results
+  - **Enhanced Filtering Columns**: `org_name`, `user_id_from_csv`, `timestamp_from_csv` for advanced filtering
+  - **CSV Metadata**: Populated from original CSV files (ORGNAME, USER_EMAIL columns)
+  - **Quality Metrics**: Processing status, validation scores, sentiment analysis
 - **nltk_analysis**: Detailed analysis results (entities, topics, keywords)
 - **word_frequencies**: Word cloud data with sentiment associations
 - **analysis_jobs**: Background processing job tracking
@@ -155,6 +177,15 @@ This is an AI-driven development project building a comprehensive web applicatio
 - Background job queue with Celery
 - Status tracking and error handling
 - Concurrent processing optimization
+
+### 5. Advanced Filtering System (NEW)
+- **Dynamic Organization Filtering**: Search and filter by organization names from CSV data
+- **User Email Filtering**: Multi-select user email filtering with search capability
+- **Date Range Filtering**: Filter by timestamp ranges (exact dates or between dates)
+- **Column Selection**: Choose which text columns to include in word cloud analysis
+- **Real-time Filter API**: Live search with debounced API calls for performance
+- **CSV Metadata Integration**: Extract org names and user emails from uploaded CSV files
+- **Caching Strategy**: Intelligent caching of filter results and word cloud data
 
 ## File Structure
 
@@ -356,6 +387,14 @@ MAX_FILE_SIZE = { default = "104857600" }
 - **Confidence Scoring**: Machine learning confidence scores for all field detections
 - **Preview System**: See exactly what will be analyzed before processing
 
+### ✅ **Enhanced Word Cloud Filtering System** (JUST IMPLEMENTED ✅)
+- **Dynamic Filter API**: Real-time organization and user email filtering from CSV data
+- **Database Schema Updates**: Added `org_name`, `user_id_from_csv`, `timestamp_from_csv` columns to support advanced filtering
+- **CSV Data Population**: Upload system to populate filter metadata from original CSV files
+- **Searchable Filter UI**: Interactive organization and user email search with tag-based selection
+- **High-Performance Filtering**: Optimized backend queries with caching for large datasets
+- **Real Data Integration**: Support for extracting organization names and user emails from uploaded CSV files
+
 ### ✅ **Previous Achievements Maintained**
 - NLTK Analysis Engine Enhanced (v2.5.0) with POS tagging
 - Professional frontend with AG Grid dataset tables
@@ -426,7 +465,14 @@ The application now has a consolidated, robust architecture suitable for product
    - ✅ Append mode for adding data to existing datasets
    - ✅ URL parameter support for direct append linking
    - ✅ Smart mode switching in upload interface
-8. **🚀 CURRENT: Complete deployment testing** and ensure all production features work correctly
+8. ✅ ~~Complete advanced filtering system~~ **COMPLETED**
+   - ✅ Database schema updates with org_name, user_id_from_csv, timestamp_from_csv columns
+   - ✅ Dynamic filter API endpoints for real-time organization and user email search
+   - ✅ CSV metadata population system for extracting org names and emails from uploads
+   - ✅ Enhanced filter UI with searchable dropdowns and tag-based selection
+   - ✅ Optimized word cloud generation with comprehensive filter support
+   - ✅ Real data integration tested and validated with production dataset
+9. **🚀 CURRENT: Complete deployment testing** and ensure all production features work correctly
 9. **Implement real-time processing** with WebSocket updates and background jobs
 10. **Build comprehensive analytics dashboard** components with database-powered insights
 11. **Set up Celery workers** for background processing (async dataset processing)
