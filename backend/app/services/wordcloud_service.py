@@ -107,6 +107,162 @@ class OptimizedWordCloudService:
     """High-performance word cloud generation service"""
     
     @staticmethod
+    async def generate_word_cloud_with_filters(
+        db: Session,
+        dataset_id: str,
+        analysis_mode: str = "all",
+        limit: int = 50,
+        filters = None,  # WordCloudFilters type
+        use_cache: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Generate word cloud with comprehensive filtering support
+        
+        Args:
+            db: Database session
+            dataset_id: Dataset identifier
+            analysis_mode: Type of analysis (all, verbs, emotions, etc.)
+            limit: Maximum number of words to return
+            filters: WordCloudFilters object with all filter options
+            use_cache: Whether to use caching
+            
+        Returns:
+            Word cloud data dictionary
+        """
+        start_time = time.time()
+        
+        # Extract filter parameters
+        selected_columns = filters.selected_columns if filters else None
+        exclude_words = filters.exclude_words if filters else []
+        org_names = filters.org_names if filters else None
+        user_emails = filters.user_emails if filters else None
+        tenant_names = filters.tenant_names if filters else None
+        date_filter = filters.date_filter if filters else None
+        include_words = filters.include_words if filters else None
+        min_word_length = filters.min_word_length if filters else 3
+        max_words = filters.max_words if filters and filters.max_words else limit
+        sentiments = filters.sentiments if filters else None
+        
+        # Generate cache key including all filter parameters
+        cache_key_data = {
+            'dataset_id': dataset_id,
+            'mode': analysis_mode,
+            'limit': limit,
+            'selected_columns': selected_columns,
+            'exclude_words': sorted(exclude_words or []),
+            'org_names': sorted(org_names or []),
+            'user_emails': sorted(user_emails or []),
+            'tenant_names': sorted(tenant_names or []),
+            'date_filter': date_filter.dict() if date_filter else None,
+            'include_words': sorted(include_words or []),
+            'min_word_length': min_word_length,
+            'max_words': max_words,
+            'sentiments': sorted(sentiments or [])
+        }
+        
+        # Check cache first
+        if use_cache:
+            cache_key = hashlib.md5(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()
+            if cache_key in word_cloud_cache._cache:
+                cached_result = word_cloud_cache._cache[cache_key]
+                if time.time() - word_cloud_cache._timestamps[cache_key] <= word_cloud_cache.ttl_seconds:
+                    cached_result = cached_result.copy()
+                    cached_result['cache_hit'] = True
+                    cached_result['generation_time'] = time.time() - start_time
+                    logger.info(f"🎯 Cache HIT for filtered dataset {dataset_id}")
+                    return cached_result
+        
+        logger.info(f"🎨 Generating filtered word cloud for dataset {dataset_id} with mode {analysis_mode}")
+        
+        try:
+            # Step 1: Verify dataset exists
+            dataset_exists = await OptimizedWordCloudService._verify_dataset_exists(db, dataset_id)
+            if not dataset_exists:
+                raise ValueError("Dataset not found")
+            
+            # Step 2: Get filtered data with all filter criteria
+            text_data, tenant_info, total_questions, filtered_count = await OptimizedWordCloudService._get_filtered_text_data(
+                db, dataset_id, selected_columns, org_names, user_emails, tenant_names, date_filter
+            )
+            
+            if not text_data:
+                result = {
+                    "dataset_id": dataset_id,
+                    "analysis_mode": analysis_mode,
+                    "words": [],
+                    "word_count": 0,
+                    "total_questions": total_questions,
+                    "filtered_count": filtered_count,
+                    "message": "No questions found matching filters",
+                    "generation_time": time.time() - start_time,
+                    "cache_hit": False
+                }
+                return result
+            
+            # Step 3: Process text with all filters
+            word_counts = await OptimizedWordCloudService._process_text_with_filters(
+                text_data, analysis_mode, tenant_info, exclude_words, include_words, min_word_length
+            )
+            
+            # Step 4: Generate word cloud data
+            word_cloud_data = OptimizedWordCloudService._generate_word_cloud_data(
+                word_counts, analysis_mode, max_words
+            )
+            
+            # Step 5: Apply sentiment filtering if specified
+            if sentiments:
+                word_cloud_data = [wd for wd in word_cloud_data if wd['sentiment'] in sentiments]
+            
+            # Step 6: Final validation
+            word_cloud_data = TextValidationService.validate_word_list(
+                word_cloud_data,
+                tenant_info=tenant_info,
+                additional_blacklist=exclude_words
+            )
+            
+            generation_time = time.time() - start_time
+            
+            result = {
+                "dataset_id": dataset_id,
+                "analysis_mode": analysis_mode,
+                "words": word_cloud_data,
+                "word_count": len(word_cloud_data),
+                "total_questions": total_questions,
+                "filtered_count": filtered_count,
+                "filters_applied": {
+                    "columns": selected_columns,
+                    "org_names": org_names,
+                    "user_emails": user_emails,
+                    "tenant_names": tenant_names,
+                    "date_filter": date_filter.dict() if date_filter else None,
+                    "sentiments": sentiments
+                },
+                "success": True,
+                "generation_time": generation_time,
+                "cache_hit": False
+            }
+            
+            # Cache the result
+            if use_cache:
+                cache_key = hashlib.md5(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()
+                with word_cloud_cache._lock:
+                    if len(word_cloud_cache._cache) >= word_cloud_cache.max_size:
+                        oldest_key = min(word_cloud_cache._timestamps.keys(), key=lambda k: word_cloud_cache._timestamps[k])
+                        del word_cloud_cache._cache[oldest_key]
+                        del word_cloud_cache._timestamps[oldest_key]
+                    
+                    word_cloud_cache._cache[cache_key] = result
+                    word_cloud_cache._timestamps[cache_key] = time.time()
+                    logger.info(f"💾 Cached filtered result for dataset {dataset_id}")
+            
+            logger.info(f"✅ Generated filtered word cloud with {len(word_cloud_data)} words in {generation_time:.2f}s")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Filtered word cloud generation failed for dataset {dataset_id}: {e}")
+            raise
+    
+    @staticmethod
     async def generate_word_cloud(
         db: Session,
         dataset_id: str,
@@ -221,6 +377,120 @@ class OptimizedWordCloudService:
             return False
     
     @staticmethod
+    async def _get_filtered_text_data(
+        db: Session, 
+        dataset_id: str, 
+        selected_columns: Optional[List[int]] = None,
+        org_names: Optional[List[str]] = None,
+        user_emails: Optional[List[str]] = None,
+        tenant_names: Optional[List[str]] = None,
+        date_filter = None
+    ) -> Tuple[str, Dict, int, int]:
+        """
+        Get text data with comprehensive filtering
+        Returns: (text_data, tenant_info, total_questions, filtered_count)
+        """
+        try:
+            # Build dynamic query based on filters
+            where_conditions = ["dataset_id = :dataset_id"]
+            query_params = {"dataset_id": dataset_id}
+            
+            # Date filtering
+            if date_filter:
+                if date_filter.exact_date:
+                    where_conditions.append("DATE(timestamp) = :exact_date")
+                    query_params["exact_date"] = date_filter.exact_date
+                else:
+                    if date_filter.start_date:
+                        where_conditions.append("DATE(timestamp) >= :start_date")
+                        query_params["start_date"] = date_filter.start_date
+                    if date_filter.end_date:
+                        where_conditions.append("DATE(timestamp) <= :end_date")
+                        query_params["end_date"] = date_filter.end_date
+            
+            # Organization filtering
+            if org_names:
+                org_placeholders = ','.join([f':org_{i}' for i in range(len(org_names))])
+                where_conditions.append(f"(LOWER(org_name) IN ({org_placeholders}) OR LOWER(tenant_name) IN ({org_placeholders}))")
+                for i, org in enumerate(org_names):
+                    query_params[f'org_{i}'] = org.lower()
+            
+            # Tenant filtering
+            if tenant_names:
+                tenant_placeholders = ','.join([f':tenant_{i}' for i in range(len(tenant_names))])
+                where_conditions.append(f"LOWER(tenant_name) IN ({tenant_placeholders})")
+                for i, tenant in enumerate(tenant_names):
+                    query_params[f'tenant_{i}'] = tenant.lower()
+            
+            # User email filtering
+            if user_emails:
+                email_placeholders = ','.join([f':email_{i}' for i in range(len(user_emails))])
+                where_conditions.append(f"LOWER(user_email) IN ({email_placeholders})")
+                for i, email in enumerate(user_emails):
+                    query_params[f'email_{i}'] = email.lower()
+            
+            # Get total count first
+            count_sql = text("SELECT COUNT(*) FROM questions WHERE " + " AND ".join(where_conditions))
+            total_questions = db.execute(count_sql, query_params).scalar() or 0
+            
+            if total_questions == 0:
+                return "", {}, 0, 0
+            
+            logger.info(f"📊 Processing {total_questions} filtered questions from dataset {dataset_id}")
+            
+            # Determine which columns to select based on selected_columns filter
+            column_selection = []
+            if not selected_columns or 1 in selected_columns:
+                column_selection.append("original_question")
+            if not selected_columns or 2 in selected_columns:
+                column_selection.append("ai_response")
+            
+            if not column_selection:
+                column_selection = ["original_question", "ai_response"]  # Default to both
+            
+            # Build the main query
+            select_columns = ", ".join(column_selection + ["org_name", "tenant_name", "user_email"])
+            questions_sql = text(f"""
+                SELECT {select_columns}
+                FROM questions 
+                WHERE {" AND ".join(where_conditions)}
+                AND ({" IS NOT NULL OR ".join(column_selection)} IS NOT NULL)
+            """)
+            
+            questions_result = db.execute(questions_sql, query_params).fetchall()
+            filtered_count = len(questions_result)
+            
+            # Build text efficiently
+            text_parts = []
+            tenant_info = {}
+            
+            for row in questions_result:
+                # Extract tenant info from first row
+                if not tenant_info:
+                    tenant_info = {
+                        'tenant_name': getattr(row, 'tenant_name', None),
+                        'org_name': getattr(row, 'org_name', None),
+                        'user_email': getattr(row, 'user_email', None)
+                    }
+                
+                # Add text based on selected columns
+                if not selected_columns or 1 in selected_columns:
+                    if hasattr(row, 'original_question') and row.original_question:
+                        text_parts.append(str(row.original_question))
+                
+                if not selected_columns or 2 in selected_columns:
+                    if hasattr(row, 'ai_response') and row.ai_response:
+                        text_parts.append(str(row.ai_response))
+            
+            all_text = " ".join(text_parts)
+            
+            return all_text, tenant_info, total_questions, filtered_count
+            
+        except Exception as e:
+            logger.error(f"Error getting filtered text data for dataset {dataset_id}: {e}")
+            return "", {}, 0, 0
+    
+    @staticmethod
     async def _get_optimized_text_data(db: Session, dataset_id: str) -> Tuple[str, Dict, int]:
         """
         Get text data with optimized database query
@@ -319,6 +589,45 @@ class OptimizedWordCloudService:
         except Exception as e:
             logger.error(f"Error in chunked text processing: {e}")
             return "", {}, 0
+    
+    @staticmethod
+    async def _process_text_with_filters(
+        text_data: str, 
+        analysis_mode: str, 
+        tenant_info: Dict, 
+        exclude_words: List[str],
+        include_words: Optional[List[str]] = None,
+        min_word_length: int = 3
+    ) -> Counter:
+        """Process text with comprehensive filtering support"""
+        
+        # Clean text first
+        cleaned_text = TextValidationService.clean_text_for_analysis(
+            text_data, 
+            tenant_info=tenant_info,
+            additional_blacklist=exclude_words
+        )
+        
+        # For very large text, split processing
+        if len(cleaned_text) > 1000000:  # 1MB of text
+            word_counts = await OptimizedWordCloudService._process_large_text_parallel(cleaned_text, analysis_mode)
+        else:
+            word_counts = OptimizedWordCloudService._process_text_mode(cleaned_text, analysis_mode)
+        
+        # Apply additional filters
+        filtered_counts = Counter()
+        for word, count in word_counts.items():
+            # Apply minimum length filter
+            if len(word) < min_word_length:
+                continue
+            
+            # Apply include words filter (if specified, only include these words)
+            if include_words and word.lower() not in [w.lower() for w in include_words]:
+                continue
+            
+            filtered_counts[word] = count
+        
+        return filtered_counts
     
     @staticmethod
     async def _process_text_parallel(

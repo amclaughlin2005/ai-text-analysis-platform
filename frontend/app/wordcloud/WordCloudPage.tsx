@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import SimpleWordCloud from '@/components/wordcloud/SimpleWordCloud';
 import DatasetSelector from '@/components/datasets/DatasetSelector';
+import EnhancedFilterPanel, { EnhancedFilters } from '@/components/wordcloud/EnhancedFilterPanel';
 import { WordCloudFilters } from '@/lib/types';
 import { Database, Users, Sparkles } from 'lucide-react';
 
@@ -42,7 +43,11 @@ const ANALYSIS_MODES = [
 
 export default function WordCloud() {
   const [selectedMode, setSelectedMode] = useState<string>('all');
-  const filters: WordCloudFilters = {};
+  const [filters, setFilters] = useState<EnhancedFilters>({
+    selected_columns: [1, 2], // Default: questions + responses
+    max_words: 100,
+    min_word_length: 3
+  });
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   
   // Dataset selection state
@@ -71,6 +76,15 @@ export default function WordCloud() {
   return (
     <div className="bg-gray-50 min-h-full">
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+        {/* Enhanced Filter Panel */}
+        <EnhancedFilterPanel
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableOrgs={[]} // TODO: Fetch from API
+          availableEmails={[]} // TODO: Fetch from API
+          availableTenants={[]} // TODO: Fetch from API
+        />
 
         {/* Compact Controls Row */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">

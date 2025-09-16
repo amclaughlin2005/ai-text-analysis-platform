@@ -15,6 +15,33 @@ from ..services.wordcloud_service import OptimizedWordCloudService
 logger = get_logger(__name__)
 router = APIRouter()
 
+# Enhanced filter models
+class DateFilter(BaseModel):
+    start_date: Optional[str] = None  # ISO format: YYYY-MM-DD
+    end_date: Optional[str] = None    # ISO format: YYYY-MM-DD
+    exact_date: Optional[str] = None  # ISO format: YYYY-MM-DD
+
+class WordCloudFilters(BaseModel):
+    # Column filtering
+    selected_columns: Optional[List[int]] = None  # [1] = questions only, [2] = responses only, [1,2] = both
+    
+    # Content filtering
+    org_names: Optional[List[str]] = None        # Filter by organization names
+    user_emails: Optional[List[str]] = None      # Filter by user emails
+    tenant_names: Optional[List[str]] = None     # Filter by tenant names
+    
+    # Date filtering
+    date_filter: Optional[DateFilter] = None
+    
+    # Text filtering
+    exclude_words: Optional[List[str]] = None
+    include_words: Optional[List[str]] = None
+    min_word_length: Optional[int] = 3
+    max_words: Optional[int] = 100
+    
+    # Sentiment filtering
+    sentiments: Optional[List[str]] = None       # ['positive', 'negative', 'neutral']
+
 # Request models
 class WordCloudRequest(BaseModel):
     dataset_id: str
@@ -22,9 +49,12 @@ class WordCloudRequest(BaseModel):
     analysis_mode: Optional[str] = None  # Alternative name
     max_words: int = 50
     limit: Optional[int] = None  # Alternative name
-    selected_columns: Optional[List[int]] = None
-    exclude_words: Optional[List[str]] = None
-    filters: Optional[dict] = None
+    selected_columns: Optional[List[int]] = None  # Backward compatibility
+    exclude_words: Optional[List[str]] = None     # Backward compatibility
+    filters: Optional[WordCloudFilters] = None    # Enhanced filters
+    
+    # Legacy support
+    legacy_filters: Optional[dict] = None
 
 class MultiWordCloudRequest(BaseModel):
     dataset_ids: List[str]
@@ -32,9 +62,12 @@ class MultiWordCloudRequest(BaseModel):
     analysis_mode: Optional[str] = None  # Alternative name
     max_words: int = 50
     limit: Optional[int] = None  # Alternative name
-    selected_columns: Optional[List[int]] = None
-    exclude_words: Optional[List[str]] = None
-    filters: Optional[dict] = None
+    selected_columns: Optional[List[int]] = None  # Backward compatibility
+    exclude_words: Optional[List[str]] = None     # Backward compatibility
+    filters: Optional[WordCloudFilters] = None    # Enhanced filters
+    
+    # Legacy support
+    legacy_filters: Optional[dict] = None
 
 # Word cloud generation endpoints
 @router.post("/generate-fast")
@@ -42,23 +75,38 @@ async def generate_wordcloud_optimized(
     request: WordCloudRequest,
     db: Session = Depends(get_db)
 ):
-    """Generate word cloud data using optimized service for better performance"""
+    """Generate word cloud data using optimized service with enhanced filtering"""
     try:
-        # Extract parameters from request
+        # Extract parameters from request with backward compatibility
         dataset_id = request.dataset_id
         analysis_mode = request.analysis_mode or request.mode
         limit = request.limit or request.max_words
-        exclude_words = request.exclude_words or []
-        selected_columns = request.selected_columns
         
-        # Use optimized service
-        result = await OptimizedWordCloudService.generate_word_cloud(
+        # Handle filters - merge new and legacy formats
+        filters = request.filters
+        if not filters and (request.exclude_words or request.selected_columns or request.legacy_filters):
+            # Create filters from legacy parameters
+            filters = WordCloudFilters(
+                selected_columns=request.selected_columns,
+                exclude_words=request.exclude_words,
+                max_words=limit
+            )
+            
+            # Handle legacy_filters dict if present
+            if request.legacy_filters:
+                legacy = request.legacy_filters
+                if 'excludeWords' in legacy:
+                    filters.exclude_words = legacy['excludeWords']
+                if 'maxWords' in legacy:
+                    filters.max_words = legacy['maxWords']
+        
+        # Use optimized service with enhanced filters
+        result = await OptimizedWordCloudService.generate_word_cloud_with_filters(
             db=db,
             dataset_id=dataset_id,
             analysis_mode=analysis_mode,
             limit=limit,
-            exclude_words=exclude_words,
-            selected_columns=selected_columns,
+            filters=filters,
             use_cache=True
         )
         

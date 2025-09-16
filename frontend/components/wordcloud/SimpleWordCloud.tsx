@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Download, Settings, Filter, LayoutGrid, List, ChevronDown, ChevronUp } from 'lucide-react';
 import { WordCloudData, WordCloudFilters } from '@/lib/types';
+import { EnhancedFilters } from './EnhancedFilterPanel';
 import { cn, getSentimentColor, formatNumber } from '@/lib/utils';
 import ColumnFilterSelector from './ColumnFilterSelector';
 import ModernWordCloud from './ModernWordCloud';
@@ -13,7 +14,7 @@ interface SimpleWordCloudProps {
   datasetId?: string; // Single dataset (for backwards compatibility)
   datasetIds?: string[]; // Multiple datasets (new feature)
   mode: 'all' | 'verbs' | 'themes' | 'emotions' | 'entities' | 'topics';
-  filters: WordCloudFilters;
+  filters: EnhancedFilters | WordCloudFilters; // Support both filter types
   selectedColumns?: number[];
   showColumnFilter?: boolean;
   onWordClick?: (word: string, data: WordCloudData) => void;
@@ -294,16 +295,34 @@ export default function SimpleWordCloud({
         let apiPayload: any;
         let endpoint: string;
         
+        // Convert enhanced filters to API format
+        const enhancedFilters = filters as EnhancedFilters;
+        const legacyFilters = filters as WordCloudFilters;
+        
+        // Determine columns to use
+        const columnsToUse = enhancedFilters.selected_columns || selectedColumns || [1, 2];
+        
+        // Build filters object for API
+        const apiFilters = {
+          selected_columns: columnsToUse,
+          exclude_words: enhancedFilters.exclude_words || legacyFilters?.excludeWords || [],
+          include_words: enhancedFilters.include_words,
+          org_names: enhancedFilters.org_names,
+          user_emails: enhancedFilters.user_emails,
+          tenant_names: enhancedFilters.tenant_names,
+          date_filter: enhancedFilters.date_filter,
+          min_word_length: enhancedFilters.min_word_length || 3,
+          max_words: enhancedFilters.max_words || legacyFilters?.maxWords || 100,
+          sentiments: enhancedFilters.sentiments
+        };
+
         if (isMultiDataset) {
           // Use multi-dataset endpoint
           console.log('🚀 Using multi-dataset API for combined analysis');
           apiPayload = {
             dataset_ids: datasetsToUse,
             mode: mode,
-            selected_columns: selectedColumns,
-            exclude_words: filters?.excludeWords,
-            max_words: filters?.maxWords || 100,
-            filters: filters
+            filters: apiFilters
           };
           endpoint = `${API_BASE_URL}/api/wordcloud/generate-multi-fast`;
         } else {
@@ -312,10 +331,7 @@ export default function SimpleWordCloud({
           apiPayload = {
             dataset_id: datasetsToUse[0],
             mode: mode,
-            selected_columns: selectedColumns,
-            exclude_words: filters?.excludeWords,
-            max_words: filters?.maxWords || 100,
-            filters: filters
+            filters: apiFilters
           };
           endpoint = `${API_BASE_URL}/api/wordcloud/generate-fast`;
         }
