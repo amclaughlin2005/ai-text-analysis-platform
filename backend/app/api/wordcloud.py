@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
 from pydantic import BaseModel
+from collections import Counter
 from ..core.database import get_db
 from ..core.logging import get_logger
 from ..services.text_validation_service import TextValidationService
@@ -129,8 +130,6 @@ async def generate_wordcloud(
 ):
     """Generate word cloud data from dataset questions"""
     try:
-        from sqlalchemy import text
-        from collections import Counter
         import re
         
         # Extract parameters from request
@@ -341,8 +340,6 @@ async def generate_multi_wordcloud(
 ):
     """Generate word cloud data from multiple datasets combined"""
     try:
-        from sqlalchemy import text
-        from collections import Counter
         import re
         
         # Extract parameters from request
@@ -1164,7 +1161,6 @@ async def populate_from_dataset_specific_csv(dataset_id: str, db: Session = Depe
         import io
         import os
         from datetime import datetime
-        from collections import Counter
         
         # Get dataset info
         dataset_sql = text("SELECT name, file_path FROM datasets WHERE id = :dataset_id")
@@ -1316,7 +1312,6 @@ async def populate_existing_dataset_from_csv(
         
         import csv
         import io
-        from collections import Counter
         
         # Parse the CSV
         csv_reader = csv.reader(io.StringIO(content_str))
@@ -1437,7 +1432,6 @@ async def upload_and_populate_metadata(dataset_id: str, csv_content: str = Form(
     try:
         import csv
         import io
-        from collections import Counter
         
         # Parse the uploaded CSV content
         csv_reader = csv.reader(io.StringIO(csv_content))
