@@ -45,6 +45,7 @@ interface EnhancedFilterPanelProps {
   availableTenants?: string[];
   datasetIds?: string[]; // Add dataset IDs to fetch filter options
   className?: string;
+  sidebarMode?: boolean; // New prop to control sidebar behavior
 }
 
 const COLUMN_PRESETS = [
@@ -88,9 +89,10 @@ export default function EnhancedFilterPanel({
   availableEmails = [],
   availableTenants = [],
   datasetIds = [],
-  className
+  className,
+  sidebarMode = false
 }: EnhancedFilterPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(sidebarMode); // Auto-expand in sidebar mode
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [newWord, setNewWord] = useState('');
   const [newExcludeWord, setNewExcludeWord] = useState('');
@@ -212,42 +214,61 @@ export default function EnhancedFilterPanel({
   };
 
   return (
-    <div className={cn("bg-white border border-gray-200 rounded-lg shadow-sm", className)}>
-      {/* Filter Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <Filter className="h-5 w-5 text-gray-500" />
-          <span className="font-medium text-gray-900">Filters</span>
-          {activeFilterCount > 0 && (
-            <span className="px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full">
-              {activeFilterCount} active
-            </span>
-          )}
+    <div className={cn("bg-white", !sidebarMode && "border border-gray-200 rounded-lg shadow-sm", className)}>
+      {/* Filter Header - Only show in non-sidebar mode */}
+      {!sidebarMode && (
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <Filter className="h-5 w-5 text-gray-500" />
+            <span className="font-medium text-gray-900">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full">
+                {activeFilterCount} active
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearAllFilters}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Clear all
+              </button>
+            )}
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1 hover:bg-gray-100 rounded"
+            >
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              )}
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {activeFilterCount > 0 && (
+      )}
+      
+      {/* Sidebar Mode: Show clear all button at top */}
+      {sidebarMode && activeFilterCount > 0 && (
+        <div className="p-4 border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">
+              {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+            </span>
             <button
               onClick={clearAllFilters}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               Clear all
             </button>
-          )}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4 text-gray-500" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-gray-500" />
-            )}
-          </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <AnimatePresence>
-        {isExpanded && (
+        {(isExpanded || sidebarMode) && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}

@@ -74,21 +74,11 @@ export default function WordCloud() {
 
 
   return (
-    <div className="bg-gray-50 min-h-full">
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-
-            {/* Enhanced Filter Panel */}
-            <EnhancedFilterPanel
-              filters={filters}
-              onFiltersChange={setFilters}
-              datasetIds={selectedDatasets} // Pass selected datasets for dynamic filtering
-              availableOrgs={[]}
-              availableEmails={[]}
-              availableTenants={[]}
-            />
-
-        {/* Compact Controls Row */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-[1920px] mx-auto px-4 py-6">
+        
+        {/* Compact Controls Row - Top */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Analysis Mode - Compact Horizontal */}
@@ -151,71 +141,111 @@ export default function WordCloud() {
           </div>
         </div>
 
-        {/* Word Cloud - Now Prominent and Higher */}
-        {selectedDatasets.length > 0 ? (
-          <div className="bg-white rounded-lg border border-primary-200 shadow-lg overflow-hidden">
-            <div className="px-4 py-3 border-b bg-gradient-to-r from-primary-50 to-primary-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-primary-900">
-                    {selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Analysis
-                  </h2>
-                  <p className="text-sm text-primary-700">
-                    {selectedDatasets.length === 1 
-                      ? `Dataset ${selectedDatasets[0].slice(0, 8)}...` 
-                      : `${selectedDatasets.length} datasets combined`}
-                  </p>
-                </div>
-                <div className="text-xs text-primary-600 text-right">
-                  <div>Interactive • Click words to explore</div>
-                  <div>Auto-filtered • Column selection available</div>
-                </div>
+        {/* Main Content Area - Side by Side Layout */}
+        <div className="flex gap-6 h-[calc(100vh-200px)]">
+          
+          {/* Left Side Panel - Filters */}
+          <div className="w-80 flex-shrink-0">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm h-full overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 z-10">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Database className="h-5 w-5 text-primary-600" />
+                  Filters & Options
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Customize your word cloud analysis
+                </p>
+              </div>
+              
+              <div className="p-0">
+                <EnhancedFilterPanel
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  datasetIds={selectedDatasets}
+                  availableOrgs={[]}
+                  availableEmails={[]}
+                  availableTenants={[]}
+                  className="border-0 rounded-none"
+                  sidebarMode={true}
+                />
               </div>
             </div>
-            <SimpleWordCloud
-              datasetIds={selectedDatasets}
-              mode={selectedMode as any}
-              filters={filters}
-              selectedColumns={selectedColumns}
-              showColumnFilter={true}
-              onWordClick={handleWordClick}
-              onColumnsChange={setSelectedColumns}
-              className="w-full"
-            />
           </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
-            <Database className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Select Dataset to Begin
-            </h3>
-            <p className="text-gray-600 text-sm">
-              Choose a dataset above to generate your word cloud analysis.
-            </p>
-          </div>
-        )}
 
-        {/* Selected Word Info - Above Features */}
+          {/* Right Main Area - Word Cloud */}
+          <div className="flex-1 min-w-0">
+            {selectedDatasets.length > 0 ? (
+              <div className="bg-white rounded-lg border border-primary-200 shadow-lg overflow-hidden h-full flex flex-col">
+                <div className="px-4 py-3 border-b bg-gradient-to-r from-primary-50 to-primary-100 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-primary-900">
+                        {selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Analysis
+                      </h2>
+                      <p className="text-sm text-primary-700">
+                        {selectedDatasets.length === 1 
+                          ? `Dataset ${selectedDatasets[0].slice(0, 8)}...` 
+                          : `${selectedDatasets.length} datasets combined`}
+                      </p>
+                    </div>
+                    <div className="text-xs text-primary-600 text-right">
+                      <div>Interactive • Click words to explore</div>
+                      <div>Auto-filtered • Column selection available</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <SimpleWordCloud
+                    datasetIds={selectedDatasets}
+                    mode={selectedMode as any}
+                    filters={filters}
+                    selectedColumns={selectedColumns}
+                    showColumnFilter={true}
+                    onWordClick={handleWordClick}
+                    onColumnsChange={setSelectedColumns}
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm h-full flex items-center justify-center">
+                <div className="text-center">
+                  <Database className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">
+                    Select Dataset to Begin
+                  </h3>
+                  <p className="text-gray-600">
+                    Choose a dataset above to generate your word cloud analysis.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Selected Word Info - Floating Bottom Right */}
         {selectedWord && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+            className="fixed bottom-6 right-6 bg-blue-600 text-white rounded-lg shadow-lg p-4 z-50 max-w-sm"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-blue-900">
+                <h4 className="font-semibold text-white mb-1">
                   Selected: &quot;{selectedWord}&quot;
-                </h3>
-                <p className="text-blue-700 text-sm">
-                  Explore usage patterns and contextual relationships for this word.
+                </h4>
+                <p className="text-blue-100 text-sm">
+                  Click for detailed analysis
                 </p>
               </div>
               <button
                 onClick={() => setSelectedWord(null)}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                className="ml-3 text-blue-200 hover:text-white transition-colors"
               >
-                Clear
+                ✕
               </button>
             </div>
           </motion.div>
