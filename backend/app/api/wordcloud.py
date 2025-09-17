@@ -3,7 +3,7 @@ Word Cloud API endpoints
 Provides multi-mode word cloud generation and interactive features
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Form
+from fastapi import APIRouter, HTTPException, Depends, Form, File, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
