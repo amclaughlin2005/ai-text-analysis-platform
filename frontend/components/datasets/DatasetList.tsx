@@ -311,6 +311,65 @@ export default function DatasetList({
     });
   };
 
+  const handleBulkMerge = async () => {
+    const selectedCount = state.bulkSelectedDatasets.size;
+    if (selectedCount < 2) {
+      toast.error('Select at least 2 datasets to merge');
+      return;
+    }
+
+    const selectedDatasets = state.datasets.filter(d => state.bulkSelectedDatasets.has(d.id));
+    const totalQuestions = selectedDatasets.reduce((sum, d) => sum + (d.questions_count || d.total_questions || 0), 0);
+    
+    const mergedName = prompt(`Enter name for merged dataset (${selectedCount} datasets, ${totalQuestions} questions):`);
+    if (!mergedName) return;
+
+    const deleteSource = confirm('Delete source datasets after merge? (This cannot be undone)');
+
+    try {
+      setState(prev => ({ ...prev, loading: true }));
+      
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
+      
+      const formData = new FormData();
+      Array.from(state.bulkSelectedDatasets).forEach(id => {
+        formData.append('source_dataset_ids', id);
+      });
+      formData.append('target_name', mergedName);
+      formData.append('delete_source', deleteSource.toString());
+      
+      const response = await fetch(`${API_BASE_URL}/api/datasets/merge`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `Merge failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      toast.success(`Successfully merged ${result.total_source_datasets} datasets into "${result.target_dataset_name}"!`, {
+        duration: 5000
+      });
+
+      // Refresh the dataset list and clear selections
+      await fetchDatasets();
+      setState(prev => ({ 
+        ...prev, 
+        bulkSelectedDatasets: new Set<string>(),
+        bulkMode: false
+      }));
+
+    } catch (error) {
+      console.error('Merge failed:', error);
+      toast.error(`Merge failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
   // Handle dataset deletion
   const handleDelete = async (datasetId: string, datasetName: string) => {
     if (!confirm(`Are you sure you want to delete "${datasetName}"? This action cannot be undone.`)) {
@@ -469,7 +528,7 @@ export default function DatasetList({
                 Export
               </button>
               <button
-                onClick={() => toast('Merge functionality coming soon!', { icon: '🔗' })}
+                onClick={handleBulkMerge}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-primary-700 hover:text-primary-800 hover:bg-primary-100 rounded-lg transition-colors"
               >
                 <Merge className="h-4 w-4" />

@@ -327,3 +327,156 @@ async def append_data_to_dataset(
             status_code=500,
             detail=f"Append operation failed: {str(e)}"
         )
+
+@router.post("/merge")
+async def merge_datasets(
+    source_dataset_ids: List[str] = Form(..., description="List of dataset IDs to merge"),
+    target_name: str = Form(..., description="Name for the new merged dataset"),
+    target_description: Optional[str] = Form(None, description="Optional description for merged dataset"),
+    delete_source: bool = Form(False, description="Whether to delete source datasets after merge"),
+    db: Session = Depends(get_db)
+):
+    """Merge multiple datasets into a new dataset"""
+    try:
+        import uuid
+        from ..models.dataset import Dataset
+        from ..models.question import Question
+        
+        logger.info(f"🔗 Starting merge operation: {len(source_dataset_ids)} datasets -> '{target_name}'")
+        
+        if len(source_dataset_ids) < 2:
+            raise HTTPException(status_code=400, detail="At least 2 datasets required for merge")
+        
+        # Verify all source datasets exist
+        source_datasets = []
+        total_questions = 0
+        
+        for dataset_id in source_dataset_ids:
+            dataset_sql = text("SELECT id, name, filename FROM datasets WHERE id = :dataset_id")
+            dataset_result = db.execute(dataset_sql, {"dataset_id": dataset_id}).fetchone()
+            
+            if not dataset_result:
+                raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} not found")
+            
+            # Count questions in this dataset
+            count_sql = text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id")
+            question_count = db.execute(count_sql, {"dataset_id": dataset_id}).scalar()
+            
+            source_datasets.append({
+                "id": dataset_result[0],
+                "name": dataset_result[1], 
+                "filename": dataset_result[2],
+                "question_count": question_count
+            })
+            total_questions += question_count
+            
+        if total_questions == 0:
+            raise HTTPException(status_code=400, detail="No questions found in source datasets")
+        
+        logger.info(f"📊 Source datasets validation complete: {total_questions} total questions")
+        
+        # Create new target dataset
+        target_dataset_id = str(uuid.uuid4())
+        
+        create_dataset_sql = text("""
+            INSERT INTO datasets (id, name, filename, file_size, created_at, updated_at, upload_status, processing_status, status)
+            VALUES (:id, :name, :filename, :file_size, NOW(), NOW(), 'completed', 'completed', 'completed')
+        """)
+        
+        merged_filename = f"merged_{len(source_dataset_ids)}_datasets.json"
+        estimated_size = total_questions * 500  # Rough estimate
+        
+        db.execute(create_dataset_sql, {
+            "id": target_dataset_id,
+            "name": target_name,
+            "filename": merged_filename,
+            "file_size": estimated_size
+        })
+        
+        # Copy all questions from source datasets to target dataset
+        questions_copied = 0
+        
+        for source_dataset in source_datasets:
+            copy_questions_sql = text("""
+                INSERT INTO questions (id, dataset_id, original_question, ai_response, org_name, user_id_from_csv, csv_row_number, is_valid, created_at, updated_at)
+                SELECT 
+                    UUID() as id,
+                    :target_dataset_id as dataset_id,
+                    original_question,
+                    ai_response, 
+                    org_name,
+                    user_id_from_csv,
+                    csv_row_number,
+                    is_valid,
+                    NOW() as created_at,
+                    NOW() as updated_at
+                FROM questions 
+                WHERE dataset_id = :source_dataset_id
+            """)
+            
+            result = db.execute(copy_questions_sql, {
+                "target_dataset_id": target_dataset_id,
+                "source_dataset_id": source_dataset["id"]
+            })
+            
+            copied_count = result.rowcount if hasattr(result, 'rowcount') else source_dataset["question_count"]
+            questions_copied += copied_count
+            
+            logger.info(f"✅ Copied {copied_count} questions from dataset '{source_dataset['name']}'")
+        
+        # Update target dataset with actual question count
+        update_dataset_sql = text("""
+            UPDATE datasets 
+            SET file_size = :actual_size
+            WHERE id = :dataset_id
+        """)
+        
+        db.execute(update_dataset_sql, {
+            "dataset_id": target_dataset_id,
+            "actual_size": questions_copied * 100  # More accurate estimate
+        })
+        
+        # Delete source datasets if requested
+        deleted_datasets = []
+        if delete_source:
+            for source_dataset in source_datasets:
+                try:
+                    # Delete questions first
+                    delete_questions_sql = text("DELETE FROM questions WHERE dataset_id = :dataset_id")
+                    db.execute(delete_questions_sql, {"dataset_id": source_dataset["id"]})
+                    
+                    # Delete dataset
+                    delete_dataset_sql = text("DELETE FROM datasets WHERE id = :dataset_id")
+                    db.execute(delete_dataset_sql, {"dataset_id": source_dataset["id"]})
+                    
+                    deleted_datasets.append(source_dataset["name"])
+                    logger.info(f"🗑️ Deleted source dataset '{source_dataset['name']}'")
+                    
+                except Exception as delete_error:
+                    logger.warning(f"⚠️ Failed to delete dataset {source_dataset['id']}: {delete_error}")
+        
+        # Commit all changes
+        db.commit()
+        
+        logger.info(f"🎉 Merge completed successfully: {questions_copied} questions in new dataset '{target_name}'")
+        
+        return {
+            "success": True,
+            "message": f"Successfully merged {len(source_dataset_ids)} datasets",
+            "target_dataset_id": target_dataset_id,
+            "target_dataset_name": target_name,
+            "questions_merged": questions_copied,
+            "source_datasets": [ds["name"] for ds in source_datasets],
+            "deleted_datasets": deleted_datasets if delete_source else [],
+            "total_source_datasets": len(source_dataset_ids)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Dataset merge failed: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Merge operation failed: {str(e)}"
+        )
