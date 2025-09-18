@@ -238,7 +238,7 @@ export default function SimpleWordCloud({
   datasetIds,
   mode, 
   filters, 
-  selectedColumns = [1, 2], // Default: questions and responses
+  selectedColumns = [1], // Default: questions only
   showColumnFilter = false,
   onWordClick,
   onColumnsChange,

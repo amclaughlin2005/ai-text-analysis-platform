@@ -44,7 +44,7 @@ const ANALYSIS_MODES = [
 export default function WordCloud() {
   const [selectedMode, setSelectedMode] = useState<string>('all');
   const [filters, setFilters] = useState<EnhancedFilters>({
-    selected_columns: [1, 2], // Default: questions + responses
+    selected_columns: [1], // Default: questions only 
     max_words: 100,
     min_word_length: 3
   });
@@ -52,7 +52,7 @@ export default function WordCloud() {
   
   // Dataset selection state
   const [selectedDatasets, setSelectedDatasets] = useState<string[]>([]);
-  const [selectedColumns, setSelectedColumns] = useState<number[]>([1, 2]); // Default: questions + responses
+  const [selectedColumns, setSelectedColumns] = useState<number[]>([1]); // Default: questions only
   
   // Check for dataset parameter in URL on load
   useEffect(() => {
