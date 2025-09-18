@@ -677,14 +677,15 @@ export default function SimpleWordCloud({
       {/* Word Cloud Display - Conditional based on viewMode */}
       {!error && (
         <div className="p-4">
-          <div className="w-full overflow-x-auto">
+          <div className="w-full">
             {viewMode === 'cloud' ? (
-              <div className="min-w-[1200px] w-full flex justify-center">
-                <ModernWordCloud
-                  datasetId={datasetsToUse[0] || ''}
-                  mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
-                  height={600}
-                  width={1200}
+              <div className="w-full flex justify-center">
+                <div className="w-full max-w-[900px]"> {/* Responsive container */}
+                  <ModernWordCloud
+                    datasetId={datasetsToUse[0] || ''}
+                    mode={mode === 'verbs' ? 'verbs' : mode === 'themes' ? 'all' : mode}
+                    height={600}
+                    width={900} // Fixed width that fits well in sidebar layout
                   words={words}
                   theme="vibrant"
                   showThemeSelector={true}
@@ -699,9 +700,10 @@ export default function SimpleWordCloud({
                   }}
                   className="rounded-lg border"
                 />
+                </div>
               </div>
             ) : (
-              <div className="min-w-[1200px] w-full flex justify-center">
+              <div className="w-full flex justify-center">
                 <SimpleTextView
                   words={words}
                   selectedWord={selectedWord}
