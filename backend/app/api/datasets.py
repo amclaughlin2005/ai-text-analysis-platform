@@ -379,18 +379,31 @@ async def merge_datasets(
         target_dataset_id = str(uuid.uuid4())
         
         create_dataset_sql = text("""
-            INSERT INTO datasets (id, name, filename, file_size, created_at, updated_at, upload_status, processing_status, status)
-            VALUES (:id, :name, :filename, :file_size, NOW(), NOW(), 'completed', 'completed', 'completed')
+            INSERT INTO datasets (id, name, filename, file_size, file_path, original_filename, 
+                                created_at, updated_at, upload_status, processing_status, status, 
+                                total_questions, processed_questions, valid_questions, invalid_questions,
+                                csv_delimiter, csv_encoding, has_header_row, organizations_count, is_public)
+            VALUES (:id, :name, :filename, :file_size, :file_path, :original_filename,
+                   NOW(), NOW(), 'completed', 'completed', 'completed',
+                   :total_questions, :processed_questions, :valid_questions, :invalid_questions,
+                   ',', 'utf-8', TRUE, 0, FALSE)
         """)
         
         merged_filename = f"merged_{len(source_dataset_ids)}_datasets.json"
+        merged_file_path = f"/merged/{target_dataset_id}/{merged_filename}"
         estimated_size = total_questions * 500  # Rough estimate
         
         db.execute(create_dataset_sql, {
             "id": target_dataset_id,
             "name": target_name,
             "filename": merged_filename,
-            "file_size": estimated_size
+            "file_size": estimated_size,
+            "file_path": merged_file_path,
+            "original_filename": merged_filename,
+            "total_questions": total_questions,
+            "processed_questions": total_questions,
+            "valid_questions": total_questions,
+            "invalid_questions": 0
         })
         
         # Copy all questions from source datasets to target dataset
@@ -424,16 +437,20 @@ async def merge_datasets(
             
             logger.info(f"✅ Copied {copied_count} questions from dataset '{source_dataset['name']}'")
         
-        # Update target dataset with actual question count
+        # Update target dataset with actual counts
         update_dataset_sql = text("""
             UPDATE datasets 
-            SET file_size = :actual_size
+            SET file_size = :actual_size,
+                total_questions = :actual_questions,
+                processed_questions = :actual_questions,
+                valid_questions = :actual_questions
             WHERE id = :dataset_id
         """)
         
         db.execute(update_dataset_sql, {
             "dataset_id": target_dataset_id,
-            "actual_size": questions_copied * 100  # More accurate estimate
+            "actual_size": questions_copied * 150,  # More accurate estimate based on actual data
+            "actual_questions": questions_copied
         })
         
         # Delete source datasets if requested
