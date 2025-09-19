@@ -208,31 +208,109 @@ async def get_dataset_questions(
     dataset_id: str,
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=50, ge=1, le=100),
+    org_names: Optional[str] = Query(None, description="Comma-separated organization names"),
+    user_emails: Optional[str] = Query(None, description="Comma-separated user emails"),
+    start_date: Optional[str] = Query(None, description="Start date filter (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date filter (YYYY-MM-DD)"),
+    include_words: Optional[str] = Query(None, description="Comma-separated words to include"),
+    exclude_words: Optional[str] = Query(None, description="Comma-separated words to exclude"),
     db: Session = Depends(get_db)
 ):
-    """Get questions for a dataset with pagination (table view)"""
+    """Get questions for a dataset with pagination and filtering (table view)"""
     try:
-        logger.info(f"Fetching questions for dataset {dataset_id}")
+        logger.info(f"Fetching questions for dataset {dataset_id} with filters")
         
-        # Use the same query as word cloud API since that works
-        questions_sql = text("SELECT original_question, ai_response FROM questions WHERE dataset_id = :dataset_id ORDER BY csv_row_number ASC")
-        questions_result = db.execute(questions_sql, {"dataset_id": dataset_id}).fetchall()
+        # Parse filter parameters
+        filters = {}
+        if org_names:
+            filters['org_names'] = [org.strip() for org in org_names.split(',') if org.strip()]
+        if user_emails:
+            filters['user_emails'] = [email.strip() for email in user_emails.split(',') if email.strip()]
+        if start_date:
+            filters['start_date'] = start_date
+        if end_date:
+            filters['end_date'] = end_date
+        if include_words:
+            filters['include_words'] = [word.strip() for word in include_words.split(',') if word.strip()]
+        if exclude_words:
+            filters['exclude_words'] = [word.strip() for word in exclude_words.split(',') if word.strip()]
         
-        # Calculate pagination
-        total = len(questions_result)
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        paginated_questions = questions_result[start_idx:end_idx]
+        logger.info(f"📋 Applied filters: {filters}")
         
-        # Format for table view (match frontend interface)
+        # Build dynamic query with filters
+        base_query = """
+            SELECT id, original_question, ai_response, org_name, user_id_from_csv, 
+                   timestamp_from_csv, created_at, csv_row_number
+            FROM questions 
+            WHERE dataset_id = :dataset_id
+        """
+        
+        params = {"dataset_id": dataset_id}
+        where_conditions = []
+        
+        # Apply filters
+        if filters.get('org_names'):
+            placeholders = ','.join([f':org_{i}' for i in range(len(filters['org_names']))])
+            where_conditions.append(f"org_name IN ({placeholders})")
+            for i, org in enumerate(filters['org_names']):
+                params[f'org_{i}'] = org
+        
+        if filters.get('user_emails'):
+            placeholders = ','.join([f':email_{i}' for i in range(len(filters['user_emails']))])
+            where_conditions.append(f"user_id_from_csv IN ({placeholders})")
+            for i, email in enumerate(filters['user_emails']):
+                params[f'email_{i}'] = email
+        
+        if filters.get('start_date'):
+            where_conditions.append("timestamp_from_csv >= :start_date")
+            params['start_date'] = filters['start_date']
+        
+        if filters.get('end_date'):
+            where_conditions.append("timestamp_from_csv <= :end_date")
+            params['end_date'] = filters['end_date']
+        
+        if filters.get('include_words'):
+            for i, word in enumerate(filters['include_words']):
+                where_conditions.append(f"(original_question ILIKE :include_word_{i} OR ai_response ILIKE :include_word_{i})")
+                params[f'include_word_{i}'] = f'%{word}%'
+        
+        if filters.get('exclude_words'):
+            for i, word in enumerate(filters['exclude_words']):
+                where_conditions.append(f"NOT (original_question ILIKE :exclude_word_{i} OR ai_response ILIKE :exclude_word_{i})")
+                params[f'exclude_word_{i}'] = f'%{word}%'
+        
+        # Build final query
+        if where_conditions:
+            base_query += " AND " + " AND ".join(where_conditions)
+        
+        # Add ordering and pagination
+        count_query = f"SELECT COUNT(*) FROM ({base_query}) as filtered_questions"
+        paginated_query = f"{base_query} ORDER BY csv_row_number ASC LIMIT :limit OFFSET :offset"
+        
+        # Get total count
+        total_result = db.execute(text(count_query), params)
+        total = total_result.scalar()
+        
+        # Get paginated results
+        params['limit'] = per_page
+        params['offset'] = (page - 1) * per_page
+        
+        questions_result = db.execute(text(paginated_query), params).fetchall()
+        
+        # Format for table view
         questions = []
-        for i, row in enumerate(paginated_questions):
+        for row in questions_result:
             questions.append({
-                "id": str(start_idx + i + 1),
-                "original_question": str(row[0]) if row[0] else "",
-                "ai_response": str(row[1]) if row[1] else "",
-                "created_at": None
+                "id": str(row[0]) if row[0] else "",
+                "original_question": str(row[1]) if row[1] else "",
+                "ai_response": str(row[2]) if row[2] else "",
+                "org_name": str(row[3]) if row[3] else "",
+                "user_id_from_csv": str(row[4]) if row[4] else "",
+                "timestamp_from_csv": row[5].isoformat() if row[5] else "",
+                "created_at": row[6].isoformat() if row[6] else ""
             })
+        
+        logger.info(f"✅ Returned {len(questions)} questions (filtered from {total} total)")
         
         return {
             "success": True,
@@ -242,8 +320,11 @@ async def get_dataset_questions(
                 "page": page,
                 "per_page": per_page,
                 "total_count": total,
-                "total_pages": (total + per_page - 1) // per_page
-            }
+                "total_pages": (total + per_page - 1) // per_page,
+                "has_next": page * per_page < total,
+                "has_prev": page > 1
+            },
+            "filters_applied": filters
         }
         
     except Exception as e:

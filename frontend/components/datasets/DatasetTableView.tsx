@@ -208,6 +208,12 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
       
       const data = await response.json();
       console.log('Questions data:', data);
+      console.log('🔍 Response structure check:', {
+        hasStatus: 'status' in data,
+        hasSuccess: 'success' in data,
+        hasFiltersApplied: 'filters_applied' in data,
+        totalField: data.total || data.pagination?.total_count
+      });
       
       // Handle the API response structure - it returns { data: [...], pagination: {...} }
       if (data.data && Array.isArray(data.data)) {
