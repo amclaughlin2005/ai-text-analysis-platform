@@ -599,9 +599,17 @@ export default function SimpleWordCloud({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Word Cloud - {mode.charAt(0).toUpperCase() + mode.slice(1)} Analysis
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Word Cloud - {mode.charAt(0).toUpperCase() + mode.slice(1)} Analysis
+            </h3>
+            {loading && (
+              <div className="flex items-center gap-1 text-primary-600">
+                <div className="w-3 h-3 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+                <span className="text-xs font-medium">Loading...</span>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>{formatNumber(words.length)} words • Interactive mode enabled</span>
             {datasetsToUse.includes('06a8437a-27e8-412f-a530-6cb04f7b6dc9') && (
@@ -767,7 +775,41 @@ export default function SimpleWordCloud({
 
       {/* Word Cloud Display - Conditional based on viewMode */}
       {!error && (
-        <div className="p-4">
+        <div className="p-4 relative">
+          {/* Loading overlay when refreshing existing data */}
+          <AnimatePresence>
+            {loading && words.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg"
+              >
+                <div className="text-center">
+                  <div className="relative mb-4">
+                    <div className="w-12 h-12 mx-auto">
+                      <div className="absolute inset-0 border-3 border-primary-200 rounded-full"></div>
+                      <div className="absolute inset-0 border-3 border-primary-600 rounded-full border-t-transparent animate-spin"></div>
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Refreshing word cloud...
+                  </p>
+                  <div className="w-32 bg-gray-200 rounded-full h-1.5 mb-2">
+                    <div 
+                      className="bg-gradient-to-r from-primary-500 to-primary-600 h-1.5 rounded-full transition-all duration-500"
+                      style={{ width: `${loadingProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {Math.round(loadingProgress)}% • {loadingStartTime ? Math.floor((Date.now() - loadingStartTime) / 1000) : 0}s
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
           <div className="w-full">
             {viewMode === 'cloud' ? (
               <div className="w-full flex justify-center">
