@@ -111,15 +111,27 @@ This is an AI-driven development project building a comprehensive web applicatio
    - **Text Validation Service**: Clean industry terms and law firm names from word clouds
    - **Filter Options API**: Fetch unique organizations and user emails from dataset
    - **CSV Metadata Population**: Extract and populate org/user data from uploaded CSV files
+   - **Apply Filters System**: Pending/applied filter state management with explicit apply button
+   - **Filter State Persistence**: Track last applied filters vs current pending changes
+   - **Visual Filter Feedback**: Real-time indicators for modified/applied filter states
 
-4. **Dataset Table View** (`frontend/components/datasets/DatasetTableView.tsx`)
+9. **Default Dataset Management** (`frontend/components/datasets/DatasetList.tsx`)
+   - **Local Storage Persistence**: Browser-based default dataset preferences
+   - **Visual Indicators**: Amber "Default" badges with star icons in dataset manager
+   - **Smart Action Menu**: Context-aware "Set as Default" / "Remove as Default" options
+   - **Automatic Loading**: Word cloud page loads default dataset on startup
+   - **Priority System**: URL params > user default > system fallback
+   - **State Management**: Exported utility functions for cross-component usage
+   - **Auto-cleanup**: Removes invalid defaults when datasets are deleted
+
+10. **Dataset Table View** (`frontend/components/datasets/DatasetTableView.tsx`)
    - AG Grid React integration for high-performance data tables
    - Interactive sorting, filtering, and search functionality
    - Auto-sizing columns with text wrapping for long content
    - CSV export functionality with filtered data
    - Pagination support for large datasets
 
-5. **Real-time Processing** (`backend/app/websocket/manager.py`)
+11. **Real-time Processing** (`backend/app/websocket/manager.py`)
    - WebSocket connection management
    - Background job status updates
    - Progress tracking for large dataset processing
@@ -141,6 +153,9 @@ This is an AI-driven development project building a comprehensive web applicatio
 ### Core Tables
 - **users**: Clerk integration for user management
 - **datasets**: Enhanced with processing status and metrics
+  - **Merge Support**: Comprehensive columns for merged dataset metadata
+  - **File Metadata**: `file_path`, `original_filename`, `total_rows`, `questions_count`
+  - **Processing Status**: `upload_status`, `processing_status`, `progress_percentage`
 - **questions**: Query-response pairs with NLTK analysis results
   - **Enhanced Filtering Columns**: `org_name`, `user_id_from_csv`, `timestamp_from_csv` for advanced filtering
   - **CSV Metadata**: Populated from original CSV files (ORGNAME, USER_EMAIL columns)
@@ -150,6 +165,12 @@ This is an AI-driven development project building a comprehensive web applicatio
 - **analysis_jobs**: Background processing job tracking
 - **llm_analysis_cache**: Cached LLM responses for efficiency
 - **org_usage_analytics**: Organization-level usage metrics
+
+### Client-Side Storage
+- **Local Storage**: Browser-based user preferences
+  - **Default Dataset**: `wordcloud_default_dataset` key stores user's preferred dataset ID
+  - **Filter State**: Applied vs pending filter state management
+  - **Cross-Session Persistence**: User preferences maintained across browser sessions
 
 ## Key Features
 
@@ -178,7 +199,7 @@ This is an AI-driven development project building a comprehensive web applicatio
 - Status tracking and error handling
 - Concurrent processing optimization
 
-### 5. Advanced Filtering System (NEW)
+### 5. Advanced Filtering System (ENHANCED)
 - **Dynamic Organization Filtering**: Search and filter by organization names from CSV data
 - **User Email Filtering**: Multi-select user email filtering with search capability
 - **Date Range Filtering**: Filter by timestamp ranges (exact dates or between dates)
@@ -186,6 +207,18 @@ This is an AI-driven development project building a comprehensive web applicatio
 - **Real-time Filter API**: Live search with debounced API calls for performance
 - **CSV Metadata Integration**: Extract org names and user emails from uploaded CSV files
 - **Caching Strategy**: Intelligent caching of filter results and word cloud data
+- **Apply Filters System**: Explicit filter application with pending/applied state management
+- **Visual State Indicators**: Real-time feedback for modified vs applied filter states
+- **Filter Reset Capability**: Reset to last applied state or clear all filters
+
+### 6. Default Dataset Management (NEW)
+- **User Preferences**: Local storage-based default dataset selection
+- **Automatic Loading**: Word cloud page loads user's preferred dataset on startup
+- **Visual Indicators**: Clear "Default" badges in dataset manager with star icons
+- **Smart Priority System**: URL parameters override default, fallback to system default
+- **Context-Aware Actions**: "Set as Default" / "Remove as Default" in dataset action menus
+- **State Persistence**: Browser-based preferences with cross-component utility functions
+- **Intelligent Cleanup**: Automatically removes invalid defaults when datasets are deleted
 
 ## File Structure
 
@@ -387,13 +420,25 @@ MAX_FILE_SIZE = { default = "104857600" }
 - **Confidence Scoring**: Machine learning confidence scores for all field detections
 - **Preview System**: See exactly what will be analyzed before processing
 
-### ✅ **Enhanced Word Cloud Filtering System** (JUST IMPLEMENTED ✅)
+### ✅ **Enhanced Word Cloud Filtering System** (RECENTLY ENHANCED ✅)
 - **Dynamic Filter API**: Real-time organization and user email filtering from CSV data
 - **Database Schema Updates**: Added `org_name`, `user_id_from_csv`, `timestamp_from_csv` columns to support advanced filtering
 - **CSV Data Population**: Upload system to populate filter metadata from original CSV files
 - **Searchable Filter UI**: Interactive organization and user email search with tag-based selection
 - **High-Performance Filtering**: Optimized backend queries with caching for large datasets
 - **Real Data Integration**: Support for extracting organization names and user emails from uploaded CSV files
+- **Apply Filters System**: Explicit filter application with pending/applied state management
+- **Enhanced UX**: Sidebar filter panel, visual state indicators, and improved loading animations
+
+### ✅ **Default Dataset Management System** (JUST IMPLEMENTED ✅)
+- **Local Storage Persistence**: Browser-based user preference storage with `wordcloud_default_dataset` key
+- **Visual Indicators**: Amber "Default" badges with star icons in dataset manager
+- **Smart Action Menu**: Context-aware "Set as Default" / "Remove as Default" options
+- **Automatic Loading**: Word cloud page loads user's preferred dataset on startup
+- **Priority System**: URL parameters > user default > system fallback for dataset selection
+- **State Management**: Exported utility functions (`getDefaultDataset`, `setDefaultDataset`, `clearDefaultDataset`)
+- **Auto-cleanup**: Automatically removes invalid defaults when datasets are deleted
+- **Cross-Session Persistence**: User preferences maintained across browser sessions
 
 ### ✅ **Previous Achievements Maintained**
 - NLTK Analysis Engine Enhanced (v2.5.0) with POS tagging
@@ -472,13 +517,27 @@ The application now has a consolidated, robust architecture suitable for product
    - ✅ Enhanced filter UI with searchable dropdowns and tag-based selection
    - ✅ Optimized word cloud generation with comprehensive filter support
    - ✅ Real data integration tested and validated with production dataset
-9. **🚀 CURRENT: Complete deployment testing** and ensure all production features work correctly
-9. **Implement real-time processing** with WebSocket updates and background jobs
-10. **Build comprehensive analytics dashboard** components with database-powered insights
-11. **Set up Celery workers** for background processing (async dataset processing)
-12. **Add advanced analysis endpoints** (sentiment analysis API, entity extraction API, topic modeling)
-13. **Enhance LLM integration** for business insights and response quality analysis
-14. **Re-implement authentication** when ready for multi-user production
+   - ✅ Apply filters system with pending/applied state management
+   - ✅ Sidebar filter panel with enhanced UX and loading animations
+9. ✅ ~~Default dataset management system~~ **COMPLETED**
+   - ✅ Local storage-based user preference system
+   - ✅ Visual indicators and smart action menus in dataset manager
+   - ✅ Automatic loading of preferred dataset on word cloud page startup
+   - ✅ Priority system: URL params > user default > system fallback
+   - ✅ Cross-component utility functions and state management
+   - ✅ Auto-cleanup of invalid defaults when datasets are deleted
+10. ✅ ~~Dataset merge functionality~~ **COMPLETED**
+   - ✅ Backend API endpoint for merging multiple datasets
+   - ✅ Frontend UI integration in dataset manager
+   - ✅ PostgreSQL compatibility and database constraint handling
+   - ✅ Comprehensive error handling and user feedback
+11. **🚀 CURRENT: Complete deployment testing** and ensure all production features work correctly
+12. **Implement real-time processing** with WebSocket updates and background jobs
+13. **Build comprehensive analytics dashboard** components with database-powered insights
+14. **Set up Celery workers** for background processing (async dataset processing)
+15. **Add advanced analysis endpoints** (sentiment analysis API, entity extraction API, topic modeling)
+16. **Enhance LLM integration** for business insights and response quality analysis
+17. **Re-implement authentication** when ready for multi-user production
 
 ## **🎯 Immediate Priorities (December 2024)**
 1. **Verify NLTK analysis modes are working** - Test that "all words" vs "action words" show different results
