@@ -163,6 +163,8 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
   // Fetch questions data with optional filtering
   const fetchQuestions = async (page: number = 1, filters?: EnhancedFilters) => {
     setLoading(true);
+    console.log('📊 Fetching questions with filters:', filters);
+    
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
       
@@ -174,6 +176,7 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
       
       // Add filter parameters if filters are applied
       if (filters) {
+        console.log('🔍 Processing filters:', filters);
         if (filters.org_names && filters.org_names.length > 0) {
           params.append('org_names', filters.org_names.join(','));
         }
@@ -194,9 +197,10 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
         }
       }
       
-      const response = await fetch(
-        `${API_BASE_URL}/api/datasets/${datasetId}/questions?${params.toString()}`
-      );
+      const finalUrl = `${API_BASE_URL}/api/datasets/${datasetId}/questions?${params.toString()}`;
+      console.log('🌐 Final API URL:', finalUrl);
+      
+      const response = await fetch(finalUrl);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch questions: ${response.status}`);
@@ -321,10 +325,9 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
 
   // Refetch when applied filters change
   useEffect(() => {
-    if (appliedFilters !== filters) {
-      // Only refetch if applied filters actually changed and aren't the initial state
-      fetchQuestions(currentPage, appliedFilters);
-    }
+    console.log('🔄 Applied filters changed:', appliedFilters);
+    // Always refetch when applied filters change (they are set intentionally)
+    fetchQuestions(currentPage, appliedFilters);
   }, [appliedFilters]);
 
   if (loading && questions.length === 0) {
