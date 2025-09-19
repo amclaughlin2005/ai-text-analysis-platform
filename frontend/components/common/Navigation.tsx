@@ -2,41 +2,49 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Brain, Home, BarChart3, Upload, MessageSquare, Database } from 'lucide-react';
+import { Brain, Home, BarChart3, Upload, MessageSquare, Database, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SignInButton from '@/components/auth/SignInButton';
 import UserButton from '@/components/auth/UserButton';
+import { useAuth } from '@clerk/nextjs';
 
 const navigationItems = [
   {
     name: 'Home',
     href: '/',
     icon: Home,
-  },
-  {
-    name: 'Upload Dataset',
-    href: '/upload',
-    icon: Upload,
-  },
-  {
-    name: 'Datasets',
-    href: '/datasets',
-    icon: Database,
-  },
-  {
-    name: 'Dashboard',
-    href: '/dashboard', 
-    icon: BarChart3,
+    public: true,
   },
   {
     name: 'Word Cloud',
     href: '/wordcloud',
     icon: MessageSquare,
+    public: true,
+  },
+  {
+    name: 'Upload Dataset',
+    href: '/upload',
+    icon: Upload,
+    protected: true,
+  },
+  {
+    name: 'Datasets',
+    href: '/datasets',
+    icon: Database,
+    protected: true,
+  },
+  {
+    name: 'Dashboard',
+    href: '/dashboard', 
+    icon: BarChart3,
+    protected: true,
   }
 ];
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { isSignedIn, isLoaded } = useAuth();
+  const authEnforced = process.env.NEXT_PUBLIC_ENFORCE_AUTH === 'true';
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -55,6 +63,8 @@ export default function Navigation() {
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
+              const isProtected = item.protected && authEnforced;
+              const canAccess = !isProtected || isSignedIn;
               
               return (
                 <Link
@@ -64,11 +74,21 @@ export default function Navigation() {
                     "flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     isActive 
                       ? "bg-primary-100 text-primary-600" 
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      : canAccess
+                        ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                        : "text-gray-400 cursor-not-allowed"
                   )}
+                  onClick={(e) => {
+                    if (!canAccess) {
+                      e.preventDefault();
+                    }
+                  }}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.name}</span>
+                  {isProtected && !isSignedIn && (
+                    <Lock className="h-3 w-3 text-gray-400" />
+                  )}
                 </Link>
               );
             })}
