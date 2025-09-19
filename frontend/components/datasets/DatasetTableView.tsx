@@ -5,7 +5,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { ColDef, GridOptions, GridReadyEvent } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import { Download, Filter, Search, RefreshCw, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Download, Filter, Search, RefreshCw, ChevronRight, ChevronLeft, Database } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EnhancedFilterPanel, { EnhancedFilters } from '../wordcloud/EnhancedFilterPanel';
 import { cn } from '@/lib/utils';
@@ -237,6 +237,35 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
     setCurrentPage(1);
   };
 
+  // Populate metadata from dataset
+  const populateMetadata = async () => {
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
+      setLoading(true);
+      
+      const response = await fetch(`${API_BASE_URL}/api/wordcloud/populate-metadata/${datasetId}`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`Metadata populated: ${result.organizations_updated || 0} orgs, ${result.emails_updated || 0} emails`);
+        
+        // Refresh data and filter options
+        fetchQuestions(currentPage, appliedFilters);
+        fetchFilterOptions();
+      } else {
+        const error = await response.text();
+        toast.error(`Failed to populate metadata: ${error}`);
+      }
+    } catch (error) {
+      console.error('Error populating metadata:', error);
+      toast.error('Failed to populate metadata');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Search filter
   const filteredQuestions = useMemo(() => {
     if (!searchText.trim()) return questions;
@@ -397,6 +426,19 @@ export default function DatasetTableView({ datasetId, datasetName }: DatasetTabl
                   <span>Export CSV</span>
                 </button>
                 
+                {/* Populate Metadata Button */}
+                {(!availableOrgs.length && !availableEmails.length) && (
+                  <button
+                    onClick={populateMetadata}
+                    disabled={loading}
+                    className="flex items-center space-x-2 px-3 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors text-sm"
+                    title="Populate organization and user email data from CSV"
+                  >
+                    <Database className="w-4 h-4" />
+                    <span>Populate Data</span>
+                  </button>
+                )}
+
                 {/* Refresh Button */}
                 <button
                   onClick={() => fetchQuestions(currentPage, appliedFilters)}
