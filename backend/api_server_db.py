@@ -355,17 +355,39 @@ def get_dataset_questions(
     dataset_id: str,
     page: int = 1,
     per_page: int = 20,
+    org_names: str = None,
+    user_emails: str = None,
+    start_date: str = None,
+    end_date: str = None,
+    include_words: str = None,
+    exclude_words: str = None,
     db: Session = Depends(get_db)
 ):
-    """Get paginated questions for a dataset from database"""
+    """Get paginated questions for a dataset from database with optional filtering"""
     try:
         if per_page > 100:
             per_page = 100  # Limit page size
         
+        # Parse filter parameters
+        filters = {}
+        if org_names:
+            filters['org_names'] = [org.strip() for org in org_names.split(',') if org.strip()]
+        if user_emails:
+            filters['user_emails'] = [email.strip() for email in user_emails.split(',') if email.strip()]
+        if start_date:
+            filters['start_date'] = start_date
+        if end_date:
+            filters['end_date'] = end_date
+        if include_words:
+            filters['include_words'] = [word.strip() for word in include_words.split(',') if word.strip()]
+        if exclude_words:
+            filters['exclude_words'] = [word.strip() for word in exclude_words.split(',') if word.strip()]
+        
         questions, total_count = QuestionService.get_questions_paginated(
             dataset_id=dataset_id,
             page=page,
-            per_page=per_page
+            per_page=per_page,
+            filters=filters
         )
         
         total_pages = (total_count + per_page - 1) // per_page
@@ -380,7 +402,8 @@ def get_dataset_questions(
                 "total_pages": total_pages,
                 "has_next": page < total_pages,
                 "has_prev": page > 1
-            }
+            },
+            "filters_applied": filters
         }
         
     except Exception as e:

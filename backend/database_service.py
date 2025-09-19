@@ -301,25 +301,69 @@ class QuestionService:
     def get_questions_paginated(
         dataset_id: str, 
         page: int = 1, 
-        per_page: int = 20
+        per_page: int = 20,
+        filters: dict = None
     ) -> Tuple[List[Question], int]:
         """
-        Get paginated questions for a dataset
+        Get paginated questions for a dataset with optional filtering
         """
         db = next(get_db())
         try:
             offset = (page - 1) * per_page
             
-            questions = db.query(Question)\
-                         .filter(Question.dataset_id == dataset_id)\
-                         .order_by(asc(Question.csv_row_number))\
-                         .limit(per_page)\
-                         .offset(offset)\
-                         .all()
+            # Build base query
+            query = db.query(Question).filter(Question.dataset_id == dataset_id)
             
-            total_count = db.query(Question)\
-                           .filter(Question.dataset_id == dataset_id)\
-                           .count()
+            # Apply filters if provided
+            if filters:
+                # Organization filter
+                if filters.get('org_names'):
+                    query = query.filter(Question.org_name.in_(filters['org_names']))
+                
+                # User email filter
+                if filters.get('user_emails'):
+                    query = query.filter(Question.user_id_from_csv.in_(filters['user_emails']))
+                
+                # Date range filter
+                if filters.get('start_date'):
+                    from datetime import datetime
+                    start_date = datetime.fromisoformat(filters['start_date'])
+                    query = query.filter(Question.timestamp_from_csv >= start_date)
+                
+                if filters.get('end_date'):
+                    from datetime import datetime
+                    end_date = datetime.fromisoformat(filters['end_date'])
+                    query = query.filter(Question.timestamp_from_csv <= end_date)
+                
+                # Text content filters
+                if filters.get('include_words'):
+                    from sqlalchemy import or_
+                    for word in filters['include_words']:
+                        query = query.filter(
+                            or_(
+                                Question.original_question.ilike(f'%{word}%'),
+                                Question.ai_response.ilike(f'%{word}%')
+                            )
+                        )
+                
+                if filters.get('exclude_words'):
+                    from sqlalchemy import or_
+                    for word in filters['exclude_words']:
+                        query = query.filter(
+                            ~or_(
+                                Question.original_question.ilike(f'%{word}%'),
+                                Question.ai_response.ilike(f'%{word}%')
+                            )
+                        )
+            
+            # Get paginated results
+            questions = query.order_by(asc(Question.csv_row_number))\
+                            .limit(per_page)\
+                            .offset(offset)\
+                            .all()
+            
+            # Get total count with same filters
+            total_count = query.count()
             
             return questions, total_count
             
