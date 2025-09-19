@@ -490,7 +490,7 @@ export default function EnhancedFilterPanel({
                       {orgSearchTerm ? (
                         <div>
                           <Search className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                          <div>No organizations match "{orgSearchTerm}"</div>
+                          <div>No organizations match &ldquo;{orgSearchTerm}&rdquo;</div>
                           <div className="text-xs mt-1">Try a different search term</div>
                         </div>
                       ) : (

@@ -119,7 +119,7 @@ export default function AppendDataUpload({
           Add More Data
         </h2>
         <p className="text-lg text-gray-600 mb-1">
-          Appending to: <span className="font-semibold text-primary-600">"{datasetName}"</span>
+          Appending to: <span className="font-semibold text-primary-600">&ldquo;{datasetName}&rdquo;</span>
         </p>
         <p className="text-sm text-gray-500">
           Upload additional CSV or JSON files to expand your existing dataset

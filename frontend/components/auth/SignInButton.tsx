@@ -3,6 +3,7 @@
 import { SignInButton as ClerkSignInButton, useAuth } from '@clerk/nextjs';
 import { LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
 interface SignInButtonProps {
   className?: string;
@@ -15,11 +16,37 @@ export default function SignInButton({
   variant = 'default',
   size = 'md' 
 }: SignInButtonProps) {
+  const [mounted, setMounted] = useState(false);
+  
+  // Ensure component only renders on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render during SSR or if not mounted
+  if (!mounted) {
+    return null;
+  }
+
+  // Don't show if auth is not enabled
+  const authEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTH === 'true';
+  if (!authEnabled) {
+    return null;
+  }
+
+  return <SignInButtonContent className={className} variant={variant} size={size} />;
+}
+
+// Separate component that uses Clerk hooks
+function SignInButtonContent({ 
+  className, 
+  variant = 'default',
+  size = 'md' 
+}: SignInButtonProps) {
   const { isSignedIn, isLoaded } = useAuth();
 
-  // Don't show if auth is not enabled or user is already signed in
-  const authEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTH === 'true';
-  if (!authEnabled || !isLoaded || isSignedIn) {
+  // Don't show if user is already signed in or not loaded
+  if (!isLoaded || isSignedIn) {
     return null;
   }
 
