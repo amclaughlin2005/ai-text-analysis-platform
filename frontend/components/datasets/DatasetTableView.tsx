@@ -7,7 +7,7 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { Download, Filter, Search, RefreshCw, ChevronRight, ChevronLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { EnhancedFilterPanel, EnhancedFilters } from '../wordcloud/EnhancedFilterPanel';
+import EnhancedFilterPanel, { EnhancedFilters } from '../wordcloud/EnhancedFilterPanel';
 import { cn } from '@/lib/utils';
 
 interface Question {
