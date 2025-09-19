@@ -444,7 +444,7 @@ export default function SimpleWordCloud({
     
     console.log('🔄 useEffect triggered - mode:', mode, 'datasets:', datasetsToUse, 'selectedColumns:', selectedColumns, 'retryCount:', retryCount);
     fetchWordCloudData();
-  }, [mode, JSON.stringify(datasetsToUse), JSON.stringify(selectedColumns), retryCount]); // Include retryCount for auto-retry
+  }, [mode, JSON.stringify(datasetsToUse), JSON.stringify(selectedColumns), retryCount, JSON.stringify(filters)]); // Include filters for apply-button functionality
 
   const handleWordClick = (word: WordCloudData) => {
     const isCurrentlySelected = selectedWord === word.word;

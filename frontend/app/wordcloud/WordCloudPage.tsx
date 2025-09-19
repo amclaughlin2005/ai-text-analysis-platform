@@ -48,6 +48,7 @@ export default function WordCloud() {
     max_words: 100,
     min_word_length: 3
   });
+  const [appliedFilters, setAppliedFilters] = useState<EnhancedFilters>(filters);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   
   // Dataset selection state
@@ -69,6 +70,11 @@ export default function WordCloud() {
 
   const handleWordClick = (word: string) => {
     setSelectedWord(word === selectedWord ? null : word);
+  };
+
+  const handleApplyFilters = (newFilters: EnhancedFilters) => {
+    setAppliedFilters(newFilters);
+    // This will trigger the word cloud to refresh with the new applied filters
   };
 
 
@@ -161,6 +167,7 @@ export default function WordCloud() {
                 <EnhancedFilterPanel
                   filters={filters}
                   onFiltersChange={setFilters}
+                  onApplyFilters={handleApplyFilters}
                   datasetIds={selectedDatasets}
                   availableOrgs={[]}
                   availableEmails={[]}
@@ -199,7 +206,7 @@ export default function WordCloud() {
                   <SimpleWordCloud
                     datasetIds={selectedDatasets}
                     mode={selectedMode as any}
-                    filters={filters}
+                    filters={appliedFilters}
                     selectedColumns={selectedColumns}
                     showColumnFilter={true}
                     onWordClick={handleWordClick}

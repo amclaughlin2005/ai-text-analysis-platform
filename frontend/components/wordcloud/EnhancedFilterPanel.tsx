@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Filter, X, ChevronDown, ChevronUp, Calendar, Users, Mail, 
@@ -40,6 +40,7 @@ export interface EnhancedFilters {
 interface EnhancedFilterPanelProps {
   filters: EnhancedFilters;
   onFiltersChange: (filters: EnhancedFilters) => void;
+  onApplyFilters?: (filters: EnhancedFilters) => void; // New callback for apply button
   availableOrgs?: string[];
   availableEmails?: string[];
   availableTenants?: string[];
@@ -85,6 +86,7 @@ const SENTIMENT_OPTIONS = [
 export default function EnhancedFilterPanel({
   filters,
   onFiltersChange,
+  onApplyFilters,
   availableOrgs = [],
   availableEmails = [],
   availableTenants = [],
@@ -103,10 +105,14 @@ export default function EnhancedFilterPanel({
   const [orgSearchTerm, setOrgSearchTerm] = useState('');
   const [emailSearchTerm, setEmailSearchTerm] = useState('');
   const [loadingFilterOptions, setLoadingFilterOptions] = useState(false);
+  const [lastAppliedFilters, setLastAppliedFilters] = useState<EnhancedFilters>(filters);
 
   // Fetch filter options from API
   const fetchFilterOptions = useCallback(async () => {
-    if (datasetIds.length === 0) return;
+    if (datasetIds.length === 0) {
+      console.log('🔍 No dataset IDs provided for filter options');
+      return;
+    }
     
     setLoadingFilterOptions(true);
     try {
@@ -114,14 +120,19 @@ export default function EnhancedFilterPanel({
       const datasetId = datasetIds[0];
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-text-analysis-production.up.railway.app';
       
+      console.log('🔍 Fetching filter options for dataset:', datasetId);
       const response = await fetch(`${API_BASE_URL}/api/wordcloud/filter-options/${datasetId}`);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Filter options received:', data);
         setDynamicOrgs(data.organizations || []);
         setDynamicEmails(data.user_emails || []);
+      } else {
+        console.error('❌ Filter options API error:', response.status, await response.text());
       }
     } catch (error) {
-      console.error('Failed to fetch filter options:', error);
+      console.error('❌ Failed to fetch filter options:', error);
     } finally {
       setLoadingFilterOptions(false);
     }
@@ -158,6 +169,24 @@ export default function EnhancedFilterPanel({
 
   const clearAllFilters = () => {
     onFiltersChange({});
+  };
+
+  // Check if current filters differ from last applied filters
+  const hasFilterChanges = useMemo(() => {
+    return JSON.stringify(filters) !== JSON.stringify(lastAppliedFilters);
+  }, [filters, lastAppliedFilters]);
+
+  // Apply filters and trigger word cloud refresh
+  const handleApplyFilters = () => {
+    setLastAppliedFilters(filters);
+    if (onApplyFilters) {
+      onApplyFilters(filters);
+    }
+  };
+
+  // Reset filters to last applied state
+  const handleResetFilters = () => {
+    onFiltersChange(lastAppliedFilters);
   };
 
   const addIncludeWord = () => {
@@ -407,7 +436,7 @@ export default function EnhancedFilterPanel({
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search 712 organizations..."
+                    placeholder={`Search ${dynamicOrgs.length} organizations...`}
                     value={orgSearchTerm}
                     onChange={(e) => setOrgSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white shadow-sm transition-all duration-200"
@@ -779,6 +808,48 @@ export default function EnhancedFilterPanel({
                       <span className={sentiment.color}>{sentiment.label}</span>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Apply Filters Section */}
+              <div className="border-t border-gray-200 pt-4 mt-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs text-gray-500">
+                    {hasFilterChanges ? (
+                      <span className="text-amber-600 flex items-center gap-1">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                        Filters modified
+                      </span>
+                    ) : (
+                      <span className="text-green-600 flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        Filters applied
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {hasFilterChanges && (
+                      <button
+                        onClick={handleResetFilters}
+                        className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+                      >
+                        Reset
+                      </button>
+                    )}
+                    <button
+                      onClick={handleApplyFilters}
+                      disabled={!hasFilterChanges}
+                      className={cn(
+                        "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+                        hasFilterChanges
+                          ? "bg-primary-600 hover:bg-primary-700 text-white shadow-sm"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      )}
+                    >
+                      {hasFilterChanges ? 'Apply Filters' : 'Applied'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
