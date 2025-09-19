@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Brain, Home, BarChart3, Upload, MessageSquare, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import SignInButton from '@/components/auth/SignInButton';
+import UserButton from '@/components/auth/UserButton';
 
 const navigationItems = [
   {
@@ -72,8 +74,16 @@ export default function Navigation() {
             })}
           </div>
 
+          {/* Authentication */}
+          <div className="hidden md:flex items-center space-x-4">
+            <SignInButton variant="outline" />
+            <UserButton showName />
+          </div>
+
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            <SignInButton size="sm" />
+            <UserButton />
             <button className="text-gray-500 hover:text-gray-600">
               <span className="sr-only">Open menu</span>
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
