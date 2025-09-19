@@ -250,10 +250,18 @@ async def get_dataset_questions(
         
         # Apply filters
         if filters.get('org_names'):
+            logger.info(f"🔍 Filtering by organizations: {filters['org_names']}")
+            
+            # Debug: Check what organizations actually exist in the database
+            debug_orgs_sql = text("SELECT DISTINCT org_name FROM questions WHERE dataset_id = :dataset_id AND org_name IS NOT NULL LIMIT 20")
+            debug_orgs = db.execute(debug_orgs_sql, {"dataset_id": dataset_id}).fetchall()
+            logger.info(f"📋 Sample organizations in database: {[org[0] for org in debug_orgs]}")
+            
             placeholders = ','.join([f':org_{i}' for i in range(len(filters['org_names']))])
             where_conditions.append(f"org_name IN ({placeholders})")
             for i, org in enumerate(filters['org_names']):
                 params[f'org_{i}'] = org
+                logger.info(f"🎯 Looking for exact match: '{org}'")
         
         if filters.get('user_emails'):
             placeholders = ','.join([f':email_{i}' for i in range(len(filters['user_emails']))])
@@ -287,9 +295,14 @@ async def get_dataset_questions(
         count_query = f"SELECT COUNT(*) FROM ({base_query}) as filtered_questions"
         paginated_query = f"{base_query} ORDER BY csv_row_number ASC LIMIT :limit OFFSET :offset"
         
+        logger.info(f"🔍 Final count query: {count_query}")
+        logger.info(f"🔍 Query parameters: {params}")
+        
         # Get total count
         total_result = db.execute(text(count_query), params)
         total = total_result.scalar()
+        
+        logger.info(f"📊 Query result: {total} records found")
         
         # Get paginated results
         params['limit'] = per_page
