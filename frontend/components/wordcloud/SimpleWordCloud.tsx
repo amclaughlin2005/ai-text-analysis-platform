@@ -252,6 +252,8 @@ export default function SimpleWordCloud({
   const [words, setWords] = useState<WordCloudData[]>(() => generateSimpleWordData(mode));
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStartTime, setLoadingStartTime] = useState<number | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [showColumnFilterUI, setShowColumnFilterUI] = useState(false); // Default collapsed to save space
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -277,6 +279,8 @@ export default function SimpleWordCloud({
       
       isRequestingRef.current = true;
       setLoading(true);
+      setLoadingStartTime(Date.now());
+      setLoadingProgress(0);
       
       console.log('🚀 fetchWordCloudData called with datasets:', datasetsToUse, 'mode:', mode, 'columns:', selectedColumns);
       
@@ -285,6 +289,8 @@ export default function SimpleWordCloud({
         setWords(generateSimpleWordData(mode));
         isRequestingRef.current = false;
         setLoading(false);
+        setLoadingStartTime(null);
+        setLoadingProgress(100);
         return;
       }
       
@@ -380,6 +386,8 @@ export default function SimpleWordCloud({
             console.log('✅ Successfully processed API data:', apiWords.length, 'words');
             setWords(apiWords);
             setLoading(false);
+            setLoadingStartTime(null);
+            setLoadingProgress(100);
             isRequestingRef.current = false;
             return;
           } else {
@@ -427,6 +435,8 @@ export default function SimpleWordCloud({
           }
           setWords(newWords);
           setLoading(false);
+          setLoadingStartTime(null);
+          setLoadingProgress(100);
           isRequestingRef.current = false;
         }
       }
@@ -449,6 +459,8 @@ export default function SimpleWordCloud({
   const refreshWordCloud = () => {
     console.log('Refreshing word cloud manually');
     setLoading(true);
+    setLoadingStartTime(Date.now());
+    setLoadingProgress(0);
     setError(null);
     setRetryCount(0); // Reset retry count for manual refresh
     isRequestingRef.current = false; // Allow new request
@@ -459,26 +471,58 @@ export default function SimpleWordCloud({
     }, 100);
   };
 
-  // Failsafe: Force exit loading after 3 seconds
+  // Progress simulation and failsafe timeout
   useEffect(() => {
-    if (loading) {
+    if (loading && loadingStartTime) {
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        const elapsed = Date.now() - loadingStartTime;
+        let newProgress = 0;
+        
+        if (elapsed < 5000) {
+          // Quick progress for first 5 seconds
+          newProgress = Math.min(30, (elapsed / 5000) * 30);
+        } else if (elapsed < 15000) {
+          // Slower progress for next 10 seconds  
+          newProgress = 30 + Math.min(40, ((elapsed - 5000) / 10000) * 40);
+        } else if (elapsed < 30000) {
+          // Very slow progress for next 15 seconds
+          newProgress = 70 + Math.min(20, ((elapsed - 15000) / 15000) * 20);
+        } else {
+          // Cap at 95% until actual completion
+          newProgress = 95;
+        }
+        
+        setLoadingProgress(newProgress);
+      }, 500);
+      
+      // Failsafe: Force exit loading after 90 seconds for very large datasets
       const failsafeTimer = setTimeout(() => {
-        console.log('Failsafe: Force exiting loading state');
+        console.log('Failsafe: Force exiting loading state after 90 seconds');
         setLoading(false);
+        setLoadingStartTime(null);
+        setLoadingProgress(100);
         isRequestingRef.current = false;
         if (words.length === 0) {
+          console.log('No words available, using fallback data');
           const failsafeWords = generateSimpleWordData(mode);
           setWords(failsafeWords);
         }
-      }, 3000);
+      }, 90000); // 90 seconds for large datasets
       
-      return () => clearTimeout(failsafeTimer);
+      return () => {
+        clearInterval(progressInterval);
+        clearTimeout(failsafeTimer);
+      };
     }
     
     return () => {}; // Empty cleanup function for non-loading case
-  }, [loading, words.length, mode]);
+  }, [loading, loadingStartTime, words.length, mode]);
 
   if (loading && words.length === 0) {
+    const elapsedTime = loadingStartTime ? Math.floor((Date.now() - loadingStartTime) / 1000) : 0;
+    const isLargeDataset = datasetsToUse.length > 0 && elapsedTime > 10;
+    
     return (
       <div className={cn("bg-white rounded-lg border shadow-sm", className)}>
         <div className="p-4 border-b">
@@ -487,15 +531,62 @@ export default function SimpleWordCloud({
           </h3>
         </div>
         <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <RefreshCw className="h-8 w-8 text-primary-600 animate-spin mx-auto mb-2" />
-            <p className="text-gray-600">Generating word cloud...</p>
-            <p className="text-xs text-gray-500">Mode: {mode}</p>
+          <div className="text-center max-w-md">
+            {/* Animated loading icon */}
+            <div className="relative mb-6">
+              <div className="w-16 h-16 mx-auto">
+                <div className="absolute inset-0 border-4 border-primary-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-primary-600 rounded-full border-t-transparent animate-spin"></div>
+                <div className="absolute inset-2 border-2 border-primary-400 rounded-full border-r-transparent animate-spin animation-delay-75"></div>
+              </div>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+              <div 
+                className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              ></div>
+            </div>
+            
+            {/* Loading text with animation */}
+            <div className="space-y-2 mb-4">
+              <p className="text-lg font-medium text-gray-700">
+                {isLargeDataset ? 'Processing large dataset...' : 'Generating word cloud...'}
+              </p>
+              <p className="text-sm text-gray-500">
+                Mode: {mode.charAt(0).toUpperCase() + mode.slice(1)} Analysis
+              </p>
+              {isMultiDataset && (
+                <p className="text-sm text-primary-600">
+                  📊 Combining {datasetsToUse.length} datasets
+                </p>
+              )}
+            </div>
+            
+            {/* Progress details */}
+            <div className="text-xs text-gray-400 space-y-1 mb-4">
+              <div className="flex justify-between">
+                <span>Progress:</span>
+                <span>{Math.round(loadingProgress)}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Elapsed:</span>
+                <span>{elapsedTime}s</span>
+              </div>
+              {isLargeDataset && (
+                <div className="text-amber-600 text-sm mt-2">
+                  ⏳ Large dataset detected - this may take up to 90 seconds
+                </div>
+              )}
+            </div>
+            
+            {/* Action button */}
             <button 
               onClick={refreshWordCloud}
-              className="mt-3 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm shadow-sm"
             >
-              Force Refresh
+              Cancel & Retry
             </button>
           </div>
         </div>
