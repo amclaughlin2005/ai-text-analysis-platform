@@ -383,12 +383,12 @@ async def merge_datasets(
                                 created_at, updated_at, upload_status, processing_status, status, 
                                 total_questions, processed_questions, valid_questions, invalid_questions,
                                 csv_delimiter, csv_encoding, has_header_row, organizations_count, is_public,
-                                total_rows, total_columns, progress_percentage)
+                                total_rows, total_columns, progress_percentage, questions_count)
             VALUES (:id, :name, :filename, :file_size, :file_path, :original_filename,
                    NOW(), NOW(), 'completed', 'completed', 'completed',
                    :total_questions, :processed_questions, :valid_questions, :invalid_questions,
                    ',', 'utf-8', TRUE, 0, FALSE,
-                   :total_rows, 2, 100.0)
+                   :total_rows, 2, 100.0, :questions_count)
         """)
         
         merged_filename = f"merged_{len(source_dataset_ids)}_datasets.json"
@@ -406,7 +406,8 @@ async def merge_datasets(
             "processed_questions": total_questions,
             "valid_questions": total_questions,
             "invalid_questions": 0,
-            "total_rows": total_questions  # Each question is a row
+            "total_rows": total_questions,  # Each question is a row
+            "questions_count": total_questions  # Total questions count
         })
         
         # Copy all questions from source datasets to target dataset
@@ -447,7 +448,8 @@ async def merge_datasets(
                 total_questions = :actual_questions,
                 processed_questions = :actual_questions,
                 valid_questions = :actual_questions,
-                total_rows = :actual_questions
+                total_rows = :actual_questions,
+                questions_count = :actual_questions
             WHERE id = :dataset_id
         """)
         
