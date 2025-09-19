@@ -301,17 +301,32 @@ async def get_dataset_questions(
             debug_orgs = db.execute(debug_orgs_sql, {"dataset_id": dataset_id}).fetchall()
             logger.info(f"📋 Sample organizations in database: {[org[0] for org in debug_orgs]}")
             
-            placeholders = ','.join([f':org_{i}' for i in range(len(filters['org_names']))])
-            where_conditions.append(f"org_name IN ({placeholders})")
+            # Use flexible matching: case-insensitive and trimmed
+            org_conditions = []
             for i, org in enumerate(filters['org_names']):
-                params[f'org_{i}'] = org
-                logger.info(f"🎯 Looking for exact match: '{org}'")
+                # Normalize the search term: trim whitespace and convert to lowercase
+                normalized_org = org.strip().lower()
+                org_conditions.append(f"LOWER(TRIM(org_name)) = :org_{i}")
+                params[f'org_{i}'] = normalized_org
+                logger.info(f"🎯 Looking for flexible match: '{org}' -> normalized: '{normalized_org}'")
+            
+            if org_conditions:
+                where_conditions.append(f"({' OR '.join(org_conditions)})")
         
         if filters.get('user_emails'):
-            placeholders = ','.join([f':email_{i}' for i in range(len(filters['user_emails']))])
-            where_conditions.append(f"user_id_from_csv IN ({placeholders})")
+            logger.info(f"🔍 Filtering by user emails: {filters['user_emails']}")
+            
+            # Use flexible matching for emails too: case-insensitive and trimmed
+            email_conditions = []
             for i, email in enumerate(filters['user_emails']):
-                params[f'email_{i}'] = email
+                # Normalize the search term: trim whitespace and convert to lowercase
+                normalized_email = email.strip().lower()
+                email_conditions.append(f"LOWER(TRIM(user_id_from_csv)) = :email_{i}")
+                params[f'email_{i}'] = normalized_email
+                logger.info(f"📧 Looking for flexible email match: '{email}' -> normalized: '{normalized_email}'")
+            
+            if email_conditions:
+                where_conditions.append(f"({' OR '.join(email_conditions)})")
         
         if filters.get('start_date'):
             where_conditions.append("timestamp_from_csv >= :start_date")
@@ -322,14 +337,22 @@ async def get_dataset_questions(
             params['end_date'] = filters['end_date']
         
         if filters.get('include_words'):
+            logger.info(f"🔍 Filtering by include words: {filters['include_words']}")
             for i, word in enumerate(filters['include_words']):
+                # Trim the word but keep case for text search
+                normalized_word = word.strip()
                 where_conditions.append(f"(original_question ILIKE :include_word_{i} OR ai_response ILIKE :include_word_{i})")
-                params[f'include_word_{i}'] = f'%{word}%'
+                params[f'include_word_{i}'] = f'%{normalized_word}%'
+                logger.info(f"✅ Include word filter: '{word}' -> '{normalized_word}'")
         
         if filters.get('exclude_words'):
+            logger.info(f"🔍 Filtering by exclude words: {filters['exclude_words']}")
             for i, word in enumerate(filters['exclude_words']):
+                # Trim the word but keep case for text search
+                normalized_word = word.strip()
                 where_conditions.append(f"NOT (original_question ILIKE :exclude_word_{i} OR ai_response ILIKE :exclude_word_{i})")
-                params[f'exclude_word_{i}'] = f'%{word}%'
+                params[f'exclude_word_{i}'] = f'%{normalized_word}%'
+                logger.info(f"❌ Exclude word filter: '{word}' -> '{normalized_word}'")
         
         # Build final query
         if where_conditions:
