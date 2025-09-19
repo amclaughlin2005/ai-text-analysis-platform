@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import SimpleWordCloud from '@/components/wordcloud/SimpleWordCloud';
 import DatasetSelector from '@/components/datasets/DatasetSelector';
 import EnhancedFilterPanel, { EnhancedFilters } from '@/components/wordcloud/EnhancedFilterPanel';
+import { getDefaultDataset } from '@/components/datasets/DatasetList';
 import { WordCloudFilters } from '@/lib/types';
 import { Database, Users, Sparkles } from 'lucide-react';
 
@@ -55,7 +56,7 @@ export default function WordCloud() {
   const [selectedDatasets, setSelectedDatasets] = useState<string[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<number[]>([1]); // Default: questions only
   
-  // Check for dataset parameter in URL on load
+  // Check for dataset parameter in URL on load, otherwise use default dataset
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const datasetParam = urlParams.get('dataset');
@@ -63,8 +64,16 @@ export default function WordCloud() {
       console.log('📊 Using dataset from URL:', datasetParam);
       setSelectedDatasets([datasetParam]);
     } else {
-      // Default to legal dataset if no URL parameter
-      setSelectedDatasets(['06a8437a-27e8-412f-a530-6cb04f7b6dc9']);
+      // Try to use the default dataset from user preferences
+      const defaultDatasetId = getDefaultDataset();
+      if (defaultDatasetId) {
+        console.log('📊 Using default dataset:', defaultDatasetId);
+        setSelectedDatasets([defaultDatasetId]);
+      } else {
+        // Fallback to legal dataset if no default set
+        console.log('📊 No default dataset, using fallback');
+        setSelectedDatasets(['06a8437a-27e8-412f-a530-6cb04f7b6dc9']);
+      }
     }
   }, []);
 

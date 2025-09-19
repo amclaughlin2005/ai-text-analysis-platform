@@ -22,7 +22,8 @@ import {
   Search,
   Filter,
   Archive,
-  Merge
+  Merge,
+  Star
 } from 'lucide-react';
 import { Dataset, DatasetStatus } from '@/lib/types';
 import { cn, formatFileSize, formatRelativeTime, getStatusColor } from '@/lib/utils';
@@ -42,7 +43,26 @@ interface DatasetListState {
   actionMenuOpen: string | null; // ID of dataset with open action menu
   bulkSelectedDatasets: Set<string>; // IDs of datasets selected for bulk operations
   bulkMode: boolean; // Whether bulk selection mode is active
+  defaultDatasetId: string | null; // ID of the default dataset
 }
+
+// Default dataset utilities
+const DEFAULT_DATASET_KEY = 'wordcloud_default_dataset';
+
+export const getDefaultDataset = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(DEFAULT_DATASET_KEY);
+};
+
+export const setDefaultDataset = (datasetId: string): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(DEFAULT_DATASET_KEY, datasetId);
+};
+
+export const clearDefaultDataset = (): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(DEFAULT_DATASET_KEY);
+};
 
 export default function DatasetList({
   onDatasetSelect,
@@ -56,7 +76,8 @@ export default function DatasetList({
     selectedDataset: null,
     actionMenuOpen: null,
     bulkSelectedDatasets: new Set<string>(),
-    bulkMode: false
+    bulkMode: false,
+    defaultDatasetId: null
   });
   
   // Debug: Log state changes (TODO: Remove after action menu is working)
@@ -388,6 +409,12 @@ export default function DatasetList({
 
       toast.success(`Dataset "${datasetName}" deleted successfully`);
       
+      // If this was the default dataset, clear it
+      if (state.defaultDatasetId === datasetId) {
+        clearDefaultDataset();
+        setState(prev => ({ ...prev, defaultDatasetId: null }));
+      }
+      
       // Remove from local state
       setState(prev => ({
         ...prev,
@@ -402,6 +429,24 @@ export default function DatasetList({
       console.error('Delete failed:', error);
       toast.error('Failed to delete dataset');
     }
+  };
+
+  // Handle setting default dataset
+  const handleSetDefault = (datasetId: string, datasetName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDefaultDataset(datasetId);
+    setState(prev => ({ ...prev, defaultDatasetId: datasetId }));
+    toast.success(`"${datasetName}" set as default dataset`);
+    closeActionMenu();
+  };
+
+  // Handle clearing default dataset
+  const handleClearDefault = (datasetName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    clearDefaultDataset();
+    setState(prev => ({ ...prev, defaultDatasetId: null }));
+    toast.success(`Removed "${datasetName}" as default dataset`);
+    closeActionMenu();
   };
 
   // Get status icon
@@ -422,9 +467,13 @@ export default function DatasetList({
     }
   };
 
-  // Load datasets on mount
+  // Load datasets and default dataset on mount
   useEffect(() => {
     fetchDatasets();
+    const defaultId = getDefaultDataset();
+    if (defaultId) {
+      setState(prev => ({ ...prev, defaultDatasetId: defaultId }));
+    }
   }, []);
 
   if (state.loading) {
@@ -603,8 +652,16 @@ export default function DatasetList({
                       </button>
                     )}
                     {getStatusIcon((dataset.processing_status || dataset.upload_status || 'failed') as DatasetStatus)}
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900">{dataset.name}</h4>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-lg font-semibold text-gray-900">{dataset.name}</h4>
+                        {state.defaultDatasetId === dataset.id && (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                            <Star className="h-3 w-3 fill-current" />
+                            Default
+                          </div>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600">{dataset.filename || dataset.original_filename}</p>
                     </div>
                   </div>
@@ -669,6 +726,24 @@ export default function DatasetList({
                               <BarChart3 className="h-4 w-4 mr-3" />
                               Analytics
                             </button>
+                            <div className="border-t border-gray-100 my-1"></div>
+                            {state.defaultDatasetId === dataset.id ? (
+                              <button
+                                onClick={(e) => handleClearDefault(dataset.name, e)}
+                                className="flex items-center w-full px-4 py-2 text-sm text-amber-600 hover:bg-amber-50"
+                              >
+                                <Star className="h-4 w-4 mr-3 fill-current" />
+                                Remove as Default
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => handleSetDefault(dataset.id, dataset.name, e)}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                <Star className="h-4 w-4 mr-3" />
+                                Set as Default
+                              </button>
+                            )}
                             <div className="border-t border-gray-100 my-1"></div>
                             <button
                               onClick={(e) => {
