@@ -417,7 +417,7 @@ async def merge_datasets(
             copy_questions_sql = text("""
                 INSERT INTO questions (id, dataset_id, original_question, ai_response, org_name, user_id_from_csv, csv_row_number, is_valid, created_at, updated_at)
                 SELECT 
-                    UUID() as id,
+                    gen_random_uuid() as id,
                     :target_dataset_id as dataset_id,
                     original_question,
                     ai_response, 
