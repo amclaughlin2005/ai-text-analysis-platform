@@ -3,21 +3,16 @@ import { authMiddleware } from '@clerk/nextjs';
 export default authMiddleware({
   // Public routes that don't require authentication
   publicRoutes: [
-    '/',                    // Landing page
-    '/wordcloud',          // Public word cloud viewing
-    '/login',              // Sign-in page
-    '/api/wordcloud/generate-fast',    // Public word cloud API
-    '/api/wordcloud/generate-multi-fast', // Public multi-dataset API
-    '/api/wordcloud/filter-options/(.*)', // Public filter options
+    '/login',              // Sign-in page only
+    // Everything else requires authentication:
+    // - / (landing page)
+    // - /wordcloud  
+    // - /upload
+    // - /datasets  
+    // - /dashboard
+    // - /dataset/[id]
+    // - All API endpoints (except ignored ones)
   ],
-  
-  // Routes that require authentication
-  // Everything not in publicRoutes will require sign-in:
-  // - /upload
-  // - /datasets  
-  // - /dashboard
-  // - /dataset/[id]
-  // - Other API endpoints
 
   // Ignore these paths completely (no auth check)
   ignoredRoutes: [

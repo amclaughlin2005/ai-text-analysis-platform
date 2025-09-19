@@ -13,13 +13,13 @@ const navigationItems = [
     name: 'Home',
     href: '/',
     icon: Home,
-    public: true,
+    protected: true,
   },
   {
     name: 'Word Cloud',
     href: '/wordcloud',
     icon: MessageSquare,
-    public: true,
+    protected: true,
   },
   {
     name: 'Upload Dataset',
