@@ -167,6 +167,50 @@ async def get_word_frequencies(
         "words": word_frequencies[:limit]
     }
 
+@router.get("/debug/orgs/{dataset_id}")
+async def debug_organization_data(dataset_id: str, db: Session = Depends(get_db)):
+    """Debug endpoint to check organization data formatting"""
+    try:
+        # Get sample organization data
+        org_sql = text("""
+            SELECT org_name, COUNT(*) as count 
+            FROM questions 
+            WHERE dataset_id = :dataset_id AND org_name IS NOT NULL 
+            GROUP BY org_name 
+            ORDER BY count DESC 
+            LIMIT 20
+        """)
+        
+        orgs = db.execute(org_sql, {"dataset_id": dataset_id}).fetchall()
+        
+        # Check specific organization
+        singleton_exact = text("""
+            SELECT COUNT(*) 
+            FROM questions 
+            WHERE dataset_id = :dataset_id AND org_name = 'Singleton Schreiber, LLP'
+        """)
+        singleton_count = db.execute(singleton_exact, {"dataset_id": dataset_id}).scalar()
+        
+        # Check similar organizations (case insensitive, partial match)
+        singleton_like = text("""
+            SELECT org_name, COUNT(*) 
+            FROM questions 
+            WHERE dataset_id = :dataset_id AND org_name ILIKE '%singleton%' 
+            GROUP BY org_name
+        """)
+        singleton_variations = db.execute(singleton_like, {"dataset_id": dataset_id}).fetchall()
+        
+        return {
+            "dataset_id": dataset_id,
+            "top_organizations": [{"name": org[0], "count": org[1]} for org in orgs],
+            "singleton_exact_match": singleton_count,
+            "singleton_variations": [{"name": var[0], "count": var[1]} for var in singleton_variations],
+            "total_questions": db.execute(text("SELECT COUNT(*) FROM questions WHERE dataset_id = :dataset_id"), {"dataset_id": dataset_id}).scalar()
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
 @router.get("/debug/schema")
 async def debug_questions_schema(db: Session = Depends(get_db)):
     """Debug endpoint to inspect questions table schema"""
